@@ -1,0 +1,189 @@
+/*
+ * Star Closet 视觉 tokens · v5「电影感买手店」
+ * 定稿：2026-10-16，发起用户确认 v5 方向。说明见 视觉规范.md。
+ * 用法：在根布局引入本文件；<html data-theme="dark|light">，未设置时跟随系统，默认深色。
+ * 字体（Google Fonts）：Bodoni Moda（ital,opsz 6..96, 400）、Noto Serif SC（300/400）、Noto Sans SC（300/400）。
+ */
+
+:root,
+:root[data-theme="dark"] {
+  /* 场景与表面 */
+  --sc-bg: #0b0d10;
+  --sc-bg-raised: #15171c;
+  --sc-scene-fade-top: linear-gradient(180deg, rgba(0, 0, 0, .55), transparent);
+  --sc-scene-fade-bottom: linear-gradient(0deg, rgba(8, 8, 10, .88), transparent);
+  --sc-vignette: radial-gradient(120% 80% at 50% 40%, transparent 50%, rgba(0, 0, 0, .55));
+
+  /* 文字 */
+  --sc-ink: #f4f2ed;
+  --sc-ink-2: #b9b2a6;
+  --sc-ink-3: #8a8378;
+  --sc-rule: rgba(244, 242, 237, .18);
+
+  /* 香槟金 */
+  --sc-champ: #c9a96e;
+  --sc-champ-deep: #8a6a36;
+  --sc-champ-text: #e8cf9c;            /* 深色底上可读的香槟文字 */
+  --sc-foil: linear-gradient(100deg, #b8924f 0%, #f2dcaa 45%, #fff3d6 50%, #f2dcaa 55%, #b8924f 100%);
+
+  /* 玻璃（通透轻盈） */
+  --sc-glass-bg: rgba(255, 246, 230, .08);
+  --sc-glass-edge: rgba(255, 255, 255, .28);
+  --sc-glass-edge-2: rgba(255, 255, 255, .12);
+  --sc-glass-shadow: 0 18px 40px rgba(0, 0, 0, .35);
+  --sc-glass-blur: 14px;
+
+  /* 主按钮 */
+  --sc-cta-bg: linear-gradient(180deg, #ecd3a0, #c9a96e);
+  --sc-cta-fg: #1a150d;
+  --sc-cta-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 12px 26px rgba(0, 0, 0, .4);
+
+  /* 氛围 */
+  --sc-beam: rgba(255, 226, 170, .22);
+  --sc-grain-opacity: .14;
+  --sc-item-shadow: rgba(0, 0, 0, .6);
+
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --sc-bg: #f4efe6;
+  --sc-bg-raised: #fbf6ec;
+  --sc-scene-fade-top: linear-gradient(180deg, rgba(250, 244, 232, .6), transparent);
+  --sc-scene-fade-bottom: linear-gradient(0deg, rgba(250, 244, 232, .92), transparent);
+  --sc-vignette: radial-gradient(120% 80% at 50% 40%, transparent 55%, rgba(90, 70, 40, .25));
+
+  --sc-ink: #1f1c18;
+  --sc-ink-2: #5e574d;
+  --sc-ink-3: #8a8174;
+  --sc-rule: rgba(31, 28, 24, .18);
+
+  --sc-champ-text: #8a6a36;
+  --sc-foil: linear-gradient(100deg, #6e5222 0%, #9c7a3c 45%, #d8bb80 50%, #9c7a3c 55%, #6e5222 100%);
+
+  --sc-glass-bg: rgba(255, 253, 248, .28);
+  --sc-glass-edge: rgba(255, 255, 255, .9);
+  --sc-glass-edge-2: rgba(255, 255, 255, .55);
+  --sc-glass-shadow: 0 14px 34px rgba(110, 80, 35, .14);
+
+  --sc-cta-bg: #221d18;
+  --sc-cta-fg: #fbf4e6;
+  --sc-cta-shadow: 0 12px 26px rgba(40, 28, 14, .25);
+
+  --sc-beam: rgba(255, 236, 200, .35);
+  --sc-grain-opacity: .08;
+  --sc-item-shadow: rgba(110, 80, 35, .28);
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --sc-bg: #f4efe6; --sc-bg-raised: #fbf6ec;
+    --sc-scene-fade-top: linear-gradient(180deg, rgba(250, 244, 232, .6), transparent);
+    --sc-scene-fade-bottom: linear-gradient(0deg, rgba(250, 244, 232, .92), transparent);
+    --sc-vignette: radial-gradient(120% 80% at 50% 40%, transparent 55%, rgba(90, 70, 40, .25));
+    --sc-ink: #1f1c18; --sc-ink-2: #5e574d; --sc-ink-3: #8a8174; --sc-rule: rgba(31, 28, 24, .18);
+    --sc-champ-text: #8a6a36;
+    --sc-foil: linear-gradient(100deg, #6e5222 0%, #9c7a3c 45%, #d8bb80 50%, #9c7a3c 55%, #6e5222 100%);
+    --sc-glass-bg: rgba(255, 253, 248, .28); --sc-glass-edge: rgba(255, 255, 255, .9); --sc-glass-edge-2: rgba(255, 255, 255, .55);
+    --sc-glass-shadow: 0 14px 34px rgba(110, 80, 35, .14);
+    --sc-cta-bg: #221d18; --sc-cta-fg: #fbf4e6; --sc-cta-shadow: 0 12px 26px rgba(40, 28, 14, .25);
+    --sc-beam: rgba(255, 236, 200, .35); --sc-grain-opacity: .08; --sc-item-shadow: rgba(110, 80, 35, .28);
+    color-scheme: light;
+  }
+}
+
+:root {
+  /* 字体 */
+  --sc-font-didone: "Bodoni Moda", "Didot", serif;   /* 刊头、N° 编号、价格数字、英文斜体引题 */
+  --sc-font-serif: "Noto Serif SC", "Songti SC", serif; /* 中文标题、风格说明 */
+  --sc-font-sans: "Noto Sans SC", -apple-system, "PingFang SC", sans-serif; /* 界面文字 */
+
+  /* 字号（手机基准） */
+  --sc-fs-masthead: 15px;   /* 刊头，字距 .42em */
+  --sc-fs-display: 28px;    /* 衣橱/搭配标题 */
+  --sc-fs-number: 36px;     /* N° 编号、总价 */
+  --sc-fs-title: 18px;
+  --sc-fs-body: 14px;
+  --sc-fs-caption: 11px;    /* 引题与元信息，字距 .12em */
+
+  /* 间距与圆角 */
+  --sc-space-1: 4px; --sc-space-2: 8px; --sc-space-3: 12px; --sc-space-4: 16px;
+  --sc-space-5: 20px; --sc-space-6: 24px; --sc-space-8: 32px;
+  --sc-radius-card: 24px;
+  --sc-radius-row: 18px;
+  --sc-radius-thumb: 13px;
+  --sc-radius-pill: 999px;
+  --sc-tap: 44px;
+
+  /* 动效 */
+  --sc-ease-cine: cubic-bezier(.22, .61, .2, 1);   /* 镜头、进场 */
+  --sc-ease-rise: cubic-bezier(.2, .7, .2, 1);     /* 卡片浮起 */
+  --sc-ease-fall: cubic-bezier(.3, 0, .45, 1);     /* 受重力下落 */
+  --sc-dur-intro: 3s;
+  --sc-dur-rise: 1.1s;
+  --sc-dur-drop: 1.25s;
+  --sc-dur-dolly: 22s;
+  --sc-dur-sway: 6.5s;
+}
+
+/* ---------- 组件类 ---------- */
+
+body { background: var(--sc-bg); color: var(--sc-ink); font-family: var(--sc-font-sans); }
+
+.sc-scene { position: absolute; inset: 0; overflow: hidden; isolation: isolate; }
+.sc-scene__media { position: absolute; inset: -6%; width: 112%; height: 112%; object-fit: cover;
+  animation: sc-intro var(--sc-dur-intro) var(--sc-ease-cine) both, sc-dolly var(--sc-dur-dolly) ease-in-out infinite alternate; }
+.sc-scene__vignette { position: absolute; inset: 0; background: var(--sc-vignette); pointer-events: none; }
+.sc-scene__fade-top { position: absolute; inset: 0 0 auto 0; height: 140px; background: var(--sc-scene-fade-top); pointer-events: none; }
+.sc-scene__fade-bottom { position: absolute; inset: auto 0 0 0; height: 45%; background: var(--sc-scene-fade-bottom); pointer-events: none; }
+.sc-beam { position: absolute; left: 50%; top: -20px; width: 260px; height: 70%; transform: translateX(-50%); pointer-events: none;
+  background: conic-gradient(from 165deg at 50% 0%, transparent 0deg, var(--sc-beam) 12deg, var(--sc-beam) 18deg, transparent 30deg);
+  filter: blur(8px); mix-blend-mode: screen; animation: sc-breathe 6s ease-in-out infinite; }
+.sc-grain { position: absolute; inset: -50%; pointer-events: none; opacity: var(--sc-grain-opacity); mix-blend-mode: overlay;
+  animation: sc-grain 1s steps(6) infinite;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+
+.sc-masthead { font-family: var(--sc-font-didone); font-size: var(--sc-fs-masthead); letter-spacing: .42em; }
+.sc-kicker { font-family: var(--sc-font-didone); font-style: italic; font-size: var(--sc-fs-caption); letter-spacing: .12em; color: var(--sc-ink-2); }
+.sc-display { font-family: var(--sc-font-serif); font-weight: 400; font-size: var(--sc-fs-display); letter-spacing: .12em; line-height: 1.2; }
+.sc-number { font-family: var(--sc-font-didone); font-style: italic; font-size: var(--sc-fs-number); line-height: .9; }
+.sc-meta { font-size: var(--sc-fs-caption); letter-spacing: .12em; color: var(--sc-ink-2); }
+.sc-foil { background: var(--sc-foil); background-size: 240% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: sc-shine 9s linear infinite; }
+
+.sc-glass { position: relative; border-radius: var(--sc-radius-card); background: var(--sc-glass-bg);
+  -webkit-backdrop-filter: blur(var(--sc-glass-blur)) saturate(1.3); backdrop-filter: blur(var(--sc-glass-blur)) saturate(1.3);
+  box-shadow: inset 0 1px 0 var(--sc-glass-edge), inset 0 0 0 .5px var(--sc-glass-edge-2), var(--sc-glass-shadow); }
+.sc-glass--row { border-radius: var(--sc-radius-row); }
+.sc-glass--changed { box-shadow: inset 0 0 0 1px rgba(201, 169, 110, .9), inset 0 1px 0 var(--sc-glass-edge), 0 10px 28px rgba(160, 120, 60, .16); }
+
+.sc-cta { min-height: 54px; border: 0; border-radius: var(--sc-radius-pill); padding: 0 var(--sc-space-6);
+  font: 400 13px/1 var(--sc-font-sans); letter-spacing: .22em; color: var(--sc-cta-fg); background: var(--sc-cta-bg);
+  box-shadow: var(--sc-cta-shadow); cursor: pointer; }
+.sc-cta--ghost { color: var(--sc-ink); background: var(--sc-glass-bg); box-shadow: inset 0 1px 0 var(--sc-glass-edge), var(--sc-glass-shadow);
+  -webkit-backdrop-filter: blur(var(--sc-glass-blur)); backdrop-filter: blur(var(--sc-glass-blur)); }
+
+.sc-badge { display: inline-block; font-size: 10px; letter-spacing: .12em; padding: 3px 9px; border-radius: var(--sc-radius-pill);
+  border: 1px solid rgba(201, 169, 110, .8); color: var(--sc-champ-text); }
+
+.sc-rise { animation: sc-rise var(--sc-dur-rise) var(--sc-ease-rise) both; }
+.sc-hang { transform-origin: 50% 0; animation: sc-drop var(--sc-dur-drop) var(--sc-ease-fall) both, sc-sway var(--sc-dur-sway) ease-in-out var(--sc-dur-drop) infinite; }
+.sc-land { animation: sc-land 1s var(--sc-ease-fall) both; }
+
+/* ---------- 关键帧 ---------- */
+@keyframes sc-intro { from { filter: blur(6px) brightness(.5); transform: scale(1.08); } to { filter: none; transform: none; } }
+@keyframes sc-dolly { from { transform: scale(1.02); } to { transform: scale(1.14) translateY(-2%); } }
+@keyframes sc-breathe { 0%, 100% { opacity: .6; } 50% { opacity: 1; } }
+@keyframes sc-grain { 0% { transform: translate(0, 0); } 25% { transform: translate(-4%, 3%); } 50% { transform: translate(3%, -5%); } 75% { transform: translate(-5%, -2%); } 100% { transform: translate(0, 0); } }
+@keyframes sc-shine { to { background-position: -240% 0; } }
+@keyframes sc-rise { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+@keyframes sc-drop { 0% { transform: translateY(-260px); opacity: 0; } 55% { transform: translateY(8px); opacity: 1; } 72% { transform: translateY(-3px) rotate(1.6deg); } 86% { transform: translateY(1px) rotate(-.9deg); } 100% { transform: none; } }
+@keyframes sc-sway { 0%, 100% { transform: rotate(.9deg); } 50% { transform: rotate(-.9deg); } }
+@keyframes sc-land { 0% { transform: translateY(-140px); opacity: 0; } 60% { transform: translateY(0) scaleY(.96) scaleX(1.03); opacity: 1; } 78% { transform: translateY(-6px); } 100% { transform: none; } }
+@keyframes sc-gift-up { 0% { transform: translate(0, 0) scale(.6); opacity: 0; } 15% { opacity: 1; transform: translate(-4px, -30px) scale(1.1); } 100% { transform: translate(var(--dx, 0), -280px) scale(.9); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sc-scene__media, .sc-beam, .sc-grain, .sc-foil, .sc-rise, .sc-hang, .sc-land { animation: none !important; }
+}
