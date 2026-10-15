@@ -201,8 +201,8 @@ export default function Adapter({ outfit, catalog, aiEnabled }: { outfit: Outfit
           ) : null}
           <ItemList items={items} catalog={catalog} onSwap={swap} originalIds={originalIds} />
           <p className="sc-meta" style={{ margin: 0 }}>
-            {result.mode === "ai" ? "由 AI 在主理人目录内挑选；" : "由规则在目录内挑选，未使用 AI；"}
-            金线标出的是换掉的单品；总价由系统按目录价格计算。
+            {result.mode === "ai" ? "由 AI 从这间衣橱现有的单品里挑选；" : "由规则从这间衣橱现有的单品里挑选，未使用 AI；"}
+            金线标出的是换掉的单品；总价按各单品标价计算。
           </p>
         </section>
       ) : null}

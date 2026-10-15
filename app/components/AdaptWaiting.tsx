@@ -4,7 +4,7 @@ import { forwardRef, useEffect, useState } from "react";
 
 // AI 改编约需 10–13 秒的等待卡：轮换说明当前在做什么（不显示假进度百分比），
 // 附已等待秒数和三行占位，结果出来后由改编结果卡替换。
-const STEPS = ["读懂你的要求", "在主理人目录里挑选", "保留原搭配的风格", "核对类别与预算", "写下每件的理由"];
+const STEPS = ["读懂你的要求", "在这间衣橱里挑选", "保留原搭配的风格", "核对类别与预算", "写下每件的理由"];
 
 const AdaptWaiting = forwardRef<HTMLElement, { aiEnabled: boolean }>(function AdaptWaiting({ aiEnabled }, ref) {
   const [step, setStep] = useState(0);
@@ -48,7 +48,7 @@ const AdaptWaiting = forwardRef<HTMLElement, { aiEnabled: boolean }>(function Ad
         ))}
       </div>
       <p className="sc-meta" style={{ margin: 0 }}>
-        {aiEnabled ? "通常需要 10 秒左右，会只从主理人的目录里挑。" : "规则模式，马上就好。"}
+        {aiEnabled ? "通常需要 10 秒左右，只会从这间衣橱现有的单品里挑。" : "规则模式，马上就好。"}
       </p>
     </section>
   );
