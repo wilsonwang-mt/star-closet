@@ -218,6 +218,87 @@
       "video_poster": "/catalog/curators/C07-closet.jpg",
       "cover_wide": "/catalog/curators/C07-cover-wide.webp",
       "persona_note": "虚构示例主理人，头像与衣橱场景为 AI 生成"
+    },
+    {
+      "curator_id": "C08",
+      "display_name": "阿哲 Jason",
+      "closet_type": "穿搭博主",
+      "closet_name": "男士都市通勤",
+      "gender": "男装",
+      "tagline": "一件好衬衫，穿出不费力的体面",
+      "intro": "互联网公司产品经理，下班后做男装穿搭博主。只推荐不出错、好打理、从会议室到约会都能穿的基础款。",
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "palette": [
+        "藏青",
+        "炭灰",
+        "白色",
+        "卡其",
+        "深棕"
+      ],
+      "avatar": "/catalog/curators/C08-avatar.webp",
+      "cover": "/catalog/curators/C08-cover.webp",
+      "video": "/catalog/curators/C08-closet.mp4",
+      "video_poster": "/catalog/curators/C08-closet.jpg",
+      "cover_wide": "/catalog/curators/C08-cover-wide.webp",
+      "persona_note": "虚构示例主理人，头像与衣橱场景为 AI 生成"
+    },
+    {
+      "curator_id": "C09",
+      "display_name": "周屿 Leo",
+      "closet_type": "穿搭博主",
+      "closet_name": "日系山系 City Boy",
+      "gender": "男装",
+      "tagline": "宽松、舒服、随时可以出发",
+      "intro": "摄影师兼男装博主。爱逛古着店和爬山，把工装、户外和日系宽松剪裁混在一起穿。",
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "palette": [
+        "橄榄绿",
+        "燕麦",
+        "藏青",
+        "卡其",
+        "白色"
+      ],
+      "avatar": "/catalog/curators/C09-avatar.webp",
+      "cover": "/catalog/curators/C09-cover.webp",
+      "video": "/catalog/curators/C09-closet.mp4",
+      "video_poster": "/catalog/curators/C09-closet.jpg",
+      "cover_wide": "/catalog/curators/C09-cover-wide.webp",
+      "persona_note": "虚构示例主理人，头像与衣橱场景为 AI 生成"
+    },
+    {
+      "curator_id": "C10",
+      "display_name": "铆钉工坊",
+      "closet_type": "品牌主题",
+      "closet_name": "美式复古工装",
+      "gender": "中性",
+      "tagline": "原色牛仔和帆布，越穿越有自己的样子",
+      "intro": "虚构示例品牌，用于演示品牌主题衣橱。男女同款的美式复古工装，牛仔、帆布和皮革都按耐穿的标准挑选。",
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "palette": [
+        "靛蓝",
+        "原色牛仔",
+        "卡其",
+        "黑色",
+        "红棕"
+      ],
+      "avatar": "/catalog/curators/C10-avatar.webp",
+      "cover": "/catalog/curators/C10-cover.webp",
+      "video": "/catalog/curators/C10-closet.mp4",
+      "video_poster": "/catalog/curators/C10-closet.jpg",
+      "cover_wide": "/catalog/curators/C10-cover-wide.webp",
+      "persona_note": "虚构示例主理人，头像与衣橱场景为 AI 生成"
     }
   ],
   "outfits": [
@@ -1408,6 +1489,516 @@
         "I151"
       ],
       "gender": "女装"
+    },
+    {
+      "outfit_id": "O43",
+      "curator_id": "C08",
+      "curator": "C08",
+      "name": "周一例会",
+      "style_note": "白色牛津纺配炭灰西裤，外搭藏青休闲西装，不打领带也足够正式。德比鞋和公文包，开会时显得靠谱。",
+      "occasion_tags": [
+        "通勤"
+      ],
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "season": "秋冬",
+      "budget_tier": "进阶",
+      "cover": "/catalog/outfits/O43.webp",
+      "cover_note": "AI 生成场景示意 · 合身未验证",
+      "item_ids": [
+        "I153",
+        "I158",
+        "I160",
+        "I163",
+        "I166",
+        "I168"
+      ],
+      "gender": "男装"
+    },
+    {
+      "outfit_id": "O44",
+      "curator_id": "C08",
+      "curator": "C08",
+      "name": "面试日",
+      "style_note": "衬衫外面叠一件炭灰美利奴毛衣，领口露出一点白，稳重又不刻板。乐福鞋比皮鞋更年轻。",
+      "occasion_tags": [
+        "面试",
+        "通勤"
+      ],
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "season": "秋冬",
+      "budget_tier": "进阶",
+      "cover": "/catalog/outfits/O44.webp",
+      "cover_note": "AI 生成场景示意 · 合身未验证",
+      "item_ids": [
+        "I153",
+        "I155",
+        "I158",
+        "I164",
+        "I166",
+        "I169"
+      ],
+      "gender": "男装"
+    },
+    {
+      "outfit_id": "O45",
+      "curator_id": "C08",
+      "curator": "C08",
+      "name": "周五便装",
+      "style_note": "白T、原色牛仔裤和哈灵顿夹克，周五下班直接去吃饭。小白鞋和尼龙托特，轻松不邋遢。",
+      "occasion_tags": [
+        "通勤",
+        "周末"
+      ],
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "season": "四季",
+      "budget_tier": "适中",
+      "cover": "/catalog/outfits/O45.webp",
+      "cover_note": "AI 生成场景示意 · 合身未验证",
+      "item_ids": [
+        "I156",
+        "I159",
+        "I162",
+        "I165",
+        "I167"
+      ],
+      "gender": "男装"
+    },
+    {
+      "outfit_id": "O46",
+      "curator_id": "C08",
+      "curator": "C08",
+      "name": "第一次约会",
+      "style_note": "炭灰毛衣配卡其休闲裤，外面一件驼色大衣。颜色柔和，眼镜让整个人更斯文。",
+      "occasion_tags": [
+        "约会"
+      ],
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "season": "秋冬",
+      "budget_tier": "进阶",
+      "cover": "/catalog/outfits/O46.webp",
+      "cover_note": "AI 生成场景示意 · 合身未验证",
+      "item_ids": [
+        "I155",
+        "I157",
+        "I161",
+        "I164",
+        "I171"
+      ],
+      "gender": "男装"
+    },
+    {
+      "outfit_id": "O47",
+      "curator_id": "C08",
+      "curator": "C08",
+      "name": "出差两天",
+      "style_note": "针织Polo配卡其裤，西装外套随时能穿上见客户。小白鞋走机场也舒服。",
+      "occasion_tags": [
+        "出差",
+        "旅行"
+      ],
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "season": "四季",
+      "budget_tier": "进阶",
+      "cover": "/catalog/outfits/O47.webp",
+      "cover_note": "AI 生成场景示意 · 合身未验证",
+      "item_ids": [
+        "I154",
+        "I157",
+        "I160",
+        "I165",
+        "I167",
+        "I168"
+      ],
+      "gender": "男装"
+    },
+    {
+      "outfit_id": "O48",
+      "curator_id": "C08",
+      "curator": "C08",
+      "name": "冬日通勤",
+      "style_note": "毛衣配西裤，驼色大衣加炭灰围巾。冬天也能穿得干净利落。",
+      "occasion_tags": [
+        "通勤"
+      ],
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "season": "秋冬",
+      "budget_tier": "进阶",
+      "cover": "/catalog/outfits/O48.webp",
+      "cover_note": "AI 生成场景示意 · 合身未验证",
+      "item_ids": [
+        "I155",
+        "I158",
+        "I161",
+        "I163",
+        "I166",
+        "I170"
+      ],
+      "gender": "男装"
+    },
+    {
+      "outfit_id": "O49",
+      "curator_id": "C09",
+      "curator": "C09",
+      "name": "周末逛街",
+      "style_note": "燕麦卫衣配宽松工装裤，City Boy 的标准廓形。帆布鞋、斜挎小包和灯芯绒帽，轻松又有细节。",
+      "occasion_tags": [
+        "周末",
+        "休闲"
+      ],
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "season": "秋冬",
+      "budget_tier": "平价",
+      "cover": "/catalog/outfits/O49.webp",
+      "cover_note": "AI 生成场景示意 · 合身未验证",
+      "item_ids": [
+        "I174",
+        "I180",
+        "I185",
+        "I187",
+        "I188"
+      ],
+      "gender": "男装"
+    },
+    {
+      "outfit_id": "O50",
+      "curator_id": "C09",
+      "curator": "C09",
+      "name": "周末露营",
+      "style_note": "法兰绒格子衫配军裤，外面套摇粒绒。晚上营地降温，再戴上毛线帽。",
+      "occasion_tags": [
+        "露营",
+        "户外"
+      ],
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "season": "秋冬",
+      "budget_tier": "适中",
+      "cover": "/catalog/outfits/O50.webp",
+      "cover_note": "AI 生成场景示意 · 合身未验证",
+      "item_ids": [
+        "I173",
+        "I182",
+        "I178",
+        "I183",
+        "I186",
+        "I189"
+      ],
+      "gender": "男装"
+    },
+    {
+      "outfit_id": "O51",
+      "curator_id": "C09",
+      "curator": "C09",
+      "name": "山系徒步",
+      "style_note": "长袖T恤加宽松工装裤，冲锋衣挡风。徒步鞋抓地，登山包装得下一天的补给。",
+      "occasion_tags": [
+        "户外",
+        "运动"
+      ],
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "season": "秋冬",
+      "budget_tier": "进阶",
+      "cover": "/catalog/outfits/O51.webp",
+      "cover_note": "AI 生成场景示意 · 合身未验证",
+      "item_ids": [
+        "I172",
+        "I180",
+        "I177",
+        "I184",
+        "I186",
+        "I188"
+      ],
+      "gender": "男装"
+    },
+    {
+      "outfit_id": "O52",
+      "curator_id": "C09",
+      "curator": "C09",
+      "name": "看展日",
+      "style_note": "渔夫毛衣配浅蓝牛仔裤，外搭帆布工装外套，颜色只有蓝和白，干净耐看。",
+      "occasion_tags": [
+        "看展",
+        "休闲"
+      ],
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "season": "秋冬",
+      "budget_tier": "适中",
+      "cover": "/catalog/outfits/O52.webp",
+      "cover_note": "AI 生成场景示意 · 合身未验证",
+      "item_ids": [
+        "I175",
+        "I181",
+        "I179",
+        "I185",
+        "I187"
+      ],
+      "gender": "男装"
+    },
+    {
+      "outfit_id": "O53",
+      "curator_id": "C09",
+      "curator": "C09",
+      "name": "秋日旅行",
+      "style_note": "格子衬衫当外套穿，里面是长袖T恤，加一件工装马甲，口袋多，旅行很方便。",
+      "occasion_tags": [
+        "旅行"
+      ],
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "season": "秋冬",
+      "budget_tier": "进阶",
+      "cover": "/catalog/outfits/O53.webp",
+      "cover_note": "AI 生成场景示意 · 合身未验证",
+      "item_ids": [
+        "I172",
+        "I173",
+        "I181",
+        "I176",
+        "I183",
+        "I186"
+      ],
+      "gender": "男装"
+    },
+    {
+      "outfit_id": "O54",
+      "curator_id": "C09",
+      "curator": "C09",
+      "name": "雨天出门",
+      "style_note": "卫衣、军裤加冲锋衣，下雨也不狼狈。毛线帽和徒步鞋，适合城市里的阴雨天。",
+      "occasion_tags": [
+        "周末"
+      ],
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "season": "秋冬",
+      "budget_tier": "进阶",
+      "cover": "/catalog/outfits/O54.webp",
+      "cover_note": "AI 生成场景示意 · 合身未验证",
+      "item_ids": [
+        "I174",
+        "I182",
+        "I177",
+        "I184",
+        "I187",
+        "I189"
+      ],
+      "gender": "男装"
+    },
+    {
+      "outfit_id": "O55",
+      "curator_id": "C10",
+      "curator": "C10",
+      "name": "经典丹宁",
+      "style_note": "黑色口袋T恤配原色赤耳牛仔裤，外搭同色牛仔夹克，靛蓝叠穿是美式复古的起点。",
+      "occasion_tags": [
+        "周末",
+        "出街"
+      ],
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "season": "秋冬",
+      "budget_tier": "进阶",
+      "cover": "/catalog/outfits/O55.webp",
+      "cover_note": "AI 生成场景示意 · 合身未验证",
+      "item_ids": [
+        "I196",
+        "I198",
+        "I191",
+        "I201",
+        "I204",
+        "I206"
+      ],
+      "gender": "中性"
+    },
+    {
+      "outfit_id": "O56",
+      "curator_id": "C10",
+      "curator": "C10",
+      "name": "周末工装",
+      "style_note": "华夫格亨利衫配双膝工装裤，外面一件帆布工装夹克，越穿越软越好看。",
+      "occasion_tags": [
+        "周末",
+        "休闲"
+      ],
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "season": "秋冬",
+      "budget_tier": "进阶",
+      "cover": "/catalog/outfits/O56.webp",
+      "cover_note": "AI 生成场景示意 · 合身未验证",
+      "item_ids": [
+        "I195",
+        "I200",
+        "I192",
+        "I201",
+        "I205",
+        "I208"
+      ],
+      "gender": "中性"
+    },
+    {
+      "outfit_id": "O57",
+      "curator_id": "C10",
+      "curator": "C10",
+      "name": "骑行夜",
+      "style_note": "皮质飞行夹克配原色牛仔，工程师靴和钱包链，夜里骑车去喝一杯。",
+      "occasion_tags": [
+        "聚会",
+        "出街"
+      ],
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "season": "秋冬",
+      "budget_tier": "进阶",
+      "cover": "/catalog/outfits/O57.webp",
+      "cover_note": "AI 生成场景示意 · 合身未验证",
+      "item_ids": [
+        "I196",
+        "I198",
+        "I193",
+        "I203",
+        "I207",
+        "I209"
+      ],
+      "gender": "中性"
+    },
+    {
+      "outfit_id": "O58",
+      "curator_id": "C10",
+      "curator": "C10",
+      "name": "画室日常",
+      "style_note": "灰色卫衣配米白画家裤，高帮帆布鞋和工具托特，男女都能穿。",
+      "occasion_tags": [
+        "休闲"
+      ],
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "season": "秋冬",
+      "budget_tier": "平价",
+      "cover": "/catalog/outfits/O58.webp",
+      "cover_note": "AI 生成场景示意 · 合身未验证",
+      "item_ids": [
+        "I197",
+        "I199",
+        "I202",
+        "I204",
+        "I206"
+      ],
+      "gender": "中性"
+    },
+    {
+      "outfit_id": "O59",
+      "curator_id": "C10",
+      "curator": "C10",
+      "name": "秋日露营",
+      "style_note": "牛仔布工装衬衫配双膝工装裤，帆布夹克耐磨，适合搭帐篷和生火。",
+      "occasion_tags": [
+        "露营",
+        "户外"
+      ],
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "season": "秋冬",
+      "budget_tier": "进阶",
+      "cover": "/catalog/outfits/O59.webp",
+      "cover_note": "AI 生成场景示意 · 合身未验证",
+      "item_ids": [
+        "I194",
+        "I200",
+        "I192",
+        "I201",
+        "I205"
+      ],
+      "gender": "中性"
+    },
+    {
+      "outfit_id": "O60",
+      "curator_id": "C10",
+      "curator": "C10",
+      "name": "城市漫游",
+      "style_note": "亨利衫、画家裤加牛仔夹克，颜色是米白和靛蓝。邮差包装下相机和一本书。",
+      "occasion_tags": [
+        "周末",
+        "旅行"
+      ],
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "season": "秋冬",
+      "budget_tier": "适中",
+      "cover": "/catalog/outfits/O60.webp",
+      "cover_note": "AI 生成场景示意 · 合身未验证",
+      "item_ids": [
+        "I195",
+        "I199",
+        "I191",
+        "I202",
+        "I205",
+        "I208"
+      ],
+      "gender": "中性"
     }
   ],
   "items": [
@@ -8366,6 +8957,2674 @@
         "牛皮"
       ],
       "gender": "女装"
+    },
+    {
+      "item_id": "I153",
+      "curator_id": "C08",
+      "name": "白色牛津纺衬衫",
+      "category": "上装",
+      "display_category": "上装",
+      "subcategory": "衬衫",
+      "color": "白色",
+      "color_family": "白色系",
+      "price": 199,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E7%99%BD%E8%89%B2%E7%89%9B%E6%B4%A5%E7%BA%BA%E8%A1%AC%E8%A1%AB",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "白色牛津纺衬衫",
+      "image": "/catalog/items/I153.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "棉",
+      "season": "四季",
+      "fit": "常规",
+      "heel": null,
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "occasion_tags": [
+        "通勤",
+        "面试"
+      ],
+      "tags": [
+        "通勤",
+        "秋冬",
+        "春夏",
+        "棉"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I154",
+      "curator_id": "C08",
+      "name": "藏青针织Polo衫",
+      "category": "上装",
+      "display_category": "上装",
+      "subcategory": "Polo衫",
+      "color": "藏青",
+      "color_family": "蓝色系",
+      "price": 229,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E8%97%8F%E9%9D%92%E9%92%88%E7%BB%87Polo%E8%A1%AB",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "藏青针织Polo衫",
+      "image": "/catalog/items/I154.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "棉",
+      "season": "四季",
+      "fit": "常规",
+      "heel": null,
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "occasion_tags": [
+        "出差",
+        "旅行"
+      ],
+      "tags": [
+        "通勤",
+        "秋冬",
+        "春夏",
+        "棉"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I155",
+      "curator_id": "C08",
+      "name": "炭灰美利奴圆领毛衣",
+      "category": "上装",
+      "display_category": "上装",
+      "subcategory": "毛衣",
+      "color": "炭灰",
+      "color_family": "灰色系",
+      "price": 399,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E7%82%AD%E7%81%B0%E7%BE%8E%E5%88%A9%E5%A5%B4%E5%9C%86%E9%A2%86%E6%AF%9B%E8%A1%A3",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "炭灰美利奴圆领毛衣",
+      "image": "/catalog/items/I155.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "美利奴羊毛",
+      "season": "秋冬",
+      "fit": "常规",
+      "heel": null,
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "occasion_tags": [
+        "面试",
+        "通勤",
+        "约会"
+      ],
+      "tags": [
+        "通勤",
+        "秋冬",
+        "美利奴羊毛"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I156",
+      "curator_id": "C08",
+      "name": "白色重磅圆领T恤",
+      "category": "上装",
+      "display_category": "上装",
+      "subcategory": "T恤",
+      "color": "白色",
+      "color_family": "白色系",
+      "price": 99,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E7%99%BD%E8%89%B2%E9%87%8D%E7%A3%85%E5%9C%86%E9%A2%86T%E6%81%A4",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "白色重磅圆领T恤",
+      "image": "/catalog/items/I156.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "棉",
+      "season": "四季",
+      "fit": "常规",
+      "heel": null,
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "occasion_tags": [
+        "通勤",
+        "周末"
+      ],
+      "tags": [
+        "休闲",
+        "通勤",
+        "秋冬",
+        "春夏",
+        "棉"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I157",
+      "curator_id": "C08",
+      "name": "卡其直筒休闲裤",
+      "category": "下装",
+      "display_category": "下装",
+      "subcategory": "休闲裤",
+      "color": "卡其",
+      "color_family": "大地色",
+      "price": 259,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E5%8D%A1%E5%85%B6%E7%9B%B4%E7%AD%92%E4%BC%91%E9%97%B2%E8%A3%A4",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "卡其直筒休闲裤",
+      "image": "/catalog/items/I157.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "棉",
+      "season": "四季",
+      "fit": "直筒",
+      "heel": null,
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "occasion_tags": [
+        "约会",
+        "出差",
+        "旅行"
+      ],
+      "tags": [
+        "通勤",
+        "秋冬",
+        "春夏",
+        "棉"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I158",
+      "curator_id": "C08",
+      "name": "炭灰羊毛西裤",
+      "category": "下装",
+      "display_category": "下装",
+      "subcategory": "西装裤",
+      "color": "炭灰",
+      "color_family": "灰色系",
+      "price": 399,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E7%82%AD%E7%81%B0%E7%BE%8A%E6%AF%9B%E8%A5%BF%E8%A3%A4",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "炭灰羊毛西裤",
+      "image": "/catalog/items/I158.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "羊毛混纺",
+      "season": "秋冬",
+      "fit": "直筒",
+      "heel": null,
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "occasion_tags": [
+        "通勤",
+        "面试"
+      ],
+      "tags": [
+        "正式",
+        "通勤",
+        "秋冬",
+        "羊毛混纺"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I159",
+      "curator_id": "C08",
+      "name": "深蓝原色直筒牛仔裤",
+      "category": "下装",
+      "display_category": "下装",
+      "subcategory": "牛仔裤",
+      "color": "深蓝",
+      "color_family": "蓝色系",
+      "price": 299,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E6%B7%B1%E8%93%9D%E5%8E%9F%E8%89%B2%E7%9B%B4%E7%AD%92%E7%89%9B%E4%BB%94%E8%A3%A4",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "深蓝原色直筒牛仔裤",
+      "image": "/catalog/items/I159.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "牛仔",
+      "season": "四季",
+      "fit": "直筒",
+      "heel": null,
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "occasion_tags": [
+        "通勤",
+        "周末"
+      ],
+      "tags": [
+        "休闲",
+        "通勤",
+        "秋冬",
+        "春夏",
+        "牛仔"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I160",
+      "curator_id": "C08",
+      "name": "藏青无衬里休闲西装",
+      "category": "外套",
+      "display_category": "外套",
+      "subcategory": "西装外套",
+      "color": "藏青",
+      "color_family": "蓝色系",
+      "price": 799,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E8%97%8F%E9%9D%92%E6%97%A0%E8%A1%AC%E9%87%8C%E4%BC%91%E9%97%B2%E8%A5%BF%E8%A3%85",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "藏青无衬里休闲西装",
+      "image": "/catalog/items/I160.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "羊毛混纺",
+      "season": "四季",
+      "fit": "常规",
+      "heel": null,
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "occasion_tags": [
+        "通勤",
+        "出差",
+        "旅行"
+      ],
+      "tags": [
+        "正式",
+        "通勤",
+        "秋冬",
+        "春夏",
+        "羊毛混纺"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I161",
+      "curator_id": "C08",
+      "name": "驼色羊毛大衣",
+      "category": "外套",
+      "display_category": "外套",
+      "subcategory": "大衣",
+      "color": "驼色",
+      "color_family": "大地色",
+      "price": 1299,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E9%A9%BC%E8%89%B2%E7%BE%8A%E6%AF%9B%E5%A4%A7%E8%A1%A3",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "驼色羊毛大衣",
+      "image": "/catalog/items/I161.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "羊毛",
+      "season": "秋冬",
+      "fit": "常规",
+      "heel": null,
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "occasion_tags": [
+        "约会",
+        "通勤"
+      ],
+      "tags": [
+        "通勤",
+        "秋冬",
+        "羊毛"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I162",
+      "curator_id": "C08",
+      "name": "黑色哈灵顿夹克",
+      "category": "外套",
+      "display_category": "外套",
+      "subcategory": "夹克",
+      "color": "黑色",
+      "color_family": "黑色系",
+      "price": 499,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E9%BB%91%E8%89%B2%E5%93%88%E7%81%B5%E9%A1%BF%E5%A4%B9%E5%85%8B",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "黑色哈灵顿夹克",
+      "image": "/catalog/items/I162.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "棉",
+      "season": "春秋",
+      "fit": "常规",
+      "heel": null,
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "occasion_tags": [
+        "通勤",
+        "周末"
+      ],
+      "tags": [
+        "休闲",
+        "通勤",
+        "春夏",
+        "秋冬",
+        "棉"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I163",
+      "curator_id": "C08",
+      "name": "深棕牛皮德比鞋",
+      "category": "鞋",
+      "display_category": "鞋",
+      "subcategory": "德比鞋",
+      "color": "深棕",
+      "color_family": "大地色",
+      "price": 559,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E6%B7%B1%E6%A3%95%E7%89%9B%E7%9A%AE%E5%BE%B7%E6%AF%94%E9%9E%8B",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "深棕牛皮德比鞋",
+      "image": "/catalog/items/I163.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45"
+      ],
+      "size_note": "标准码",
+      "material": "牛皮",
+      "season": "四季",
+      "fit": "平底",
+      "heel": "平底",
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "occasion_tags": [
+        "通勤"
+      ],
+      "tags": [
+        "平底",
+        "正式",
+        "通勤",
+        "秋冬",
+        "春夏",
+        "牛皮"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I164",
+      "curator_id": "C08",
+      "name": "黑色便士乐福鞋",
+      "category": "鞋",
+      "display_category": "鞋",
+      "subcategory": "乐福鞋",
+      "color": "黑色",
+      "color_family": "黑色系",
+      "price": 499,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E9%BB%91%E8%89%B2%E4%BE%BF%E5%A3%AB%E4%B9%90%E7%A6%8F%E9%9E%8B",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "黑色便士乐福鞋",
+      "image": "/catalog/items/I164.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45"
+      ],
+      "size_note": "标准码",
+      "material": "牛皮",
+      "season": "四季",
+      "fit": "平底",
+      "heel": "平底",
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "occasion_tags": [
+        "面试",
+        "通勤",
+        "约会"
+      ],
+      "tags": [
+        "平底",
+        "通勤",
+        "秋冬",
+        "春夏",
+        "牛皮"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I165",
+      "curator_id": "C08",
+      "name": "白色皮质小白鞋",
+      "category": "鞋",
+      "display_category": "鞋",
+      "subcategory": "板鞋",
+      "color": "白色",
+      "color_family": "白色系",
+      "price": 399,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E7%99%BD%E8%89%B2%E7%9A%AE%E8%B4%A8%E5%B0%8F%E7%99%BD%E9%9E%8B",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "白色皮质小白鞋",
+      "image": "/catalog/items/I165.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45"
+      ],
+      "size_note": "标准码",
+      "material": "牛皮",
+      "season": "四季",
+      "fit": "平底",
+      "heel": "平底",
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "occasion_tags": [
+        "通勤",
+        "周末",
+        "出差",
+        "旅行"
+      ],
+      "tags": [
+        "平底",
+        "休闲",
+        "通勤",
+        "秋冬",
+        "春夏",
+        "牛皮"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I166",
+      "curator_id": "C08",
+      "name": "黑色牛皮公文包",
+      "category": "包",
+      "display_category": "包",
+      "subcategory": "公文包",
+      "color": "黑色",
+      "color_family": "黑色系",
+      "price": 599,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E9%BB%91%E8%89%B2%E7%89%9B%E7%9A%AE%E5%85%AC%E6%96%87%E5%8C%85",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "黑色牛皮公文包",
+      "image": "/catalog/items/I166.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "均码"
+      ],
+      "size_note": "均码",
+      "material": "牛皮",
+      "season": "四季",
+      "fit": "",
+      "heel": null,
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "occasion_tags": [
+        "通勤",
+        "面试"
+      ],
+      "tags": [
+        "通勤",
+        "秋冬",
+        "春夏",
+        "牛皮"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I167",
+      "curator_id": "C08",
+      "name": "深灰尼龙通勤托特",
+      "category": "包",
+      "display_category": "包",
+      "subcategory": "托特包",
+      "color": "深灰",
+      "color_family": "灰色系",
+      "price": 299,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E6%B7%B1%E7%81%B0%E5%B0%BC%E9%BE%99%E9%80%9A%E5%8B%A4%E6%89%98%E7%89%B9",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "深灰尼龙通勤托特",
+      "image": "/catalog/items/I167.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "均码"
+      ],
+      "size_note": "均码",
+      "material": "尼龙",
+      "season": "四季",
+      "fit": "",
+      "heel": null,
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "occasion_tags": [
+        "通勤",
+        "周末",
+        "出差",
+        "旅行"
+      ],
+      "tags": [
+        "休闲",
+        "通勤",
+        "秋冬",
+        "春夏",
+        "尼龙"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I168",
+      "curator_id": "C08",
+      "name": "银色钢带黑盘腕表",
+      "category": "配饰",
+      "display_category": "配饰",
+      "subcategory": "腕表",
+      "color": "银色",
+      "color_family": "金属色",
+      "price": 699,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E9%93%B6%E8%89%B2%E9%92%A2%E5%B8%A6%E9%BB%91%E7%9B%98%E8%85%95%E8%A1%A8",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "银色钢带黑盘腕表",
+      "image": "/catalog/items/I168.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "均码"
+      ],
+      "size_note": "均码",
+      "material": "不锈钢",
+      "season": "四季",
+      "fit": "",
+      "heel": null,
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "occasion_tags": [
+        "通勤",
+        "出差",
+        "旅行"
+      ],
+      "tags": [
+        "通勤",
+        "秋冬",
+        "春夏",
+        "不锈钢"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I169",
+      "curator_id": "C08",
+      "name": "深棕牛皮腰带",
+      "category": "配饰",
+      "display_category": "配饰",
+      "subcategory": "腰带",
+      "color": "深棕",
+      "color_family": "大地色",
+      "price": 159,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E6%B7%B1%E6%A3%95%E7%89%9B%E7%9A%AE%E8%85%B0%E5%B8%A6",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "深棕牛皮腰带",
+      "image": "/catalog/items/I169.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "均码"
+      ],
+      "size_note": "均码",
+      "material": "牛皮",
+      "season": "四季",
+      "fit": "",
+      "heel": null,
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "occasion_tags": [
+        "面试",
+        "通勤"
+      ],
+      "tags": [
+        "通勤",
+        "秋冬",
+        "春夏",
+        "牛皮"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I170",
+      "curator_id": "C08",
+      "name": "炭灰羊毛围巾",
+      "category": "配饰",
+      "display_category": "配饰",
+      "subcategory": "围巾",
+      "color": "炭灰",
+      "color_family": "灰色系",
+      "price": 199,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E7%82%AD%E7%81%B0%E7%BE%8A%E6%AF%9B%E5%9B%B4%E5%B7%BE",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "炭灰羊毛围巾",
+      "image": "/catalog/items/I170.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "均码"
+      ],
+      "size_note": "均码",
+      "material": "羊毛",
+      "season": "秋冬",
+      "fit": "",
+      "heel": null,
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "occasion_tags": [
+        "通勤"
+      ],
+      "tags": [
+        "通勤",
+        "秋冬",
+        "羊毛"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I171",
+      "curator_id": "C08",
+      "name": "玳瑁圆框眼镜",
+      "category": "配饰",
+      "display_category": "配饰",
+      "subcategory": "眼镜",
+      "color": "玳瑁",
+      "color_family": "图案",
+      "price": 199,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E7%8E%B3%E7%91%81%E5%9C%86%E6%A1%86%E7%9C%BC%E9%95%9C",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "玳瑁圆框眼镜",
+      "image": "/catalog/items/I171.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "均码"
+      ],
+      "size_note": "均码",
+      "material": "板材",
+      "season": "四季",
+      "fit": "",
+      "heel": null,
+      "style_tags": [
+        "通勤",
+        "Smart Casual",
+        "极简"
+      ],
+      "occasion_tags": [
+        "约会"
+      ],
+      "tags": [
+        "秋冬",
+        "春夏",
+        "板材"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I172",
+      "curator_id": "C09",
+      "name": "白色宽松长袖T恤",
+      "category": "上装",
+      "display_category": "上装",
+      "subcategory": "T恤",
+      "color": "白色",
+      "color_family": "白色系",
+      "price": 129,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E7%99%BD%E8%89%B2%E5%AE%BD%E6%9D%BE%E9%95%BF%E8%A2%96T%E6%81%A4",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "白色宽松长袖T恤",
+      "image": "/catalog/items/I172.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "size_note": "宽松版型，建议选平时尺码",
+      "material": "棉",
+      "season": "四季",
+      "fit": "宽松",
+      "heel": null,
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "occasion_tags": [
+        "户外",
+        "运动",
+        "旅行"
+      ],
+      "tags": [
+        "户外",
+        "运动",
+        "秋冬",
+        "春夏",
+        "棉"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I173",
+      "curator_id": "C09",
+      "name": "绿藏青格纹法兰绒衬衫",
+      "category": "上装",
+      "display_category": "上装",
+      "subcategory": "衬衫",
+      "color": "格纹",
+      "color_family": "图案",
+      "price": 229,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E7%BB%BF%E8%97%8F%E9%9D%92%E6%A0%BC%E7%BA%B9%E6%B3%95%E5%85%B0%E7%BB%92%E8%A1%AC%E8%A1%AB",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "绿藏青格纹法兰绒衬衫",
+      "image": "/catalog/items/I173.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "size_note": "宽松版型，建议选平时尺码",
+      "material": "棉",
+      "season": "秋冬",
+      "fit": "宽松",
+      "heel": null,
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "occasion_tags": [
+        "露营",
+        "户外",
+        "旅行"
+      ],
+      "tags": [
+        "户外",
+        "秋冬",
+        "棉"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I174",
+      "curator_id": "C09",
+      "name": "燕麦色宽松圆领卫衣",
+      "category": "上装",
+      "display_category": "上装",
+      "subcategory": "卫衣",
+      "color": "燕麦",
+      "color_family": "大地色",
+      "price": 259,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E7%87%95%E9%BA%A6%E8%89%B2%E5%AE%BD%E6%9D%BE%E5%9C%86%E9%A2%86%E5%8D%AB%E8%A1%A3",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "燕麦色宽松圆领卫衣",
+      "image": "/catalog/items/I174.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "size_note": "宽松版型，建议选平时尺码",
+      "material": "棉",
+      "season": "秋冬",
+      "fit": "宽松",
+      "heel": null,
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "occasion_tags": [
+        "周末",
+        "休闲"
+      ],
+      "tags": [
+        "休闲",
+        "秋冬",
+        "棉"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I175",
+      "curator_id": "C09",
+      "name": "藏青渔夫麻花毛衣",
+      "category": "上装",
+      "display_category": "上装",
+      "subcategory": "毛衣",
+      "color": "藏青",
+      "color_family": "蓝色系",
+      "price": 359,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E8%97%8F%E9%9D%92%E6%B8%94%E5%A4%AB%E9%BA%BB%E8%8A%B1%E6%AF%9B%E8%A1%A3",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "藏青渔夫麻花毛衣",
+      "image": "/catalog/items/I175.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "size_note": "宽松版型，建议选平时尺码",
+      "material": "羊毛混纺",
+      "season": "秋冬",
+      "fit": "宽松",
+      "heel": null,
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "occasion_tags": [
+        "看展",
+        "休闲"
+      ],
+      "tags": [
+        "休闲",
+        "秋冬",
+        "羊毛混纺"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I176",
+      "curator_id": "C09",
+      "name": "卡其多口袋工装马甲",
+      "category": "外套",
+      "display_category": "外套",
+      "subcategory": "马甲",
+      "color": "卡其",
+      "color_family": "大地色",
+      "price": 329,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E5%8D%A1%E5%85%B6%E5%A4%9A%E5%8F%A3%E8%A2%8B%E5%B7%A5%E8%A3%85%E9%A9%AC%E7%94%B2",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "卡其多口袋工装马甲",
+      "image": "/catalog/items/I176.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "size_note": "宽松版型，建议选平时尺码",
+      "material": "棉",
+      "season": "四季",
+      "fit": "宽松",
+      "heel": null,
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "occasion_tags": [
+        "旅行"
+      ],
+      "tags": [
+        "秋冬",
+        "春夏",
+        "棉"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I177",
+      "curator_id": "C09",
+      "name": "军绿山系冲锋衣",
+      "category": "外套",
+      "display_category": "外套",
+      "subcategory": "冲锋衣",
+      "color": "军绿",
+      "color_family": "绿色系",
+      "price": 699,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E5%86%9B%E7%BB%BF%E5%B1%B1%E7%B3%BB%E5%86%B2%E9%94%8B%E8%A1%A3",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "军绿山系冲锋衣",
+      "image": "/catalog/items/I177.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "size_note": "宽松版型，建议选平时尺码",
+      "material": "防水面料",
+      "season": "四季",
+      "fit": "宽松",
+      "heel": null,
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "occasion_tags": [
+        "户外",
+        "运动",
+        "周末"
+      ],
+      "tags": [
+        "户外",
+        "休闲",
+        "运动",
+        "秋冬",
+        "春夏",
+        "防水面料"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I178",
+      "curator_id": "C09",
+      "name": "奶白摇粒绒外套",
+      "category": "外套",
+      "display_category": "外套",
+      "subcategory": "抓绒外套",
+      "color": "奶白",
+      "color_family": "白色系",
+      "price": 299,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E5%A5%B6%E7%99%BD%E6%91%87%E7%B2%92%E7%BB%92%E5%A4%96%E5%A5%97",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "奶白摇粒绒外套",
+      "image": "/catalog/items/I178.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "size_note": "宽松版型，建议选平时尺码",
+      "material": "抓绒",
+      "season": "秋冬",
+      "fit": "宽松",
+      "heel": null,
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "occasion_tags": [
+        "露营",
+        "户外"
+      ],
+      "tags": [
+        "户外",
+        "秋冬",
+        "抓绒"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I179",
+      "curator_id": "C09",
+      "name": "藏青帆布工装外套",
+      "category": "外套",
+      "display_category": "外套",
+      "subcategory": "夹克",
+      "color": "藏青",
+      "color_family": "蓝色系",
+      "price": 459,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E8%97%8F%E9%9D%92%E5%B8%86%E5%B8%83%E5%B7%A5%E8%A3%85%E5%A4%96%E5%A5%97",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "藏青帆布工装外套",
+      "image": "/catalog/items/I179.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "size_note": "宽松版型，建议选平时尺码",
+      "material": "帆布",
+      "season": "春秋",
+      "fit": "宽松",
+      "heel": null,
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "occasion_tags": [
+        "看展",
+        "休闲"
+      ],
+      "tags": [
+        "休闲",
+        "春夏",
+        "秋冬",
+        "帆布"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I180",
+      "curator_id": "C09",
+      "name": "卡其宽松工装裤",
+      "category": "下装",
+      "display_category": "下装",
+      "subcategory": "工装裤",
+      "color": "卡其",
+      "color_family": "大地色",
+      "price": 279,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E5%8D%A1%E5%85%B6%E5%AE%BD%E6%9D%BE%E5%B7%A5%E8%A3%85%E8%A3%A4",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "卡其宽松工装裤",
+      "image": "/catalog/items/I180.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "棉",
+      "season": "四季",
+      "fit": "阔腿",
+      "heel": null,
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "occasion_tags": [
+        "周末",
+        "休闲",
+        "户外",
+        "运动"
+      ],
+      "tags": [
+        "休闲",
+        "户外",
+        "运动",
+        "秋冬",
+        "春夏",
+        "棉"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I181",
+      "curator_id": "C09",
+      "name": "浅蓝宽松牛仔裤",
+      "category": "下装",
+      "display_category": "下装",
+      "subcategory": "牛仔裤",
+      "color": "浅蓝",
+      "color_family": "蓝色系",
+      "price": 259,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E6%B5%85%E8%93%9D%E5%AE%BD%E6%9D%BE%E7%89%9B%E4%BB%94%E8%A3%A4",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "浅蓝宽松牛仔裤",
+      "image": "/catalog/items/I181.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "size_note": "宽松版型，建议选平时尺码",
+      "material": "牛仔",
+      "season": "四季",
+      "fit": "宽松",
+      "heel": null,
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "occasion_tags": [
+        "看展",
+        "休闲",
+        "旅行"
+      ],
+      "tags": [
+        "休闲",
+        "秋冬",
+        "春夏",
+        "牛仔"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I182",
+      "curator_id": "C09",
+      "name": "橄榄绿军裤",
+      "category": "下装",
+      "display_category": "下装",
+      "subcategory": "工装裤",
+      "color": "橄榄绿",
+      "color_family": "绿色系",
+      "price": 239,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E6%A9%84%E6%A6%84%E7%BB%BF%E5%86%9B%E8%A3%A4",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "橄榄绿军裤",
+      "image": "/catalog/items/I182.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "棉",
+      "season": "四季",
+      "fit": "直筒",
+      "heel": null,
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "occasion_tags": [
+        "露营",
+        "户外",
+        "周末"
+      ],
+      "tags": [
+        "休闲",
+        "户外",
+        "秋冬",
+        "春夏",
+        "棉"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I183",
+      "curator_id": "C09",
+      "name": "棕色牛皮工装靴",
+      "category": "鞋",
+      "display_category": "鞋",
+      "subcategory": "工装靴",
+      "color": "深棕",
+      "color_family": "大地色",
+      "price": 699,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E6%A3%95%E8%89%B2%E7%89%9B%E7%9A%AE%E5%B7%A5%E8%A3%85%E9%9D%B4",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "棕色牛皮工装靴",
+      "image": "/catalog/items/I183.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45"
+      ],
+      "size_note": "标准码",
+      "material": "牛皮",
+      "season": "秋冬",
+      "fit": "平底",
+      "heel": "平底",
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "occasion_tags": [
+        "露营",
+        "户外",
+        "旅行"
+      ],
+      "tags": [
+        "平底",
+        "户外",
+        "秋冬",
+        "牛皮"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I184",
+      "curator_id": "C09",
+      "name": "灰色山系徒步鞋",
+      "category": "鞋",
+      "display_category": "鞋",
+      "subcategory": "徒步鞋",
+      "color": "灰色",
+      "color_family": "灰色系",
+      "price": 599,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E7%81%B0%E8%89%B2%E5%B1%B1%E7%B3%BB%E5%BE%92%E6%AD%A5%E9%9E%8B",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "灰色山系徒步鞋",
+      "image": "/catalog/items/I184.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45"
+      ],
+      "size_note": "标准码",
+      "material": "网面",
+      "season": "四季",
+      "fit": "平底",
+      "heel": "平底",
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "occasion_tags": [
+        "户外",
+        "运动",
+        "周末"
+      ],
+      "tags": [
+        "平底",
+        "户外",
+        "运动",
+        "休闲",
+        "秋冬",
+        "春夏",
+        "网面"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I185",
+      "curator_id": "C09",
+      "name": "米白低帮帆布鞋",
+      "category": "鞋",
+      "display_category": "鞋",
+      "subcategory": "帆布鞋",
+      "color": "米白",
+      "color_family": "白色系",
+      "price": 199,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E7%B1%B3%E7%99%BD%E4%BD%8E%E5%B8%AE%E5%B8%86%E5%B8%83%E9%9E%8B",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "米白低帮帆布鞋",
+      "image": "/catalog/items/I185.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45"
+      ],
+      "size_note": "标准码",
+      "material": "帆布",
+      "season": "四季",
+      "fit": "平底",
+      "heel": "平底",
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "occasion_tags": [
+        "周末",
+        "休闲",
+        "看展"
+      ],
+      "tags": [
+        "平底",
+        "休闲",
+        "秋冬",
+        "春夏",
+        "帆布"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I186",
+      "curator_id": "C09",
+      "name": "军绿登山双肩包",
+      "category": "包",
+      "display_category": "包",
+      "subcategory": "双肩包",
+      "color": "军绿",
+      "color_family": "绿色系",
+      "price": 359,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E5%86%9B%E7%BB%BF%E7%99%BB%E5%B1%B1%E5%8F%8C%E8%82%A9%E5%8C%85",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "军绿登山双肩包",
+      "image": "/catalog/items/I186.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "均码"
+      ],
+      "size_note": "均码",
+      "material": "尼龙",
+      "season": "四季",
+      "fit": "",
+      "heel": null,
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "occasion_tags": [
+        "露营",
+        "户外",
+        "运动",
+        "旅行"
+      ],
+      "tags": [
+        "户外",
+        "运动",
+        "秋冬",
+        "春夏",
+        "尼龙"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I187",
+      "curator_id": "C09",
+      "name": "黑色尼龙斜挎小包",
+      "category": "包",
+      "display_category": "包",
+      "subcategory": "斜挎包",
+      "color": "黑色",
+      "color_family": "黑色系",
+      "price": 159,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E9%BB%91%E8%89%B2%E5%B0%BC%E9%BE%99%E6%96%9C%E6%8C%8E%E5%B0%8F%E5%8C%85",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "黑色尼龙斜挎小包",
+      "image": "/catalog/items/I187.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "均码"
+      ],
+      "size_note": "均码",
+      "material": "尼龙",
+      "season": "四季",
+      "fit": "",
+      "heel": null,
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "occasion_tags": [
+        "周末",
+        "休闲",
+        "看展"
+      ],
+      "tags": [
+        "休闲",
+        "秋冬",
+        "春夏",
+        "尼龙"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I188",
+      "curator_id": "C09",
+      "name": "棕色灯芯绒棒球帽",
+      "category": "配饰",
+      "display_category": "配饰",
+      "subcategory": "帽子",
+      "color": "深棕",
+      "color_family": "大地色",
+      "price": 99,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E6%A3%95%E8%89%B2%E7%81%AF%E8%8A%AF%E7%BB%92%E6%A3%92%E7%90%83%E5%B8%BD",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "棕色灯芯绒棒球帽",
+      "image": "/catalog/items/I188.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "均码"
+      ],
+      "size_note": "均码",
+      "material": "灯芯绒",
+      "season": "秋冬",
+      "fit": "",
+      "heel": null,
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "occasion_tags": [
+        "周末",
+        "休闲",
+        "户外",
+        "运动"
+      ],
+      "tags": [
+        "休闲",
+        "户外",
+        "运动",
+        "秋冬",
+        "灯芯绒"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I189",
+      "curator_id": "C09",
+      "name": "藏青渔夫毛线帽",
+      "category": "配饰",
+      "display_category": "配饰",
+      "subcategory": "帽子",
+      "color": "藏青",
+      "color_family": "蓝色系",
+      "price": 79,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E8%97%8F%E9%9D%92%E6%B8%94%E5%A4%AB%E6%AF%9B%E7%BA%BF%E5%B8%BD",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "藏青渔夫毛线帽",
+      "image": "/catalog/items/I189.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "均码"
+      ],
+      "size_note": "均码",
+      "material": "腈纶",
+      "season": "秋冬",
+      "fit": "",
+      "heel": null,
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "occasion_tags": [
+        "露营",
+        "户外",
+        "周末"
+      ],
+      "tags": [
+        "休闲",
+        "户外",
+        "秋冬",
+        "腈纶"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I190",
+      "curator_id": "C09",
+      "name": "灰色羊毛混纺袜",
+      "category": "配饰",
+      "display_category": "配饰",
+      "subcategory": "袜子",
+      "color": "灰色",
+      "color_family": "灰色系",
+      "price": 49,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E7%81%B0%E8%89%B2%E7%BE%8A%E6%AF%9B%E6%B7%B7%E7%BA%BA%E8%A2%9C",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "灰色羊毛混纺袜",
+      "image": "/catalog/items/I190.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "均码"
+      ],
+      "size_note": "均码",
+      "material": "羊毛混纺",
+      "season": "秋冬",
+      "fit": "",
+      "heel": null,
+      "style_tags": [
+        "日系",
+        "山系",
+        "City Boy"
+      ],
+      "occasion_tags": [
+        "周末",
+        "休闲"
+      ],
+      "tags": [
+        "休闲",
+        "秋冬",
+        "羊毛混纺"
+      ],
+      "gender": "男装"
+    },
+    {
+      "item_id": "I191",
+      "curator_id": "C10",
+      "name": "原色牛仔夹克",
+      "category": "外套",
+      "display_category": "外套",
+      "subcategory": "牛仔夹克",
+      "color": "靛蓝",
+      "color_family": "蓝色系",
+      "price": 599,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E5%8E%9F%E8%89%B2%E7%89%9B%E4%BB%94%E5%A4%B9%E5%85%8B",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "原色牛仔夹克",
+      "image": "/catalog/items/I191.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "牛仔",
+      "season": "四季",
+      "fit": "常规",
+      "heel": null,
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "occasion_tags": [
+        "周末",
+        "出街",
+        "旅行"
+      ],
+      "tags": [
+        "休闲",
+        "秋冬",
+        "春夏",
+        "牛仔"
+      ],
+      "gender": "中性"
+    },
+    {
+      "item_id": "I192",
+      "curator_id": "C10",
+      "name": "卡其帆布工装夹克",
+      "category": "外套",
+      "display_category": "外套",
+      "subcategory": "工装夹克",
+      "color": "卡其",
+      "color_family": "大地色",
+      "price": 699,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E5%8D%A1%E5%85%B6%E5%B8%86%E5%B8%83%E5%B7%A5%E8%A3%85%E5%A4%B9%E5%85%8B",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "卡其帆布工装夹克",
+      "image": "/catalog/items/I192.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "帆布",
+      "season": "秋冬",
+      "fit": "常规",
+      "heel": null,
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "occasion_tags": [
+        "周末",
+        "休闲",
+        "露营",
+        "户外"
+      ],
+      "tags": [
+        "休闲",
+        "户外",
+        "秋冬",
+        "帆布"
+      ],
+      "gender": "中性"
+    },
+    {
+      "item_id": "I193",
+      "curator_id": "C10",
+      "name": "棕色皮质飞行夹克",
+      "category": "外套",
+      "display_category": "外套",
+      "subcategory": "皮衣",
+      "color": "红棕",
+      "color_family": "大地色",
+      "price": 1299,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E6%A3%95%E8%89%B2%E7%9A%AE%E8%B4%A8%E9%A3%9E%E8%A1%8C%E5%A4%B9%E5%85%8B",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "棕色皮质飞行夹克",
+      "image": "/catalog/items/I193.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "牛皮",
+      "season": "秋冬",
+      "fit": "常规",
+      "heel": null,
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "occasion_tags": [
+        "聚会",
+        "出街"
+      ],
+      "tags": [
+        "休闲",
+        "秋冬",
+        "牛皮"
+      ],
+      "gender": "中性"
+    },
+    {
+      "item_id": "I194",
+      "curator_id": "C10",
+      "name": "浅蓝牛仔布工装衬衫",
+      "category": "上装",
+      "display_category": "上装",
+      "subcategory": "衬衫",
+      "color": "浅蓝",
+      "color_family": "蓝色系",
+      "price": 299,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E6%B5%85%E8%93%9D%E7%89%9B%E4%BB%94%E5%B8%83%E5%B7%A5%E8%A3%85%E8%A1%AC%E8%A1%AB",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "浅蓝牛仔布工装衬衫",
+      "image": "/catalog/items/I194.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "棉",
+      "season": "四季",
+      "fit": "常规",
+      "heel": null,
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "occasion_tags": [
+        "露营",
+        "户外"
+      ],
+      "tags": [
+        "户外",
+        "秋冬",
+        "春夏",
+        "棉"
+      ],
+      "gender": "中性"
+    },
+    {
+      "item_id": "I195",
+      "curator_id": "C10",
+      "name": "燕麦色华夫格亨利衫",
+      "category": "上装",
+      "display_category": "上装",
+      "subcategory": "T恤",
+      "color": "燕麦",
+      "color_family": "大地色",
+      "price": 199,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E7%87%95%E9%BA%A6%E8%89%B2%E5%8D%8E%E5%A4%AB%E6%A0%BC%E4%BA%A8%E5%88%A9%E8%A1%AB",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "燕麦色华夫格亨利衫",
+      "image": "/catalog/items/I195.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "棉",
+      "season": "秋冬",
+      "fit": "常规",
+      "heel": null,
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "occasion_tags": [
+        "周末",
+        "休闲",
+        "旅行"
+      ],
+      "tags": [
+        "休闲",
+        "秋冬",
+        "棉"
+      ],
+      "gender": "中性"
+    },
+    {
+      "item_id": "I196",
+      "curator_id": "C10",
+      "name": "黑色口袋T恤",
+      "category": "上装",
+      "display_category": "上装",
+      "subcategory": "T恤",
+      "color": "黑色",
+      "color_family": "黑色系",
+      "price": 129,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E9%BB%91%E8%89%B2%E5%8F%A3%E8%A2%8BT%E6%81%A4",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "黑色口袋T恤",
+      "image": "/catalog/items/I196.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "棉",
+      "season": "四季",
+      "fit": "常规",
+      "heel": null,
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "occasion_tags": [
+        "周末",
+        "出街",
+        "聚会"
+      ],
+      "tags": [
+        "休闲",
+        "秋冬",
+        "春夏",
+        "棉"
+      ],
+      "gender": "中性"
+    },
+    {
+      "item_id": "I197",
+      "curator_id": "C10",
+      "name": "灰色复古圆领卫衣",
+      "category": "上装",
+      "display_category": "上装",
+      "subcategory": "卫衣",
+      "color": "灰色",
+      "color_family": "灰色系",
+      "price": 299,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E7%81%B0%E8%89%B2%E5%A4%8D%E5%8F%A4%E5%9C%86%E9%A2%86%E5%8D%AB%E8%A1%A3",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "灰色复古圆领卫衣",
+      "image": "/catalog/items/I197.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "棉",
+      "season": "秋冬",
+      "fit": "常规",
+      "heel": null,
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "occasion_tags": [
+        "休闲"
+      ],
+      "tags": [
+        "休闲",
+        "秋冬",
+        "棉"
+      ],
+      "gender": "中性"
+    },
+    {
+      "item_id": "I198",
+      "curator_id": "C10",
+      "name": "原色赤耳牛仔裤",
+      "category": "下装",
+      "display_category": "下装",
+      "subcategory": "牛仔裤",
+      "color": "靛蓝",
+      "color_family": "蓝色系",
+      "price": 499,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E5%8E%9F%E8%89%B2%E8%B5%A4%E8%80%B3%E7%89%9B%E4%BB%94%E8%A3%A4",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "原色赤耳牛仔裤",
+      "image": "/catalog/items/I198.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "牛仔",
+      "season": "四季",
+      "fit": "直筒",
+      "heel": null,
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "occasion_tags": [
+        "周末",
+        "出街",
+        "聚会"
+      ],
+      "tags": [
+        "休闲",
+        "秋冬",
+        "春夏",
+        "牛仔"
+      ],
+      "gender": "中性"
+    },
+    {
+      "item_id": "I199",
+      "curator_id": "C10",
+      "name": "米白画家裤",
+      "category": "下装",
+      "display_category": "下装",
+      "subcategory": "休闲裤",
+      "color": "米白",
+      "color_family": "白色系",
+      "price": 299,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E7%B1%B3%E7%99%BD%E7%94%BB%E5%AE%B6%E8%A3%A4",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "米白画家裤",
+      "image": "/catalog/items/I199.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "帆布",
+      "season": "四季",
+      "fit": "直筒",
+      "heel": null,
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "occasion_tags": [
+        "休闲",
+        "周末",
+        "旅行"
+      ],
+      "tags": [
+        "休闲",
+        "秋冬",
+        "春夏",
+        "帆布"
+      ],
+      "gender": "中性"
+    },
+    {
+      "item_id": "I200",
+      "curator_id": "C10",
+      "name": "卡其双膝工装裤",
+      "category": "下装",
+      "display_category": "下装",
+      "subcategory": "工装裤",
+      "color": "卡其",
+      "color_family": "大地色",
+      "price": 359,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E5%8D%A1%E5%85%B6%E5%8F%8C%E8%86%9D%E5%B7%A5%E8%A3%85%E8%A3%A4",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "卡其双膝工装裤",
+      "image": "/catalog/items/I200.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "size_note": "标准尺码，按商家尺码表选择",
+      "material": "帆布",
+      "season": "四季",
+      "fit": "直筒",
+      "heel": null,
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "occasion_tags": [
+        "周末",
+        "休闲",
+        "露营",
+        "户外"
+      ],
+      "tags": [
+        "休闲",
+        "户外",
+        "秋冬",
+        "春夏",
+        "帆布"
+      ],
+      "gender": "中性"
+    },
+    {
+      "item_id": "I201",
+      "curator_id": "C10",
+      "name": "红棕色圆头工装靴",
+      "category": "鞋",
+      "display_category": "鞋",
+      "subcategory": "工装靴",
+      "color": "红棕",
+      "color_family": "大地色",
+      "price": 899,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E7%BA%A2%E6%A3%95%E8%89%B2%E5%9C%86%E5%A4%B4%E5%B7%A5%E8%A3%85%E9%9D%B4",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "红棕色圆头工装靴",
+      "image": "/catalog/items/I201.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "36",
+        "37",
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45"
+      ],
+      "size_note": "标准码",
+      "material": "牛皮",
+      "season": "秋冬",
+      "fit": "平底",
+      "heel": "平底",
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "occasion_tags": [
+        "周末",
+        "出街",
+        "休闲",
+        "露营",
+        "户外"
+      ],
+      "tags": [
+        "平底",
+        "休闲",
+        "户外",
+        "秋冬",
+        "牛皮"
+      ],
+      "gender": "中性"
+    },
+    {
+      "item_id": "I202",
+      "curator_id": "C10",
+      "name": "黑色高帮帆布鞋",
+      "category": "鞋",
+      "display_category": "鞋",
+      "subcategory": "帆布鞋",
+      "color": "黑色",
+      "color_family": "黑色系",
+      "price": 259,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E9%BB%91%E8%89%B2%E9%AB%98%E5%B8%AE%E5%B8%86%E5%B8%83%E9%9E%8B",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "黑色高帮帆布鞋",
+      "image": "/catalog/items/I202.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "36",
+        "37",
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45"
+      ],
+      "size_note": "标准码",
+      "material": "帆布",
+      "season": "四季",
+      "fit": "平底",
+      "heel": "平底",
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "occasion_tags": [
+        "休闲",
+        "周末",
+        "旅行"
+      ],
+      "tags": [
+        "平底",
+        "休闲",
+        "秋冬",
+        "春夏",
+        "帆布"
+      ],
+      "gender": "中性"
+    },
+    {
+      "item_id": "I203",
+      "curator_id": "C10",
+      "name": "黑色工程师靴",
+      "category": "鞋",
+      "display_category": "鞋",
+      "subcategory": "工程师靴",
+      "color": "黑色",
+      "color_family": "黑色系",
+      "price": 999,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E9%BB%91%E8%89%B2%E5%B7%A5%E7%A8%8B%E5%B8%88%E9%9D%B4",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "黑色工程师靴",
+      "image": "/catalog/items/I203.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "36",
+        "37",
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45"
+      ],
+      "size_note": "标准码",
+      "material": "牛皮",
+      "season": "秋冬",
+      "fit": "低跟",
+      "heel": "低跟",
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "occasion_tags": [
+        "聚会",
+        "出街"
+      ],
+      "tags": [
+        "低跟",
+        "休闲",
+        "秋冬",
+        "牛皮"
+      ],
+      "gender": "中性"
+    },
+    {
+      "item_id": "I204",
+      "curator_id": "C10",
+      "name": "原色帆布工具托特",
+      "category": "包",
+      "display_category": "包",
+      "subcategory": "托特包",
+      "color": "原色",
+      "color_family": "大地色",
+      "price": 199,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E5%8E%9F%E8%89%B2%E5%B8%86%E5%B8%83%E5%B7%A5%E5%85%B7%E6%89%98%E7%89%B9",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "原色帆布工具托特",
+      "image": "/catalog/items/I204.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "均码"
+      ],
+      "size_note": "均码",
+      "material": "帆布",
+      "season": "四季",
+      "fit": "",
+      "heel": null,
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "occasion_tags": [
+        "周末",
+        "出街",
+        "休闲"
+      ],
+      "tags": [
+        "休闲",
+        "秋冬",
+        "春夏",
+        "帆布"
+      ],
+      "gender": "中性"
+    },
+    {
+      "item_id": "I205",
+      "curator_id": "C10",
+      "name": "卡其帆布邮差包",
+      "category": "包",
+      "display_category": "包",
+      "subcategory": "邮差包",
+      "color": "卡其",
+      "color_family": "大地色",
+      "price": 299,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E5%8D%A1%E5%85%B6%E5%B8%86%E5%B8%83%E9%82%AE%E5%B7%AE%E5%8C%85",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "卡其帆布邮差包",
+      "image": "/catalog/items/I205.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "均码"
+      ],
+      "size_note": "均码",
+      "material": "帆布",
+      "season": "四季",
+      "fit": "",
+      "heel": null,
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "occasion_tags": [
+        "周末",
+        "休闲",
+        "露营",
+        "户外",
+        "旅行"
+      ],
+      "tags": [
+        "休闲",
+        "户外",
+        "秋冬",
+        "春夏",
+        "帆布"
+      ],
+      "gender": "中性"
+    },
+    {
+      "item_id": "I206",
+      "curator_id": "C10",
+      "name": "靛蓝佩斯利方巾",
+      "category": "配饰",
+      "display_category": "配饰",
+      "subcategory": "方巾",
+      "color": "靛蓝",
+      "color_family": "蓝色系",
+      "price": 69,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E9%9D%9B%E8%93%9D%E4%BD%A9%E6%96%AF%E5%88%A9%E6%96%B9%E5%B7%BE",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "靛蓝佩斯利方巾",
+      "image": "/catalog/items/I206.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "均码"
+      ],
+      "size_note": "均码",
+      "material": "棉",
+      "season": "四季",
+      "fit": "",
+      "heel": null,
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "occasion_tags": [
+        "周末",
+        "出街",
+        "休闲"
+      ],
+      "tags": [
+        "休闲",
+        "秋冬",
+        "春夏",
+        "棉"
+      ],
+      "gender": "中性"
+    },
+    {
+      "item_id": "I207",
+      "curator_id": "C10",
+      "name": "黑色黄铜扣皮带",
+      "category": "配饰",
+      "display_category": "配饰",
+      "subcategory": "腰带",
+      "color": "黑色",
+      "color_family": "黑色系",
+      "price": 189,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E9%BB%91%E8%89%B2%E9%BB%84%E9%93%9C%E6%89%A3%E7%9A%AE%E5%B8%A6",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "黑色黄铜扣皮带",
+      "image": "/catalog/items/I207.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "均码"
+      ],
+      "size_note": "均码",
+      "material": "牛皮",
+      "season": "四季",
+      "fit": "",
+      "heel": null,
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "occasion_tags": [
+        "聚会",
+        "出街"
+      ],
+      "tags": [
+        "休闲",
+        "秋冬",
+        "春夏",
+        "牛皮"
+      ],
+      "gender": "中性"
+    },
+    {
+      "item_id": "I208",
+      "curator_id": "C10",
+      "name": "黑色水手毛线帽",
+      "category": "配饰",
+      "display_category": "配饰",
+      "subcategory": "帽子",
+      "color": "黑色",
+      "color_family": "黑色系",
+      "price": 89,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E9%BB%91%E8%89%B2%E6%B0%B4%E6%89%8B%E6%AF%9B%E7%BA%BF%E5%B8%BD",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "黑色水手毛线帽",
+      "image": "/catalog/items/I208.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "均码"
+      ],
+      "size_note": "均码",
+      "material": "腈纶",
+      "season": "秋冬",
+      "fit": "",
+      "heel": null,
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "occasion_tags": [
+        "周末",
+        "休闲",
+        "旅行"
+      ],
+      "tags": [
+        "休闲",
+        "秋冬",
+        "腈纶"
+      ],
+      "gender": "中性"
+    },
+    {
+      "item_id": "I209",
+      "curator_id": "C10",
+      "name": "银色钱包链",
+      "category": "配饰",
+      "display_category": "配饰",
+      "subcategory": "钱包链",
+      "color": "银色",
+      "color_family": "金属色",
+      "price": 129,
+      "currency": "CNY",
+      "price_note": "参考价：按 2026-10 平价品牌同类价格带设定，非实时售价",
+      "buy_url": "https://s.taobao.com/search?q=%E9%93%B6%E8%89%B2%E9%92%B1%E5%8C%85%E9%93%BE",
+      "buy_label": "淘宝搜同款",
+      "search_keyword": "银色钱包链",
+      "image": "/catalog/items/I209.webp",
+      "image_rights": "AI 生成",
+      "image_rights_note": "AI 生成商品示意图（Figma Weave · Nano Banana 2.1），非真实在售商品实拍",
+      "sizes": [
+        "均码"
+      ],
+      "size_note": "均码",
+      "material": "不锈钢",
+      "season": "四季",
+      "fit": "",
+      "heel": null,
+      "style_tags": [
+        "美式复古",
+        "工装",
+        "Amekaji"
+      ],
+      "occasion_tags": [
+        "聚会",
+        "出街"
+      ],
+      "tags": [
+        "休闲",
+        "秋冬",
+        "春夏",
+        "不锈钢"
+      ],
+      "gender": "中性"
     }
   ]
 }
