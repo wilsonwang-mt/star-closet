@@ -61,6 +61,22 @@ const INFO: Record<ProviderId, ProviderInfo> = {
   },
 };
 
+/**
+ * 生成所需的必填照片。
+ * - mock：不发送照片，正面 + 侧面或背面任一即可。
+ * - tripo_fal：正面 + 侧面必填（侧面对应 fal 的 left 位），背面可选。
+ */
+export function hasRequiredSlots(id: string, photos: { slot: string }[]) {
+  const slots = new Set(photos.map((p) => p.slot));
+  if (!slots.has("front")) return false;
+  if (id === "tripo_fal") return slots.has("side");
+  return slots.has("side") || slots.has("back");
+}
+
+export function requiredSlotsMessage(id: string) {
+  return id === "tripo_fal" ? "需要正面和侧面全身照，背面可选" : "需要正面全身照，以及侧面或背面全身照至少一张";
+}
+
 export function maxPollSeconds() {
   const n = Number(process.env.AVATAR3D_MAX_POLL_SECONDS);
   return Number.isFinite(n) && n > 0 ? n : 600;
@@ -109,8 +125,11 @@ const handles = (g.scFalHandles ??= new Map());
 
 const FAL_ENDPOINT = "https://queue.fal.run/tripo3d/h3.1/multiview-to-3d";
 const MAX_GLB_BYTES = 100 * 1024 * 1024;
-// fal 要求的视角顺序：front、left、back、right；本站的“侧面”对应 left，没有 right。
-const SLOT_ORDER = ["front", "side", "back"] as const;
+// fal 的 image_urls 按位置区分视角：[front, left, back, right]，2–4 张，正面必填，
+// 文档没有“跳过某个位置”的写法（不接受空串或 null）。因此按位置构造、不能过滤后压紧：
+// 本站“侧面”固定对应 left，“背面”对应 back，不发 right。只有正面+背面时背面会被当成 left，
+// 所以真实服务要求正面+侧面必填，背面可选。
+const FAL_VIEW_ORDER = ["front", "side", "back"] as const;
 
 function falHeaders() {
   return { Authorization: `Key ${process.env.FAL_KEY}`, "Content-Type": "application/json", "X-Fal-Store-IO": "0" };
@@ -131,9 +150,16 @@ const isHttps = (u: unknown): u is string => typeof u === "string" && u.startsWi
 const tripoFal: Avatar3DProvider = {
   info: INFO.tripo_fal,
   async submit(jobId, photos) {
-    const ordered = SLOT_ORDER.map((s) => photos.find((p) => p.slot === s)).filter((p): p is InputPhoto => !!p);
-    if (!ordered.length || ordered[0].slot !== "front" || ordered.length < 2) {
-      throw new ProviderError("BAD_INPUT", "需要正面全身照，以及侧面或背面全身照至少一张");
+    const bySlot = (slot: string) => photos.find((p) => p.slot === slot);
+    if (!hasRequiredSlots("tripo_fal", photos)) {
+      throw new ProviderError("BAD_INPUT", requiredSlotsMessage("tripo_fal"));
+    }
+    // 位置 0=front、1=left(侧面)、2=back；背面缺省时数组到 left 为止，位置不会错位。
+    const ordered: InputPhoto[] = [];
+    for (const slot of FAL_VIEW_ORDER) {
+      const p = bySlot(slot);
+      if (!p) break;
+      ordered.push(p);
     }
     const image_urls = await Promise.all(ordered.map(photoUrl));
     const res = await fetch(FAL_ENDPOINT, {

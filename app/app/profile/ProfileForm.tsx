@@ -110,7 +110,16 @@ function TagPicker({
   );
 }
 
-export default function ProfileForm({ initial, fallbackName }: { initial: Profile; fallbackName: string }) {
+export default function ProfileForm({
+  initial,
+  fallbackName,
+  avatarIsMock,
+}: {
+  initial: Profile;
+  fallbackName: string;
+  /** 3D 形象当前是否为示意模式（服务端判断后传入） */
+  avatarIsMock: boolean;
+}) {
   const [f, setF] = useState<Form>(() => toForm(initial, fallbackName));
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -238,7 +247,7 @@ export default function ProfileForm({ initial, fallbackName }: { initial: Profil
           <span className="sc-badge">可选</span>
         </div>
         <p className="serif-note">
-          身高、体重只用于帮你判断合身，仅你本人可见，可随时一键删除，不会用于训练任何模型。不填也能正常使用。
+          身高、体重用于后续的合身参考（比赛版尚未接入），仅你本人可见，可随时一键删除，不会用于训练任何模型。不填也能正常使用。
         </p>
         <label className="row" style={{ flexWrap: "nowrap", alignItems: "flex-start", fontSize: 13, color: "var(--sc-ink)" }}>
           <input
@@ -250,7 +259,7 @@ export default function ProfileForm({ initial, fallbackName }: { initial: Profil
               setMsg(null);
             }}
           />
-          <span>我同意保存我的身高、体重，用于合身建议</span>
+          <span>我同意保存我的身高、体重，用于后续的合身参考</span>
         </label>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, opacity: f.bodyDataConsent ? 1 : 0.5 }}>
           <label>
@@ -287,7 +296,8 @@ export default function ProfileForm({ initial, fallbackName }: { initial: Profil
       <section className="sc-glass card stack sc-rise">
         <span className="sc-kicker">3D Avatar</span>
         <h2 className="section-title">我的 3D 形象</h2>
-        <p className="serif-note">上传几张照片，在 AI 协助下生成你的 3D 形象，用来预览整套穿搭。</p>
+        <p className="serif-note">上传几张全身照，生成可 360° 查看的 3D 形象预览；穿搭试穿尚未接入。</p>
+        {avatarIsMock ? <p className="sc-meta">当前为示意模式：生成的是通用人台，不是你本人。</p> : null}
         <Link href="/profile/avatar" className="sc-cta sc-cta--ghost">
           生成我的 3D 形象
         </Link>

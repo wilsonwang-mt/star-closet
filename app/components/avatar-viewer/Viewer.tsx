@@ -1,7 +1,7 @@
 "use client";
 
 import { ContactShadows, OrbitControls } from "@react-three/drei";
-import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Box3, Vector3, type Group, type Mesh, type Object3D } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -98,6 +98,24 @@ function Model({ src, animate, onProgress, onLoaded, onSettled }: ModelProps) {
   );
 }
 
+// OrbitControls 挂上时会把事件元素（Canvas 外层 div）的 touch-action 设为 none，
+// 盖掉外层的 pan-y，手指在查看器上竖滑时页面滚不动。极角锁死、只允许水平旋转，
+// 所以改回 pan-y：竖向交给页面滚动，横向拖动仍由 OrbitControls 处理。
+// 必须作为 <OrbitControls> 之后的兄弟节点渲染：同级 effect 按顺序执行，这里晚于 controls.connect()。
+function AllowVerticalScroll() {
+  const target = useThree((s) => s.events.connected as HTMLElement | undefined);
+  const gl = useThree((s) => s.gl);
+  const apply = useCallback(() => {
+    for (const el of [target, gl.domElement]) {
+      if (el && el.style.touchAction !== "pan-y") el.style.touchAction = "pan-y";
+    }
+  }, [target, gl]);
+  useEffect(apply, [apply]);
+  // 兜底：controls 若重新 connect 又写回 none，下一帧改回。
+  useFrame(apply);
+  return null;
+}
+
 // 调用方用 key={src} 挂载：换模型时整体重建，状态自然回到加载态。
 export type ViewerProps = {
   src: string;
@@ -156,6 +174,7 @@ export default function Viewer({ src, animate }: ViewerProps) {
           autoRotateSpeed={0.7}
           onStart={() => setInteracted(true)}
         />
+        <AllowVerticalScroll />
       </Canvas>
       {status.phase === "loading" && (
         <div className={styles.overlay} role="status" aria-live="polite">

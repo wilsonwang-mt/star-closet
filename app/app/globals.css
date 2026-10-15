@@ -123,15 +123,23 @@ body { overflow-x: hidden; }
 .link-btn { background: none; border: none; padding: 0; color: var(--sc-ink-2); cursor: pointer; font-size: 12px; letter-spacing: .08em; text-decoration: underline; text-underline-offset: 3px; }
 
 /* ---------- 表单 ---------- */
+/* 输入控件显式 16px：label 是 12px，若继承它，iOS Safari 聚焦时会自动放大页面。 */
 textarea, input[type="text"], input[type="email"], input[type="password"], select {
+  font-size: 16px;
   width: 100%; padding: 12px 14px; border-radius: 14px; border: 0;
   background: color-mix(in srgb, var(--sc-bg) 35%, transparent);
   box-shadow: inset 0 0 0 .5px var(--sc-rule);
 }
 textarea:focus, input:focus, select:focus { outline: 1px solid var(--sc-champ); }
-textarea { min-height: 76px; resize: vertical; font-family: var(--sc-font-serif); font-size: 15px; }
+textarea { min-height: 76px; resize: vertical; font-family: var(--sc-font-serif); font-size: 16px; }
 label { font-size: 12px; letter-spacing: .08em; color: var(--sc-ink-2); display: grid; gap: 6px; }
 select.swap { margin-top: 6px; max-width: 240px; padding: 5px 10px; font-size: 12px; border-radius: 10px; }
+@media (max-width: 767px) { select.swap { font-size: 16px; } }
+/* 只给读屏用的文字（如 aria-live 汇总区） */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+}
 .chips { display: flex; gap: 8px; flex-wrap: wrap; }
 .chip {
   border: 0; border-radius: var(--sc-radius-pill); padding: 7px 12px; font-size: 12px; cursor: pointer;

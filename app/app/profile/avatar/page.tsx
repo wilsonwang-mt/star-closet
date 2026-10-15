@@ -18,7 +18,7 @@ export default async function AvatarPage() {
         <span className="sc-kicker">3D Avatar</span>
         <h1 className="sc-display" style={{ margin: "6px 0 8px" }}>我的 3D 形象</h1>
         <p className="serif-note">
-          上传几张全身照，生成可 360° 旋转的 3D 形象预览，用来看整套穿搭。它还原的是外观轮廓，不代表精确的本人外貌或身体尺寸。
+          上传几张全身照，生成可 360° 查看的 3D 形象预览；穿搭试穿尚未接入。它还原的是外观轮廓，不代表精确的本人外貌或身体尺寸。
         </p>
       </section>
       <AvatarStudio initial={state} />

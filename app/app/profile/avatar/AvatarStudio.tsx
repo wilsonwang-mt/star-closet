@@ -63,6 +63,8 @@ function PhotoTile({
   photo,
   disabled,
   busy,
+  error,
+  required,
   onPick,
   onDelete,
 }: {
@@ -70,6 +72,10 @@ function PhotoTile({
   photo?: PhotoView;
   disabled: boolean;
   busy: boolean;
+  /** 本格上传或删除的错误，就近显示 */
+  error?: string;
+  /** 真实服务下侧面也必填 */
+  required?: boolean;
   onPick: (f: File) => void;
   onDelete?: () => void;
 }) {
@@ -119,7 +125,7 @@ function PhotoTile({
       <div className="spread" style={{ gap: 4 }}>
         <span style={{ fontSize: 13 }}>
           {meta.label}
-          {meta.required ? <span className="sc-meta">（必填）</span> : null}
+          {required ?? meta.required ? <span className="sc-meta">（必填）</span> : null}
         </span>
         {photo && onDelete ? (
           <button type="button" className="link-btn" onClick={onDelete} disabled={busy}>
@@ -139,6 +145,7 @@ function PhotoTile({
           提示：{h}
         </span>
       ))}
+      {error ? <span className="error">{error}</span> : null}
     </div>
   );
 }
@@ -147,10 +154,15 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
   const [state, setState] = useState<AvatarState>(initial);
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  // 提示就近显示：at 为照片格（slot 或照片 id）、consent、job、delete。
+  // 底部的视觉隐藏 aria-live 区同步播报给读屏，就近文字不再重复声明 role。
+  const [msg, setMsg] = useState<{ at: string; ok: boolean; text: string } | null>(null);
+  const noteAt = (at: string) => (msg && msg.at === at ? msg : null);
   const job = state.job;
   const consented = !!state.consent?.current;
   const mock = state.provider.isMock;
+  // 真实服务按位置区分视角（front/left/back），侧面必填；示意模式正面 + 侧面或背面任一即可。
+  const sideRequired = !mock;
   const modeBadges = mock ? ["非本人示意模型", "合身：未验证"] : ["AI 生成 3D 形象 · 还原度未验证", "合身：未验证"];
   const active = job?.status === "queued" || job?.status === "processing";
 
@@ -181,7 +193,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
       body: JSON.stringify({ agree: true, consentVersion: state.provider.consentVersion }),
     }).catch(() => null);
     setBusy(null);
-    if (!res || !res.ok) return setMsg({ ok: false, text: await readError(res, "记录同意失败") });
+    if (!res || !res.ok) return setMsg({ at: "consent", ok: false, text: await readError(res, "记录同意失败") });
     setState((await res.json()) as AvatarState);
   }
 
@@ -193,22 +205,24 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
       blob = await compress(file);
     } catch {
       setBusy(null);
-      return setMsg({ ok: false, text: "无法读取这张图片，请换一张 JPG 或 PNG" });
+      return setMsg({ at: slot, ok: false, text: "无法读取这张图片，请换一张 JPG 或 PNG" });
     }
     const fd = new FormData();
     fd.set("slot", slot);
     fd.set("file", blob, `${slot}.jpg`);
     const res = await fetch("/api/avatar/photos", { method: "POST", body: fd }).catch(() => null);
     setBusy(null);
-    if (!res || !res.ok) return setMsg({ ok: false, text: await readError(res, "上传失败") });
+    if (!res || !res.ok) return setMsg({ at: slot, ok: false, text: await readError(res, "上传失败") });
     setState((await res.json()) as AvatarState);
   }
 
-  async function removePhoto(id: string) {
+  // at：错误显示的位置。主视角按 slot（删除后格子仍在），补充照片按照片 id。
+  async function removePhoto(id: string, at: string) {
     setBusy(id);
+    setMsg(null);
     const res = await fetch(`/api/avatar/photos/${id}`, { method: "DELETE" }).catch(() => null);
     setBusy(null);
-    if (!res || !res.ok) return setMsg({ ok: false, text: await readError(res, "删除失败") });
+    if (!res || !res.ok) return setMsg({ at, ok: false, text: await readError(res, "删除失败") });
     setState((await res.json()) as AvatarState);
   }
 
@@ -217,28 +231,30 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
     setMsg(null);
     const res = await fetch("/api/avatar/jobs", { method: "POST" }).catch(() => null);
     setBusy(null);
-    if (!res || !res.ok) return setMsg({ ok: false, text: await readError(res, "创建任务失败") });
+    if (!res || !res.ok) return setMsg({ at: "job", ok: false, text: await readError(res, "创建任务失败") });
     setJob((await res.json()) as JobView);
   }
 
   async function cancel() {
     if (!job) return;
     setBusy("cancel");
+    setMsg(null);
     const res = await fetch(`/api/avatar/jobs/${job.id}`, { method: "DELETE" }).catch(() => null);
     setBusy(null);
-    if (!res || !res.ok) return setMsg({ ok: false, text: await readError(res, "取消失败") });
+    if (!res || !res.ok) return setMsg({ at: "job", ok: false, text: await readError(res, "取消失败") });
     setJob((await res.json()) as JobView);
   }
 
   async function deleteEverything() {
     if (!confirm("确定删除全部照片与 3D 形象吗？存储里的文件会一并删除，无法恢复。")) return;
     setBusy("delete");
+    setMsg(null);
     const res = await fetch("/api/avatar", { method: "DELETE" }).catch(() => null);
     setBusy(null);
-    if (!res || !res.ok) return setMsg({ ok: false, text: await readError(res, "删除失败") });
+    if (!res || !res.ok) return setMsg({ at: "delete", ok: false, text: await readError(res, "删除失败") });
     setState((await res.json()) as AvatarState);
     setAgree(false);
-    setMsg({ ok: true, text: "已删除全部照片与 3D 形象" });
+    setMsg({ at: "delete", ok: true, text: "已删除全部照片与 3D 形象" });
   }
 
   const photosBySlot = (slot: Slot) => state.photos.filter((p) => p.slot === slot);
@@ -253,15 +269,20 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
           {consented ? <span className="sc-badge">已同意</span> : null}
         </div>
         <ul className="stack" style={{ gap: 6, margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.6 }}>
-          <li>用途：只用来生成你的 3D 形象，在本站预览穿搭。</li>
+          <li>用途：只用来生成你的 3D 形象，在本站 360° 查看；穿搭试穿尚未接入。</li>
           <li>谁处理：{state.provider.processor}。</li>
           <li>
-            保存期：原始照片在 3D 形象生成完成 {state.retentionDays} 天后自动删除；3D 形象保留到你删除为止。
+            保存期：原始照片在 3D 形象生成完成 {state.retentionDays} 天后删除——比赛版在你下次打开本页时清理到期照片，不访问就不会触发，自动定时删除上线前补齐；3D 形象保留到你删除为止。
           </li>
-          <li>可删除：随时一键删除全部照片与形象，存储里的文件同时清除。</li>
+          <li>
+            可删除：随时一键删除全部照片与形象，本站存储里的文件同时清除
+            {mock ? "。" : "；一键删除不会向第三方服务发出删除请求。"}
+          </li>
           <li>
             不用于训练：本站不会把你的照片或形象用于训练任何模型
-            {mock ? "。" : "；第三方服务的数据处理以其条款为准，本站调用时要求不保留输入输出。"}
+            {mock
+              ? "。"
+              : "；第三方服务的数据处理以其条款为准。本站调用时已请求不保存输入输出，第三方是否仍有副本尚未核实。"}
           </li>
           <li>隐私：照片仅你本人可见；上传前在你的设备上压缩，并去掉拍摄位置等附加信息。</li>
         </ul>
@@ -272,6 +293,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
             {state.consent && !state.consent.current ? (
               <p className="error">处理方已变更，请重新阅读并确认。</p>
             ) : null}
+            {noteAt("consent") ? <p className="error">{noteAt("consent")!.text}</p> : null}
             <label className="row" style={{ flexWrap: "nowrap", alignItems: "flex-start", fontSize: 13, color: "var(--sc-ink)" }}>
               <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
               <span>
@@ -291,7 +313,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
       <section className="sc-glass card stack sc-rise">
         <h2 className="section-title">上传照片</h2>
         <p className="serif-note">
-          穿贴身或常穿的衣服，站直、手臂略微张开，背景简洁、光线均匀。至少需要正面，以及侧面或背面中的一张。
+          穿贴身或常穿的衣服，站直、手臂略微张开，背景简洁、光线均匀。{sideRequired ? "至少需要正面和侧面，背面可选。" : "至少需要正面，以及侧面或背面中的一张。"}
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
           {SLOT_META.filter((m) => m.slot !== "extra").map((m) => {
@@ -303,8 +325,10 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
                 photo={p}
                 disabled={!consented}
                 busy={busy === m.slot || (!!p && busy === p.id)}
+                required={m.slot === "side" && sideRequired ? true : undefined}
+                error={noteAt(m.slot)?.text}
                 onPick={(f) => upload(m.slot, f)}
-                onDelete={p ? () => removePhoto(p.id) : undefined}
+                onDelete={p ? () => removePhoto(p.id, m.slot) : undefined}
               />
             );
           })}
@@ -319,8 +343,9 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
                 photo={p}
                 disabled
                 busy={busy === p.id}
+                error={noteAt(p.id)?.text}
                 onPick={() => {}}
-                onDelete={() => removePhoto(p.id)}
+                onDelete={() => removePhoto(p.id, p.id)}
               />
             ))}
             {photosBySlot("extra").length < 3 ? (
@@ -328,6 +353,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
                 meta={SLOT_META[4]}
                 disabled={!consented}
                 busy={busy === "extra"}
+                error={noteAt("extra")?.text}
                 onPick={(f) => upload("extra", f)}
               />
             ) : null}
@@ -386,22 +412,36 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
           </button>
         ) : null}
         {!active && !state.canGenerate ? (
-          <p className="sc-meta">{consented ? "先上传正面，以及侧面或背面全身照。" : "先在上方勾选同意。"}</p>
+          <p className="sc-meta">
+            {!consented
+              ? "先在上方勾选同意。"
+              : sideRequired
+                ? "先上传正面和侧面全身照。"
+                : "先上传正面，以及侧面或背面全身照。"}
+          </p>
         ) : null}
+        {noteAt("job") ? <p className="error">{noteAt("job")!.text}</p> : null}
       </section>
 
       {/* 删除 */}
-      {hasAny ? (
+      {/* 删除成功后 hasAny 变为 false，仍保留这张卡显示结果 */}
+      {hasAny || noteAt("delete") ? (
         <section className="sc-glass card stack sc-rise">
           <h2 className="section-title">删除</h2>
-          <p className="sc-meta">删除全部照片与生成的 3D 形象，存储文件一并清除；之后再上传需要重新同意。</p>
-          <button type="button" className="link-btn" style={{ justifySelf: "start" }} onClick={deleteEverything} disabled={busy === "delete"}>
-            {busy === "delete" ? "删除中…" : "一键删除全部照片与形象"}
-          </button>
+          {hasAny ? (
+            <>
+              <p className="sc-meta">删除全部照片与生成的 3D 形象，本站存储文件一并清除；之后再上传需要重新同意。</p>
+              <button type="button" className="link-btn" style={{ justifySelf: "start" }} onClick={deleteEverything} disabled={busy === "delete"}>
+                {busy === "delete" ? "删除中…" : "一键删除全部照片与形象"}
+              </button>
+            </>
+          ) : null}
+          {noteAt("delete") ? <p className={noteAt("delete")!.ok ? "sc-meta" : "error"}>{noteAt("delete")!.text}</p> : null}
         </section>
       ) : null}
 
-      <p role="status" aria-live="polite" className={msg?.ok === false ? "error" : "sc-meta"} style={{ textAlign: "center", minHeight: 18 }}>
+      {/* 读屏播报：视觉上隐藏，提示文字已就近显示在对应卡片里 */}
+      <p role="status" aria-live="polite" className="sr-only">
         {msg?.text ?? ""}
       </p>
     </div>

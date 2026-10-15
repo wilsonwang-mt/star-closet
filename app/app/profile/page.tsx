@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Scene from "@/components/Scene";
 import { getCurrentUser } from "@/lib/auth";
+import { activeProviderInfo } from "@/lib/avatar/providers";
 import { getProfile } from "@/lib/profile";
 import ProfileForm from "./ProfileForm";
 import SignOutButton from "./SignOutButton";
@@ -18,10 +19,10 @@ export default async function ProfilePage() {
         <span className="sc-kicker">My Profile</span>
         <h1 className="sc-display" style={{ margin: "6px 0 8px" }}>我的档案</h1>
         <p className="serif-note">
-          风格、尺码与预算，让改编更贴近你。档案仅你本人可见。
+          记下你的风格、尺码与预算，之后用于改编推荐（比赛版尚未接入）。档案仅你本人可见。
         </p>
       </section>
-      <ProfileForm initial={profile} fallbackName={user.name} />
+      <ProfileForm initial={profile} fallbackName={user.name} avatarIsMock={activeProviderInfo().isMock} />
       <section className="row" style={{ justifyContent: "space-between", padding: "8px 4px 0" }}>
         <span className="sc-meta">{user.email}</span>
         <SignOutButton />

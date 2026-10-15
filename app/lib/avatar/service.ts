@@ -5,8 +5,10 @@ import { MAX_PHOTO_BYTES, QUALITY_HINTS, qualityFlags, sniffImage, type QualityF
 import {
   activeProviderInfo,
   getProvider,
+  hasRequiredSlots,
   ProviderError,
   providerInfo,
+  requiredSlotsMessage,
   type ErrorCode,
   type ProviderInfo,
 } from "./providers";
@@ -141,9 +143,9 @@ function consentOf(jobs: JobRow[], info: ProviderInfo): AvatarState["consent"] {
   return { version: j.consentVersion, at: j.consentAt.toISOString(), current: j.consentVersion === info.consentVersion };
 }
 
-function hasRequiredPhotos(photos: { slot: string }[]) {
-  const slots = new Set(photos.map((p) => p.slot));
-  return slots.has("front") && (slots.has("side") || slots.has("back"));
+// 必填视角随服务而定（真实服务按位置区分视角，见 providers.ts）。
+function hasRequiredPhotos(photos: { slot: string }[], providerId: string) {
+  return hasRequiredSlots(providerId, photos);
 }
 
 // D47：原始照片在对应形象生成完成 30 天后删除。比赛版在读取状态时顺带清理（惰性）。
@@ -178,7 +180,7 @@ export async function getAvatarState(userId: string): Promise<AvatarState> {
     consent,
     photos: photos.map(toPhotoView),
     job: job ? toJobView(job) : null,
-    canGenerate: !!consent?.current && hasRequiredPhotos(photos),
+    canGenerate: !!consent?.current && hasRequiredPhotos(photos, info.id),
     retentionDays: PHOTO_RETENTION_DAYS,
   };
 }
@@ -290,7 +292,7 @@ export async function createJob(userId: string): Promise<JobView> {
   const active = jobs.find((j) => j.status === "queued" || j.status === "processing");
   if (active) throw new AvatarError(409, "已有一个正在生成的任务");
   const photos = await livePhotos(userId);
-  if (!hasRequiredPhotos(photos)) throw new AvatarError(400, "需要正面全身照，以及侧面或背面全身照至少一张");
+  if (!hasRequiredPhotos(photos, info.id)) throw new AvatarError(400, requiredSlotsMessage(info.id));
 
   const now = new Date();
   const values = {
