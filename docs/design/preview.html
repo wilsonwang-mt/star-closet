@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Star Closet 静态设计探索画廊：浅弧衣橱首页、服饰聚光、搜索发现与手机布局。">
+  <meta name="theme-color" content="#080d12">
+  <title>Star Closet · 设计探索画廊</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #080d12;
+      --surface: #121b23;
+      --text: #f4f1e9;
+      --muted: #b8c0c8;
+      --accent: #e0c6a0;
+      --line: rgba(230, 237, 241, .15);
+      --radius: 24px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: radial-gradient(ellipse at 70% 0%, #3a312329, transparent 35%), var(--bg);
+      color: var(--text);
+      font-family: "Geist", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-underline-offset: .22em; }
+    a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 5px; }
+    img { display: block; max-width: 100%; }
+    h1, h2, h3, p, figure { margin: 0; }
+    h1, h2, h3 { text-wrap: balance; }
+    .shell { width: min(100%, 1480px); margin-inline: auto; padding-inline: clamp(20px, 5vw, 80px); }
+    .skip { position: absolute; top: 8px; left: 20px; z-index: 20; padding: 12px 18px; background: var(--text); color: var(--bg); transform: translateY(-160%); }
+    .skip:focus { transform: none; }
+    .site-header { position: relative; padding-top: 22px; }
+    .nav-shell { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 14px 20px; border: 1px solid var(--line); border-radius: 22px; background: linear-gradient(140deg, #ffffff08, #ffffff02); }
+    .brand { text-decoration: none; font-size: 14px; font-weight: 600; letter-spacing: .19em; white-space: nowrap; }
+    .brand small { margin-left: 15px; color: var(--muted); font-size: 10px; letter-spacing: .12em; font-weight: 400; }
+    .nav-links { display: flex; align-items: center; gap: 22px; font-size: 13px; }
+    .nav-links a { text-decoration: none; color: var(--muted); }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links .slides-link { color: var(--accent); }
+    .hero { padding-block: clamp(54px, 8vw, 104px) 42px; }
+    .eyebrow { color: var(--accent); font-size: 12px; letter-spacing: .12em; margin-bottom: 20px; }
+    h1 { max-width: 1100px; font-size: clamp(38px, 5.5vw, 78px); line-height: 1.18; font-weight: 550; letter-spacing: -.045em; }
+    .hero-copy { max-width: 710px; margin-top: 26px; color: var(--muted); font-size: clamp(16px, 1.45vw, 20px); }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
+    .button { display: inline-flex; justify-content: center; align-items: center; gap: 18px; min-height: 48px; padding: 11px 23px; border: 1px solid var(--line); border-radius: 999px; text-decoration: none; font-size: 14px; transition: transform 180ms cubic-bezier(.2,.7,.2,1), border-color 180ms; }
+    .button:hover { transform: translateY(-2px); border-color: var(--accent); }
+    .button--primary { color: #15120e; background: #ebd8ba; border-color: #ebd8ba; }
+    .button .arrow { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: #0000000b; }
+    .overview { padding-bottom: clamp(56px, 8vw, 100px); }
+    .image-frame { overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); padding: 5px; background: #ffffff05; box-shadow: 0 20px 65px #00000026, inset 0 1px 0 #ffffff0d; }
+    .image-frame > a { display: block; overflow: hidden; border-radius: calc(var(--radius) - 5px); }
+    .overview-image { width: 100%; height: auto; }
+    figcaption { margin-top: 16px; color: var(--muted); font-size: 13px; }
+    .overview figcaption { display: flex; justify-content: space-between; gap: 20px; }
+    .figure-label { color: var(--accent); white-space: nowrap; }
+    .section-intro { margin-bottom: 16px; }
+    .section-intro h2 { font-size: clamp(28px, 3.4vw, 44px); line-height: 1.3; font-weight: 500; letter-spacing: -.03em; }
+    .section-intro p { color: var(--muted); margin-top: 14px; max-width: 720px; }
+    .view { display: grid; grid-template-columns: 1.4fr 1fr; align-items: center; gap: clamp(26px, 4.5vw, 72px); padding-block: clamp(40px, 6vw, 84px); border-top: 1px solid var(--line); scroll-margin-top: 28px; }
+    .view--reverse { grid-template-columns: 1fr 1.4fr; }
+    .view--reverse .visual { order: 2; }
+    .crop { position: relative; width: 100%; aspect-ratio: 793 / 496; overflow: hidden; background: var(--surface); }
+    .crop img { position: absolute; left: 0; top: 0; width: 200%; height: 200%; max-width: none; object-fit: fill; }
+    .crop--tr img, .crop--br img { left: -100%; }
+    .crop--bl img, .crop--br img { top: -100%; }
+    .view h2 { font-size: clamp(28px, 3vw, 43px); line-height: 1.3; font-weight: 500; letter-spacing: -.035em; }
+    .view .lead { color: var(--muted); margin-top: 18px; font-size: 17px; }
+    .view ul { margin: 22px 0 0; padding-left: 20px; }
+    .view li { padding-left: 3px; margin-top: 10px; color: var(--muted); }
+    .view li::marker { color: var(--accent); }
+    .note { margin-top: 24px; padding: 16px 18px; background: #e0c6a00a; border-left: 2px solid #e0c6a066; border-radius: 0 12px 12px 0; color: #c9c2b6; font-size: 13px; }
+    .dimensions { color: var(--accent); font-size: 14px; margin-top: 20px; line-height: 2; }
+    .directions-section { padding-block: 70px; border-top: 1px solid var(--line); scroll-margin-top: 28px; }
+    .directions { display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-flow: dense; gap: 18px; margin-top: 30px; }
+    .direction { padding: 26px; border: 1px solid var(--line); border-radius: 20px; background: linear-gradient(150deg, #ffffff06, #ffffff01); }
+    .direction h3 { font-size: 21px; font-weight: 500; }
+    .direction p { margin-top: 14px; color: var(--muted); font-size: 14px; }
+    .direction .status { color: var(--accent); margin-top: 24px; font-size: 12px; }
+    .materials { padding-block: 65px; border-top: 1px solid var(--line); scroll-margin-top: 28px; }
+    .notes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px 60px; margin-top: 32px; }
+    .notes-grid h3 { font-size: 17px; font-weight: 500; }
+    .notes-grid p { color: var(--muted); font-size: 14px; margin-top: 10px; }
+    .material-links { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 28px; font-size: 13px; color: var(--accent); }
+    footer { display: flex; justify-content: space-between; gap: 24px; padding-block: 28px 38px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+    @media (max-width: 980px) {
+      .brand small { display: none; }
+      .view, .view--reverse { grid-template-columns: 1fr; gap: 28px; }
+      .view--reverse .visual { order: 0; }
+      .view .lead { max-width: 740px; }
+      .directions { grid-template-columns: 1fr; }
+      .direction { padding: 24px; }
+    }
+    @media (max-width: 640px) {
+      .nav-shell { padding: 13px 15px; gap: 12px; }
+      .nav-links { gap: 0; }
+      .nav-links a:not(.slides-link) { display: none; }
+      .hero { padding-top: 46px; }
+      h1 { font-size: clamp(36px, 9.5vw, 54px); }
+      .hero-copy { margin-top: 22px; }
+      .actions { gap: 10px; }
+      .button { padding-inline: 18px; }
+      .overview figcaption { display: block; }
+      .overview .figure-label { display: block; margin-top: 8px; }
+      .image-frame { border-radius: 16px; padding: 3px; }
+      .image-frame > a { border-radius: 12px; }
+      .notes-grid { grid-template-columns: 1fr; gap: 26px; }
+      .directions-section, .materials { padding-block: 46px; }
+      footer { display: block; }
+      footer p + p { margin-top: 10px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .button { transition: none; }
+      .button:hover { transform: none; }
+    }
+    @media print {
+      :root { color-scheme: light; --text: #171717; --muted: #454545; --accent: #635039; --line: #d0d0d0; }
+      body { background: white; }
+      .shell { padding-inline: 0; }
+      .site-header, .actions, .material-links, footer { display: none; }
+      .hero { padding-block: 0 24px; }
+      h1 { font-size: 36px; }
+      .view { break-inside: avoid; padding-block: 28px; }
+      .image-frame { box-shadow: none; }
+      .notes-grid { gap: 22px; }
+      a { text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">跳到设计内容</a>
+  <header class="site-header shell">
+    <nav class="nav-shell" aria-label="设计画廊导航">
+      <a class="brand" href="#main">STAR CLOSET <small>DESIGN STUDY</small></a>
+      <div class="nav-links">
+        <a href="#overview">概念总览</a>
+        <a href="#views">关键视图</a>
+        <a href="#directions">探索方向</a>
+        <a class="slides-link" href="../presentation/star-closet-hackathon.html">产品 Slides ↗</a>
+      </div>
+    </nav>
+  </header>
+  <main id="main" class="shell">
+    <section class="hero" aria-labelledby="page-title">
+      <p class="eyebrow">静态概念探索 · 2026.10.15</p>
+      <h1 id="page-title">一间衣橱，<br>一种风格的入口。</h1>
+      <p class="hero-copy">以深色空间、玻璃卡片和有层次的光影，连接人物审美与服饰发现。从首页的浅弧选择，到单品的聚光舞台，探索一条连贯的浏览体验。</p>
+      <div class="actions">
+        <a class="button button--primary" href="concepts/visual-atlas-20261015.png">打开完整概念图 <span class="arrow" aria-hidden="true">↗</span></a>
+        <a class="button" href="../presentation/star-closet-hackathon.html">查看产品 Slides <span aria-hidden="true">↗</span></a>
+      </div>
+    </section>
+
+    <figure id="overview" class="overview">
+      <div class="image-frame">
+        <a href="concepts/visual-atlas-20261015.png" aria-label="打开完整静态概念总览 PNG">
+          <img class="overview-image" src="concepts/visual-atlas-20261015.png" width="1586" height="992" alt="四象限静态概念总览：左上为浅弧剖切衣橱首页，右上为聚光夹克及玻璃卡，左下为中文搜索，右下为手机竖横屏布局。">
+        </a>
+      </div>
+      <figcaption><span>本次在云端重新生成的视觉总览。点击图片，可打开原尺寸 PNG。</span><span class="figure-label">静态概念 · 非可交互网页</span></figcaption>
+    </figure>
+
+    <section id="views" aria-label="四个关键视图">
+      <article class="view" aria-labelledby="home-title">
+        <figure class="visual">
+          <div class="image-frame"><a href="concepts/visual-atlas-20261015.png" aria-label="在完整概念图中查看首页布局"><div class="crop"><img src="concepts/visual-atlas-20261015.png" width="1586" height="992" loading="lazy" alt="首页静态概念：中央最大正面的剖切衣橱，两侧相邻衣橱部分露出，卡下有头像、姓名、风格和进入按钮。"></div></a></div>
+          <figcaption>首页选择 · 静态概念</figcaption>
+        </figure>
+        <div>
+          <p class="eyebrow">选择一间衣橱</p>
+          <h2 id="home-title">让空间先讲述，<br>这是谁的风格。</h2>
+          <p class="lead">浅弧形卡片给衣橱留出舞台。中央最大、正对用户，两侧用透视、远近与遮挡提示下一间。</p>
+          <ul>
+            <li>卡下保留头像、姓名、一句风格介绍与进入按钮。</li>
+            <li>横向切换后，相邻衣橱来到中央。</li>
+            <li>搜索保持明显，让目标明确的用户直接找到内容。</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="view view--reverse" aria-labelledby="garment-title">
+        <figure class="visual">
+          <div class="image-frame"><a href="concepts/visual-atlas-20261015.png" aria-label="在完整概念图中查看服饰聚焦"><div class="crop crop--tr"><img src="concepts/visual-atlas-20261015.png" width="1586" height="992" loading="lazy" alt="单品静态概念：白色夹克位于暖色射灯舞台上，右侧悬浮半透明玻璃信息卡，底部画有旋转和复位提示。"></div></a></div>
+          <figcaption>服饰聚光 · 静态概念，非三维模型</figcaption>
+        </figure>
+        <div>
+          <p class="eyebrow">把目光交给一件衣服</p>
+          <h2 id="garment-title">灯光聚焦，<br>细节成为主角。</h2>
+          <p class="lead">选中服饰后，以射灯、柔和补光和轮廓分离形成中央舞台；右侧玻璃卡提供故事、材质与操作。</p>
+          <ul>
+            <li>衣服需要真实立体、可旋转，灯光随观察角度产生自然明暗。</li>
+            <li>玻璃模糊背景，文字和服饰纹理保持锐利。</li>
+            <li>购买入口应匹配真实供货与交易能力，展示清楚的规则。</li>
+          </ul>
+          <p class="note">当前只有静态图，没有可旋转模型。白色夹克的表现也不能证明深色、反光或半透明面料已经验证。</p>
+        </div>
+      </article>
+
+      <article class="view" aria-labelledby="search-title">
+        <figure class="visual">
+          <div class="image-frame"><a href="concepts/visual-atlas-20261015.png" aria-label="在完整概念图中查看搜索布局"><div class="crop crop--bl"><img src="concepts/visual-atlas-20261015.png" width="1586" height="992" loading="lazy" alt="搜索静态概念：中文关键词、品牌风格类别筛选、已选条件和三张服饰结果卡；生成的筛选与结果存在错配。"></div></a></div>
+          <figcaption>搜索与发现 · 静态概念，包含生成内容错配</figcaption>
+        </figure>
+        <div>
+          <p class="eyebrow">不止一种发现方式</p>
+          <h2 id="search-title">可以闲逛，<br>也可以直接找到。</h2>
+          <p class="lead">除了浏览衣橱，用户也会带着姓名、审美或商品目标而来。搜索与导航需要提供同样完整的路径。</p>
+          <p class="dimensions">明星姓名 ／ 风格 ／ 标签 ／ 品牌 ／ 服饰类别</p>
+          <p class="note">这张生成图存在筛选条件与结果错配，例如选中品牌与结果品牌不同。它只用于讨论布局；正式搜索必须依据真实元数据，验证筛选、类型和商品关系。</p>
+        </div>
+      </article>
+
+      <article class="view view--reverse" aria-labelledby="mobile-title">
+        <figure class="visual">
+          <div class="image-frame"><a href="concepts/visual-atlas-20261015.png" aria-label="在完整概念图中查看手机布局"><div class="crop crop--br"><img src="concepts/visual-atlas-20261015.png" width="1586" height="992" loading="lazy" alt="手机版式静态概念：左侧竖屏首页，右侧横屏服饰检视和信息卡，尚未完整呈现侧卡露出与横屏提醒。"></div></a></div>
+          <figcaption>手机竖屏与横屏 · 布局探索</figcaption>
+        </figure>
+        <div>
+          <p class="eyebrow">为手指和视野重新构图</p>
+          <h2 id="mobile-title">竖屏挑选，<br>横屏走近细节。</h2>
+          <p class="lead">首页支持手指滑动和点击。进入衣橱前提醒横握手机，横屏后把更多宽度留给服饰。</p>
+          <ul>
+            <li>横屏时服饰与信息分区，长内容再展开。</li>
+            <li>旋转设备应保留当前衣橱、服饰与浏览位置。</li>
+            <li>是否继续支持竖屏空间浏览，仍需验证。</li>
+          </ul>
+          <p class="note">图中未充分体现首页相邻卡片露出及进入前横屏提醒；这些已确认要求仍以文字规范为准。尚未执行真实手机交互测试。</p>
+        </div>
+      </article>
+    </section>
+
+    <section id="directions" class="directions-section" aria-labelledby="directions-title">
+      <div class="section-intro">
+        <h2 id="directions-title">同一组要求，三种空间表达。</h2>
+        <p>浅弧、身份信息、触摸与聚光体验已经明确。预览采用微缩全景、眼平取景还是空间入口，仍值得比较。</p>
+      </div>
+      <div class="directions">
+        <article class="direction"><h3>悬浮衣橱画廊</h3><p>切开式微缩房间让结构和陈列一目了然。重点验证尺度、布料和材质，避免玩具感。</p><p class="status">优先探索建议 · 尚未定稿</p></article>
+        <article class="direction"><h3>夜间时尚档案</h3><p>眼平视角强调人物审美、空间气氛与穿着故事。需要让用户清楚感知房间可以进入。</p><p class="status">比较方向 · 本图未单独呈现</p></article>
+        <article class="direction"><h3>光场展厅</h3><p>像选择一扇通往衣橱的入口，进入与聚焦形成连续镜头。需控制等待、眩晕和设备开销。</p><p class="status">转场研究 · 尚未实现</p></article>
+      </div>
+    </section>
+
+    <section id="materials" class="materials" aria-labelledby="materials-title">
+      <div class="section-intro"><h2 id="materials-title">看清设计，也看清材料的身份。</h2></div>
+      <div class="notes-grid">
+        <div><h3>虚构内容</h3><p>人物、房间、服饰、品牌与示例文案仅供研究。STAR CLOSET 是工作名称，没有据此确认明星合作、商品事实或名称可用性。</p></div>
+        <div><h3>静态材料</h3><p>总览于 2026 年 10 月 15 日在云端重新生成，尺寸为 1586 × 992。它是 PNG，不是 GLB、真实三维场景或已完成的网站应用。</p></div>
+        <div><h3>文字规范优先</h3><p>生成的账号图标、购买按钮和商品字段不自动成为获批功能。图形偏差、筛选错配与示例版型需在后续设计中修正。</p></div>
+        <div><h3>仍待验证</h3><p>尚未实测参考网站 miniroom.5title.com，也未据此验证对比度、旋转、触摸、响应式或性能；不声称已达到或超过参考效果。</p></div>
+      </div>
+      <div class="material-links">
+        <a href="concepts/visual-atlas-20261015.png">完整 PNG ↗</a>
+        <a href="../presentation/star-closet-hackathon.html">产品 Slides ↗</a>
+        <a href="设计探索.md">设计说明 Markdown ↗</a>
+        <a href="素材清单.md">素材清单 Markdown ↗</a>
+      </div>
+    </section>
+  </main>
+  <footer class="shell"><p>STAR CLOSET · 设计评审材料</p><p>本页为静态画廊，图片中的产品按钮不可操作。</p></footer>
+</body>
+</html>
