@@ -247,9 +247,9 @@ export default function ProfileForm({
           <span className="sc-badge">可选</span>
         </div>
         <p className="serif-note">
-          身高、体重用于后续的合身参考（比赛版尚未接入），仅你本人可见，可随时一键删除，不会用于训练任何模型。不填也能正常使用。
+          身高、体重仅你本人可见，先为后续的个性化与合身参考保存，比赛版暂未使用；可随时一键删除，不会用于训练任何模型。不填也能正常使用。
         </p>
-        <label className="row" style={{ flexWrap: "nowrap", alignItems: "flex-start", fontSize: 13, color: "var(--sc-ink)" }}>
+        <label className="row check-row" style={{ flexWrap: "nowrap", alignItems: "flex-start", fontSize: 13, color: "var(--sc-ink)" }}>
           <input
             type="checkbox"
             checked={f.bodyDataConsent}
@@ -259,7 +259,7 @@ export default function ProfileForm({
               setMsg(null);
             }}
           />
-          <span>我同意保存我的身高、体重，用于后续的合身参考</span>
+          <span>我同意保存我的身高、体重，供后续个性化使用（当前未使用）</span>
         </label>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, opacity: f.bodyDataConsent ? 1 : 0.5 }}>
           <label>
@@ -296,7 +296,7 @@ export default function ProfileForm({
       <section className="sc-glass card stack sc-rise">
         <span className="sc-kicker">3D Avatar</span>
         <h2 className="section-title">我的 3D 形象</h2>
-        <p className="serif-note">上传几张全身照，生成可 360° 查看的 3D 形象预览；穿搭试穿尚未接入。</p>
+        <p className="serif-note">上传三张全身照，生成可 360° 查看的 3D 外观预览（合身未验证）；穿搭试穿尚未接入。</p>
         {avatarIsMock ? <p className="sc-meta">当前为示意模式：生成的是通用人台，不是你本人。</p> : null}
         <Link href="/profile/avatar" className="sc-cta sc-cta--ghost">
           生成我的 3D 形象

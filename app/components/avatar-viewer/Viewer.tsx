@@ -4,6 +4,7 @@ import { ContactShadows, OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Box3, Vector3, type Group, type Mesh, type Object3D } from "three";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import ViewerErrorBoundary from "./ErrorBoundary";
@@ -116,20 +117,115 @@ function AllowVerticalScroll() {
   return null;
 }
 
+// ---- 复位视角：弹簧把相机带回正面与默认距离 ----
+// 半隐式欧拉积分的阻尼弹簧（刚度 170、阻尼比 0.86：轻微过冲后收住，接近 Apple 的“柔和弹簧”）。
+// 只改相机位置（GPU 只做矩阵变换），每帧步长封顶 1/30s，掉帧时不会发散。
+// 可打断：用户一按下拖动（OrbitControls start 事件）立即停下，速度不保留。减弱动态时直接跳到正面。
+const SPRING_K = 170;
+const SPRING_C = 2 * 0.86 * Math.sqrt(SPRING_K);
+const wrapAngle = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
+
+type Spring = { active: boolean; vA: number; vD: number };
+
+function placeCamera(c: OrbitControlsImpl, azimuth: number, distance: number) {
+  const cam = c.object;
+  const s = Math.sin(POLAR);
+  cam.position.set(
+    c.target.x + distance * s * Math.sin(azimuth),
+    c.target.y + distance * Math.cos(POLAR),
+    c.target.z + distance * s * Math.cos(azimuth),
+  );
+  cam.lookAt(c.target);
+}
+
+function CameraRig({
+  controls,
+  spring,
+  signal,
+  animate,
+  interacted,
+  onMoved,
+}: {
+  interacted: boolean;
+  controls: React.RefObject<OrbitControlsImpl | null>;
+  spring: React.RefObject<Spring>;
+  signal: number;
+  animate: boolean;
+  onMoved?: (moved: boolean) => void;
+}) {
+  const moved = useRef(false);
+  const invalidate = useThree((s) => s.invalidate);
+
+  useEffect(() => {
+    const c = controls.current;
+    if (!signal || !c) return;
+    if (!animate) {
+      placeCamera(c, 0, DISTANCE);
+      c.update();
+      invalidate();
+      return;
+    }
+    // 关掉阻尼并结算残余惯性，避免与弹簧互相拉扯；结束或被打断时恢复。
+    c.enableDamping = false;
+    c.update();
+    spring.current.active = true;
+    spring.current.vA = 0;
+    spring.current.vD = 0;
+  }, [signal, animate, controls, spring, invalidate]);
+
+  useFrame((_, delta) => {
+    const c = controls.current;
+    if (!c) return;
+    let az = c.getAzimuthalAngle();
+    let dist = c.getDistance();
+    const sp = spring.current;
+    if (sp.active) {
+      const h = Math.min(delta, 1 / 30);
+      const dA = wrapAngle(0 - az);
+      const dD = DISTANCE - dist;
+      sp.vA += (SPRING_K * dA - SPRING_C * sp.vA) * h;
+      sp.vD += (SPRING_K * dD - SPRING_C * sp.vD) * h;
+      az += sp.vA * h;
+      dist += sp.vD * h;
+      const done = Math.abs(dA) < 0.001 && Math.abs(sp.vA) < 0.005 && Math.abs(dD) < 0.001 && Math.abs(sp.vD) < 0.005;
+      if (done) {
+        az = 0;
+        dist = DISTANCE;
+        sp.active = false;
+        c.enableDamping = true;
+      }
+      placeCamera(c, az, dist);
+    }
+    // 只在用户亲手转动或缩放过之后才算“偏离”（进场自转不出现复位按钮）；复位途中视为已复位，按钮立即淡出。
+    const isMoved = interacted && !sp.active && (Math.abs(wrapAngle(az)) > 0.12 || Math.abs(dist - DISTANCE) > 0.12);
+    if (isMoved !== moved.current) {
+      moved.current = isMoved;
+      onMoved?.(isMoved);
+    }
+  });
+  return null;
+}
+
 // 调用方用 key={src} 挂载：换模型时整体重建，状态自然回到加载态。
 export type ViewerProps = {
   src: string;
   /** false：不做下落与自转（减弱动态时用户主动打开 3D） */
   animate: boolean;
+  /** 每次递增触发一次“复位视角” */
+  resetSignal?: number;
+  /** 视角是否偏离正面（用于显示/隐藏复位按钮） */
+  onMoved?: (moved: boolean) => void;
 };
 
 type Status = { phase: "loading"; progress: number | null } | { phase: "ready" };
 
-export default function Viewer({ src, animate }: ViewerProps) {
+export default function Viewer({ src, animate, resetSignal = 0, onMoved }: ViewerProps) {
   const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState<Status>({ phase: "loading", progress: null });
   const [settled, setSettled] = useState(false);
   const [interacted, setInteracted] = useState(false);
+  const controls = useRef<OrbitControlsImpl | null>(null);
+  const spring = useRef<Spring>({ active: false, vA: 0, vD: 0 });
 
   const retry = useCallback(() => {
     clearModelCache(src);
@@ -163,6 +259,7 @@ export default function Viewer({ src, animate }: ViewerProps) {
         </Suspense>
         <ContactShadows position={[0, 0, 0]} opacity={0.42} scale={3.2} blur={2.6} far={1.6} resolution={512} />
         <OrbitControls
+          ref={controls}
           target={[0, TARGET_Y, 0]}
           enablePan={false}
           enableDamping
@@ -172,9 +269,17 @@ export default function Viewer({ src, animate }: ViewerProps) {
           maxDistance={6.2}
           autoRotate={animate && settled && !interacted}
           autoRotateSpeed={0.7}
-          onStart={() => setInteracted(true)}
+          onStart={() => {
+            setInteracted(true);
+            // 打断复位弹簧，交还给手势与阻尼
+            if (spring.current.active) {
+              spring.current.active = false;
+              if (controls.current) controls.current.enableDamping = true;
+            }
+          }}
         />
         <AllowVerticalScroll />
+        <CameraRig controls={controls} spring={spring} signal={resetSignal} animate={animate} interacted={interacted} onMoved={onMoved} />
       </Canvas>
       {status.phase === "loading" && (
         <div className={styles.overlay} role="status" aria-live="polite">

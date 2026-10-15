@@ -1,27 +1,44 @@
-import { and, desc, eq, inArray, isNull, lt, ne, or } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, ne, or } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { avatarKey, getStorage, photoKey } from "@/lib/storage";
 import { MAX_PHOTO_BYTES, QUALITY_HINTS, qualityFlags, sniffImage, type QualityFlags } from "./image";
 import {
-  activeProviderInfo,
+  consentVersionFor,
   getProvider,
   hasRequiredSlots,
+  offerVersion,
+  parseConsentVersion,
   ProviderError,
+  providerForConsent,
   providerInfo,
   requiredSlotsMessage,
+  thirdPartyInfo,
   type ErrorCode,
-  type ProviderInfo,
+  type ProviderHandle,
+  type ProviderId,
+  type RemotePurge,
 } from "./providers";
+import {
+  isLiveStatusUrl,
+  PHOTO_RETENTION_DAYS,
+  purgeExpiredPhotos,
+  purgeRemoteForJob,
+  remoteState,
+  setPhotoExpiry,
+} from "./purge";
+import { stripMetadata } from "./strip";
 
 // 3D 形象：同意 → 上传照片 → 生成（draft → queued → processing → succeeded / failed，可 canceled）→ 查看 → 删除。
 // 所有函数都以当前登录用户 userId 为界，只读写本人数据。
 // 作业推进由 GET /api/avatar/jobs/[id] 轮询驱动（tick），并用带条件的 UPDATE 防止并发轮询重复提交。
+// 外部任务句柄存在 avatar_job.provider_task_id / provider_status_url，进程重启后可继续轮询；
+// 任务结束后 provider_status_url 改写为第三方删除标记（见 purge.ts）。
 
+export { PHOTO_RETENTION_DAYS };
 export const SLOTS = ["front", "side", "back", "face", "extra"] as const;
 export type Slot = (typeof SLOTS)[number];
-export const MAX_EXTRA = 3;
-/** 原始照片在对应形象生成完成后保留天数（D47）。 */
-export const PHOTO_RETENTION_DAYS = 30;
+/** 现在接受上传的位置：只收生成会用到的三张全身照。面部特写与补充照片不参与生成，不再收集（旧照片仍可查看与删除）。 */
+export const UPLOAD_SLOTS = ["front", "side", "back"] as const;
 /** 一键删除时写入 error 的标记；带此标记的作业不再计入同意状态。 */
 const DELETED_MARK = "DELETED_BY_USER|用户已删除全部照片与形象";
 
@@ -36,6 +53,8 @@ export type PhotoView = {
   bytes: number | null;
   hints: string[];
   createdAt: string;
+  /** 到期删除时间（生成成功后写入），未生成过为 null */
+  expiresAt: string | null;
 };
 
 export type JobView = {
@@ -44,22 +63,33 @@ export type JobView = {
   provider: string;
   isMock: boolean;
   glbUrl: string | null;
+  /** 生成成功但形象已被用户删除（照片保留） */
+  resultDeleted: boolean;
   fidelityNote: string | null;
   badges: string[];
   error: { code: string; message: string } | null;
+  /** 第三方副本删除状态；未使用第三方服务为 null */
+  remotePurge: Exclude<RemotePurge, "skipped"> | null;
   elapsedSeconds: number;
   createdAt: string;
   updatedAt: string;
 };
 
+export type ProviderView = { id: ProviderId; isMock: boolean; name: string; processor: string };
+
 export type AvatarState = {
-  provider: { id: string; isMock: boolean; processor: string; consentVersion: string };
-  consent: { version: string; at: string; current: boolean } | null;
+  /** 同意卡：offerVersion 用来确认用户看到的卡片没有过期；thirdParty 为 null 时不显示第二项。 */
+  offer: { version: string; thirdParty: ProviderView | null };
+  /** 按用户同意实际使用的服务 */
+  provider: ProviderView;
+  consent: { version: string; at: string; current: boolean; thirdParty: ProviderId | null } | null;
   photos: PhotoView[];
   job: JobView | null;
   canGenerate: boolean;
   retentionDays: number;
 };
+
+export type RemoteSummary = { sent: number; failed: number; pending: number };
 
 export class AvatarError extends Error {
   constructor(
@@ -85,6 +115,13 @@ function parseError(e: string | null): JobView["error"] {
 type JobRow = typeof schema.avatarJob.$inferSelect;
 type PhotoRow = typeof schema.avatarPhoto.$inferSelect;
 
+const view = (p: { id: ProviderId; isMock: boolean; name: string; processor: string }): ProviderView => ({
+  id: p.id,
+  isMock: p.isMock,
+  name: p.name,
+  processor: p.processor,
+});
+
 function toJobView(j: JobRow): JobView {
   const info = providerInfo(j.provider);
   const isMock = info?.isMock ?? true;
@@ -95,9 +132,11 @@ function toJobView(j: JobRow): JobView {
     provider: j.provider,
     isMock,
     glbUrl: j.status === "succeeded" && j.resultGlbKey ? fileUrl(j.resultGlbKey) : null,
+    resultDeleted: j.status === "succeeded" && !j.resultGlbKey,
     fidelityNote: j.fidelityNote,
     badges: badgesFor(isMock),
     error: j.status === "failed" ? parseError(j.error) : null,
+    remotePurge: isMock ? null : remoteState(j.providerStatusUrl),
     elapsedSeconds: Math.max(0, Math.round(((terminal ? j.updatedAt.getTime() : Date.now()) - j.createdAt.getTime()) / 1000)),
     createdAt: j.createdAt.toISOString(),
     updatedAt: j.updatedAt.toISOString(),
@@ -115,6 +154,7 @@ function toPhotoView(p: PhotoRow): PhotoView {
     bytes: p.bytes,
     hints: (Object.keys(QUALITY_HINTS) as (keyof QualityFlags)[]).filter((k) => flags[k]).map((k) => QUALITY_HINTS[k]),
     createdAt: p.createdAt.toISOString(),
+    expiresAt: p.expiresAt ? p.expiresAt.toISOString() : null,
   };
 }
 
@@ -137,64 +177,54 @@ async function latestJobs(userId: string, limit = 10) {
     .limit(limit);
 }
 
-function consentOf(jobs: JobRow[], info: ProviderInfo): AvatarState["consent"] {
+function consentOf(jobs: JobRow[]): AvatarState["consent"] {
   const j = jobs.find((x) => x.consentVersion && x.consentAt);
   if (!j || !j.consentVersion || !j.consentAt) return null;
-  return { version: j.consentVersion, at: j.consentAt.toISOString(), current: j.consentVersion === info.consentVersion };
+  const parsed = parseConsentVersion(j.consentVersion);
+  return { version: j.consentVersion, at: j.consentAt.toISOString(), current: !!parsed, thirdParty: parsed?.thirdParty ?? null };
 }
 
-// 必填视角随服务而定（真实服务按位置区分视角，见 providers.ts）。
-function hasRequiredPhotos(photos: { slot: string }[], providerId: string) {
-  return hasRequiredSlots(providerId, photos);
-}
-
-// D47：原始照片在对应形象生成完成 30 天后删除。比赛版在读取状态时顺带清理（惰性）。
-async function purgeExpiredPhotos(userId: string) {
-  const cutoff = new Date(Date.now() - PHOTO_RETENTION_DAYS * 86400_000);
-  const old = await db
-    .select({ ids: schema.avatarJob.inputPhotoIds })
-    .from(schema.avatarJob)
-    .where(and(eq(schema.avatarJob.userId, userId), eq(schema.avatarJob.status, "succeeded"), lt(schema.avatarJob.updatedAt, cutoff)));
-  const ids = [...new Set(old.flatMap((r) => r.ids ?? []))];
-  if (!ids.length) return;
-  const rows = await db
-    .select()
-    .from(schema.avatarPhoto)
-    .where(and(eq(schema.avatarPhoto.userId, userId), isNull(schema.avatarPhoto.deletedAt), inArray(schema.avatarPhoto.id, ids)));
-  if (!rows.length) return;
-  await getStorage().remove(rows.map((r) => r.storageKey));
-  await db
-    .update(schema.avatarPhoto)
-    .set({ deletedAt: new Date() })
-    .where(and(eq(schema.avatarPhoto.userId, userId), inArray(schema.avatarPhoto.id, rows.map((r) => r.id))));
+function offer(): AvatarState["offer"] {
+  const tp = thirdPartyInfo();
+  return { version: offerVersion(), thirdParty: tp ? view(tp) : null };
 }
 
 export async function getAvatarState(userId: string): Promise<AvatarState> {
-  await purgeExpiredPhotos(userId);
-  const info = activeProviderInfo();
+  // D47：到期照片在打开页面时惰性清理；另有 npm run avatar:purge 供定时任务调用。
+  await purgeExpiredPhotos({ userId });
   const [photos, jobs] = await Promise.all([livePhotos(userId), latestJobs(userId)]);
-  const consent = consentOf(jobs, info);
+  const consent = consentOf(jobs);
+  const provider = providerForConsent(consent?.current ? consent.thirdParty : null);
   const job = jobs.find((j) => j.status !== "draft");
   return {
-    provider: { id: info.id, isMock: info.isMock, processor: info.processor, consentVersion: info.consentVersion },
+    offer: offer(),
+    provider: view(provider),
     consent,
     photos: photos.map(toPhotoView),
     job: job ? toJobView(job) : null,
-    canGenerate: !!consent?.current && hasRequiredPhotos(photos, info.id),
+    canGenerate: !!consent?.current && hasRequiredSlots(provider.id, photos),
     retentionDays: PHOTO_RETENTION_DAYS,
   };
 }
 
 async function requireConsent(userId: string) {
-  const info = activeProviderInfo();
   const jobs = await latestJobs(userId);
-  const consent = consentOf(jobs, info);
+  const consent = consentOf(jobs);
   if (!consent?.current) throw new AvatarError(403, "请先阅读并勾选同意，再上传照片");
-  return { info, jobs, consent };
+  return { jobs, consent, provider: providerForConsent(consent.thirdParty) };
 }
 
-export async function recordConsent(userId: string) {
-  const info = activeProviderInfo();
+/**
+ * 记录同意。store（保存照片）必选；thirdParty（发送给第三方服务）只有在配置了真实服务时才可勾选。
+ * offerVersion 必须与当前同意卡一致，防止用户看到的是旧的“谁处理”说明。
+ */
+export async function recordConsent(userId: string, input: { store: boolean; thirdParty: boolean; offerVersion: unknown }) {
+  if (!input.store) throw new AvatarError(400, "需要勾选同意保存照片");
+  if (input.offerVersion !== offerVersion()) throw new AvatarError(409, "处理方已变更，请刷新页面重新阅读说明");
+  const tp = thirdPartyInfo();
+  if (input.thirdParty && !tp) throw new AvatarError(409, "第三方生成服务未启用，请刷新页面");
+  const version = consentVersionFor(input.thirdParty && tp ? tp.id : null);
+  const provider = providerForConsent(input.thirdParty && tp ? tp.id : null);
   const now = new Date();
   const [draft] = await db
     .select()
@@ -205,15 +235,15 @@ export async function recordConsent(userId: string) {
   if (draft) {
     await db
       .update(schema.avatarJob)
-      .set({ consentVersion: info.consentVersion, consentAt: now, provider: info.id, updatedAt: now })
+      .set({ consentVersion: version, consentAt: now, provider: provider.id, createdAt: now, updatedAt: now })
       .where(eq(schema.avatarJob.id, draft.id));
   } else {
     await db.insert(schema.avatarJob).values({
       id: crypto.randomUUID(),
       userId,
       status: "draft",
-      provider: info.id,
-      consentVersion: info.consentVersion,
+      provider: provider.id,
+      consentVersion: version,
       consentAt: now,
       createdAt: now,
       updatedAt: now,
@@ -224,12 +254,19 @@ export async function recordConsent(userId: string) {
 
 export async function addPhoto(userId: string, slot: string, file: File) {
   if (!(SLOTS as readonly string[]).includes(slot)) throw new AvatarError(400, "照片位置不对");
+  if (!(UPLOAD_SLOTS as readonly string[]).includes(slot)) {
+    throw new AvatarError(400, "面部特写与补充照片不参与生成，已不再收集");
+  }
   if (file.size > MAX_PHOTO_BYTES) throw new AvatarError(413, "单张照片不能超过 8MB");
   if (file.size === 0) throw new AvatarError(400, "照片是空文件");
   await requireConsent(userId);
 
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  if (bytes.byteLength > MAX_PHOTO_BYTES) throw new AvatarError(413, "单张照片不能超过 8MB");
+  const raw = new Uint8Array(await file.arrayBuffer());
+  if (raw.byteLength > MAX_PHOTO_BYTES) throw new AvatarError(413, "单张照片不能超过 8MB");
+  // 服务端再剥一次元数据（EXIF 含 GPS、XMP 等）：浏览器压缩已去掉，但不能依赖客户端。
+  const stripped = stripMetadata(raw);
+  if (!stripped) throw new AvatarError(415, "只支持 JPG、PNG、WebP 图片");
+  const bytes = stripped.bytes;
   const info = sniffImage(bytes);
   if (!info) throw new AvatarError(415, "只支持 JPG、PNG、WebP 图片");
   if (info.width < 64 || info.height < 64 || info.width > 10000 || info.height > 10000) {
@@ -237,10 +274,6 @@ export async function addPhoto(userId: string, slot: string, file: File) {
   }
 
   const live = await livePhotos(userId);
-  if (slot === "extra" && live.filter((p) => p.slot === "extra").length >= MAX_EXTRA) {
-    throw new AvatarError(400, `补充照片最多 ${MAX_EXTRA} 张`);
-  }
-
   const storage = getStorage();
   const id = crypto.randomUUID();
   const key = photoKey(userId, id, info.ext);
@@ -261,16 +294,14 @@ export async function addPhoto(userId: string, slot: string, file: File) {
     await storage.remove([key]).catch(() => {});
     throw e;
   }
-  // 正面/侧面/背面/面部每个位置只保留一张：替换掉旧照片并删除旧文件。
-  if (slot !== "extra") {
-    const old = live.filter((p) => p.slot === slot);
-    if (old.length) {
-      await storage.remove(old.map((p) => p.storageKey));
-      await db
-        .update(schema.avatarPhoto)
-        .set({ deletedAt: new Date() })
-        .where(and(eq(schema.avatarPhoto.userId, userId), inArray(schema.avatarPhoto.id, old.map((p) => p.id))));
-    }
+  // 每个位置只保留一张：替换掉旧照片并删除旧文件。
+  const old = live.filter((p) => p.slot === slot);
+  if (old.length) {
+    await storage.remove(old.map((p) => p.storageKey));
+    await db
+      .update(schema.avatarPhoto)
+      .set({ deletedAt: new Date() })
+      .where(and(eq(schema.avatarPhoto.userId, userId), inArray(schema.avatarPhoto.id, old.map((p) => p.id))));
   }
   return getAvatarState(userId);
 }
@@ -288,20 +319,22 @@ export async function deletePhoto(userId: string, id: string) {
 }
 
 export async function createJob(userId: string): Promise<JobView> {
-  const { info, jobs, consent } = await requireConsent(userId);
+  const { jobs, consent, provider } = await requireConsent(userId);
   const active = jobs.find((j) => j.status === "queued" || j.status === "processing");
   if (active) throw new AvatarError(409, "已有一个正在生成的任务");
-  const photos = await livePhotos(userId);
-  if (!hasRequiredPhotos(photos, info.id)) throw new AvatarError(400, requiredSlotsMessage(info.id));
+  const photos = (await livePhotos(userId)).filter((p) => (UPLOAD_SLOTS as readonly string[]).includes(p.slot));
+  if (!hasRequiredSlots(provider.id, photos)) throw new AvatarError(400, requiredSlotsMessage(provider.id));
 
   const now = new Date();
   const values = {
     status: "queued" as const,
-    provider: info.id,
+    provider: provider.id,
     inputPhotoIds: photos.map((p) => p.id),
     consentVersion: consent.version,
     consentAt: new Date(consent.at),
     error: null,
+    providerTaskId: null,
+    providerStatusUrl: null,
     updatedAt: now,
   };
   const draft = jobs.find((j) => j.status === "draft");
@@ -342,6 +375,24 @@ async function getOwnJob(userId: string, jobId: string) {
   return j ?? null;
 }
 
+function handleOf(j: JobRow): ProviderHandle | null {
+  return j.providerTaskId && isLiveStatusUrl(j.providerStatusUrl) ? { taskId: j.providerTaskId, statusUrl: j.providerStatusUrl } : null;
+}
+
+/** 新形象生成成功后，清理本人其他作业留下的旧 GLB（照片不动）。 */
+async function removeOlderResults(userId: string, keepJobId: string) {
+  const older = await db
+    .select({ id: schema.avatarJob.id, key: schema.avatarJob.resultGlbKey })
+    .from(schema.avatarJob)
+    .where(and(eq(schema.avatarJob.userId, userId), ne(schema.avatarJob.id, keepJobId), isNotNull(schema.avatarJob.resultGlbKey)));
+  if (!older.length) return;
+  await getStorage().remove(older.map((o) => o.key!));
+  await db
+    .update(schema.avatarJob)
+    .set({ resultGlbKey: null, resultPreviewKey: null })
+    .where(inArray(schema.avatarJob.id, older.map((o) => o.id)));
+}
+
 /** 读取作业并推进一步。返回 null 表示不存在或不属于本人。 */
 export async function tickJob(userId: string, jobId: string): Promise<JobView | null> {
   const job = await getOwnJob(userId, jobId);
@@ -372,7 +423,14 @@ export async function tickJob(userId: string, jobId: string): Promise<JobView | 
                   ),
                 )
             : [];
-          await provider.submit(won.id, photos.map((p) => ({ slot: p.slot, storageKey: p.storageKey, mime: p.mime })));
+          const handle = await provider.submit(won.id, photos.map((p) => ({ slot: p.slot, storageKey: p.storageKey, mime: p.mime })));
+          if (handle) {
+            // 持久化外部任务句柄；不改 updated_at（它是超时计时起点）。
+            await db
+              .update(schema.avatarJob)
+              .set({ providerTaskId: handle.taskId, providerStatusUrl: handle.statusUrl })
+              .where(eq(schema.avatarJob.id, won.id));
+          }
         } catch (e) {
           const pe = e instanceof ProviderError ? e : new ProviderError("PROVIDER_FAILED", "提交生成任务失败");
           await failJob(job.id, pe.code, pe.message);
@@ -387,22 +445,32 @@ export async function tickJob(userId: string, jobId: string): Promise<JobView | 
         await failJob(job.id, pe.code ?? "PROVIDER_FAILED", pe.message);
         return toJobView((await getOwnJob(userId, jobId))!);
       }
-      const r = await provider.poll(job.id, job.updatedAt).catch(
+      const r = await provider.poll(job.id, handleOf(job), job.updatedAt).catch(
         () => ({ state: "failed", code: "PROVIDER_FAILED", message: "查询生成进度失败" }) as const,
       );
       if (r.state === "failed") {
         await failJob(job.id, r.code, r.message);
+        await purgeRemoteForJob(job);
       } else if (r.state === "succeeded") {
         const key = avatarKey(userId, job.id);
         const storage = getStorage();
         await storage.put(key, r.glb, "model/gltf-binary");
+        const now = new Date();
         const [done] = await db
           .update(schema.avatarJob)
-          .set({ status: "succeeded", resultGlbKey: key, fidelityNote: provider.info.fidelityNote, error: null, updatedAt: new Date() })
+          .set({ status: "succeeded", resultGlbKey: key, fidelityNote: provider.info.fidelityNote, error: null, updatedAt: now })
           .where(and(eq(schema.avatarJob.id, job.id), eq(schema.avatarJob.status, "processing")))
           .returning();
-        // 期间被取消或删除：丢弃结果文件。
-        if (!done) await storage.remove([key]).catch(() => {});
+        if (done) {
+          // D47：原始照片自生成成功起保留 30 天。
+          await setPhotoExpiry(userId, done.inputPhotoIds, now);
+          await removeOlderResults(userId, done.id);
+        } else {
+          // 期间被取消或删除：丢弃结果文件。
+          await storage.remove([key]).catch(() => {});
+        }
+        // GLB 已转存到本站：请求第三方删除该任务的 payload 与输出（mock 不访问网络）。
+        await purgeRemoteForJob(job);
       }
     }
   } finally {
@@ -412,9 +480,9 @@ export async function tickJob(userId: string, jobId: string): Promise<JobView | 
   return fresh ? toJobView(fresh) : null;
 }
 
-async function safeCancel(providerId: string, jobId: string) {
+async function safeCancel(j: JobRow) {
   try {
-    await getProvider(providerId).cancel(jobId);
+    await getProvider(j.provider).cancel(j.id, handleOf(j));
   } catch {
     // 服务未配置或取消请求失败：本地状态已改为 canceled，忽略。
   }
@@ -428,18 +496,31 @@ export async function cancelJob(userId: string, jobId: string): Promise<JobView 
       .update(schema.avatarJob)
       .set({ status: "canceled", updatedAt: new Date() })
       .where(and(eq(schema.avatarJob.id, job.id), inArray(schema.avatarJob.status, ["queued", "processing"])));
-    await safeCancel(job.provider, job.id);
+    await safeCancel(job);
+    // 任务可能尚未在第三方结束：删除请求返回 pending，由 avatar:purge 重试。
+    await purgeRemoteForJob(job);
   }
   const fresh = await getOwnJob(userId, jobId);
   return fresh ? toJobView(fresh) : null;
 }
 
-/** 一键删除：全部照片与生成结果（含存储文件），作业标记 canceled，同意随之失效。 */
-export async function deleteAll(userId: string) {
-  const active = await db
-    .select({ id: schema.avatarJob.id, provider: schema.avatarJob.provider })
-    .from(schema.avatarJob)
-    .where(and(eq(schema.avatarJob.userId, userId), inArray(schema.avatarJob.status, ["queued", "processing"])));
+/** 删除单个已生成的形象（GLB 文件），保留照片与同意；同时再次请求第三方删除副本。 */
+export async function deleteResult(userId: string, jobId: string): Promise<{ job: JobView; remotePurge: RemotePurge }> {
+  const job = await getOwnJob(userId, jobId);
+  if (!job || job.status !== "succeeded") throw new AvatarError(404, "形象不存在");
+  if (job.resultGlbKey) await getStorage().remove([job.resultGlbKey]);
+  await db
+    .update(schema.avatarJob)
+    .set({ resultGlbKey: null, resultPreviewKey: null, updatedAt: new Date() })
+    .where(eq(schema.avatarJob.id, job.id));
+  const remotePurge = await purgeRemoteForJob(job);
+  return { job: toJobView((await getOwnJob(userId, jobId))!), remotePurge };
+}
+
+/** 一键删除：全部照片与生成结果（含存储文件），作业标记 canceled，同意随之失效；并请求第三方删除副本。 */
+export async function deleteAll(userId: string): Promise<AvatarState & { remotePurge: RemoteSummary }> {
+  const jobs = await db.select().from(schema.avatarJob).where(eq(schema.avatarJob.userId, userId));
+  const active = jobs.filter((j) => j.status === "queued" || j.status === "processing");
   const now = new Date();
   await db
     .update(schema.avatarJob)
@@ -449,7 +530,12 @@ export async function deleteAll(userId: string) {
     .update(schema.avatarPhoto)
     .set({ deletedAt: now })
     .where(and(eq(schema.avatarPhoto.userId, userId), isNull(schema.avatarPhoto.deletedAt)));
-  await Promise.all(active.map((j) => safeCancel(j.provider, j.id)));
+  await Promise.all(active.map(safeCancel));
   await getStorage().removeUserPrefix(userId);
-  return getAvatarState(userId);
+  const summary: RemoteSummary = { sent: 0, failed: 0, pending: 0 };
+  for (const j of jobs) {
+    const s = await purgeRemoteForJob(j);
+    if (s !== "skipped") summary[s]++;
+  }
+  return { ...(await getAvatarState(userId)), remotePurge: summary };
 }

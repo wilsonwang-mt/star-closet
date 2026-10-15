@@ -253,10 +253,12 @@ body { overflow-x: hidden; }
 }
 .cta-bar .sc-cta:first-child { flex: 1; }
 .link-btn { background: none; border: none; padding: 0; color: var(--sc-ink-2); cursor: pointer; font-size: 12px; letter-spacing: .08em; text-decoration: underline; text-underline-offset: 3px; }
+/* 小按钮可点高度 ≥36px（视觉不变，靠最小高度与居中扩大点击区） */
+.link-btn { display: inline-flex; align-items: center; min-height: 36px; }
 
 /* ---------- 表单 ---------- */
 /* 输入控件显式 16px：label 是 12px，若继承它，iOS Safari 聚焦时会自动放大页面。 */
-textarea, input[type="text"], input[type="email"], input[type="password"], select {
+textarea, input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="search"], input[type="tel"], input[type="url"], select {
   font-size: 16px;
   width: 100%; padding: 12px 14px; border-radius: 14px; border: 0;
   background: color-mix(in srgb, var(--sc-bg) 35%, transparent);
@@ -274,10 +276,12 @@ select.swap { margin-top: 6px; max-width: 240px; padding: 5px 10px; font-size: 1
 }
 .chips { display: flex; gap: 8px; flex-wrap: wrap; }
 .chip {
-  border: 0; border-radius: var(--sc-radius-pill); padding: 7px 12px; font-size: 12px; cursor: pointer;
+  border: 0; border-radius: var(--sc-radius-pill); padding: 7px 12px; font-size: 12px; cursor: pointer; min-height: 36px;
   background: color-mix(in srgb, var(--sc-bg) 30%, transparent); box-shadow: inset 0 0 0 .5px var(--sc-rule);
 }
 input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--sc-champ); }
+/* 勾选行：整行可点，高度 ≥36px */
+label.check-row { min-height: 36px; align-items: center; cursor: pointer; }
 
 details > summary { list-style: none; }
 details > summary::-webkit-details-marker { display: none; }

@@ -20,3 +20,33 @@ export async function withUser(fn: (userId: string) => Promise<Response>): Promi
     return json({ error: "服务暂时不可用，请稍后再试" }, 500);
   }
 }
+
+/**
+ * 在解析之前限制请求体大小：先看 Content-Length，再边读边数（覆盖 chunked 与谎报长度的请求），
+ * 超过 limit 立即中止读取并抛 413，不会把超大请求体读进内存。
+ */
+export async function readBodyLimited(req: Request, limit: number, message: string): Promise<Uint8Array> {
+  const declared = req.headers.get("content-length");
+  if (declared && Number(declared) > limit) throw new AvatarError(413, message);
+  if (!req.body) return new Uint8Array(0);
+  const reader = req.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > limit) {
+      await reader.cancel().catch(() => {});
+      throw new AvatarError(413, message);
+    }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(total);
+  let o = 0;
+  for (const c of chunks) {
+    out.set(c, o);
+    o += c.byteLength;
+  }
+  return out;
+}

@@ -26,6 +26,10 @@ export type AvatarViewerProps = {
   height?: number | string;
   /** 无障碍描述，默认“可旋转的 3D 形象” */
   label?: string;
+  /** 显示“复位视角”按钮（转动或缩放后出现在右下角），默认 true */
+  showReset?: boolean;
+  /** 用户点了“复位视角”后回调（可选） */
+  onReset?: () => void;
 };
 
 type Mode = "pending" | "webgl" | "reduced" | "no-webgl";
@@ -42,8 +46,18 @@ function hasWebGL(): boolean {
   }
 }
 
-export default function AvatarViewer({ src, badges, poster, height = 420, label = "可旋转的 3D 形象" }: AvatarViewerProps) {
+export default function AvatarViewer({
+  src,
+  badges,
+  poster,
+  height = 420,
+  label = "可旋转的 3D 形象",
+  showReset = true,
+  onReset,
+}: AvatarViewerProps) {
   const [mode, setMode] = useState<Mode>("pending");
+  const [resetSignal, setResetSignal] = useState(0);
+  const [moved, setMoved] = useState(false);
   // 减弱动态时用户仍可主动打开 3D，此时不做下落和自转
   const [staticOptIn, setStaticOptIn] = useState(false);
 
@@ -62,9 +76,34 @@ export default function AvatarViewer({ src, badges, poster, height = 420, label 
   return (
     <div className={styles.root} style={style} role="group" aria-label={label}>
       {show3D ? (
-        <Viewer key={src} src={src} animate={mode === "webgl"} />
+        <Viewer key={src} src={src} animate={mode === "webgl"} resetSignal={resetSignal} onMoved={setMoved} />
       ) : (
         <Fallback mode={mode} poster={poster} onOpen3D={mode === "reduced" ? () => setStaticOptIn(true) : undefined} />
+      )}
+      {show3D && showReset && (
+        <button
+          type="button"
+          className={styles.reset}
+          data-visible={moved || undefined}
+          aria-hidden={!moved}
+          tabIndex={moved ? 0 : -1}
+          onClick={() => {
+            setResetSignal((n) => n + 1);
+            onReset?.();
+          }}
+        >
+          <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+            <path
+              d="M4.5 10a5.5 5.5 0 1 0 1.7-3.98M4.5 3.5v3h3"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          复位视角
+        </button>
       )}
       {badges.length > 0 && (
         <div className={styles.badges}>

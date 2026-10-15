@@ -20,20 +20,25 @@
 
 ## 3D 形象
 
-入口 `/profile/avatar`（登录后，档案页底部也有入口）。流程：同意卡 → 上传照片 → 生成 → 查看 → 删除。存储与第三方处理规则见 AGENTS.md「2026-10-16 个人影像存储决定」（D47）。
+入口 `/profile/avatar`（登录后，档案页底部也有入口）。流程：同意卡 → 上传三张全身照 → 生成 → 查看 → 删除。存储与第三方处理规则见 AGENTS.md「2026-10-16 个人影像存储决定」（D47）。
 
-- 同意卡：用途、谁处理、保存期、可删除、不用于训练。勾选后才能上传；同意记录在 `avatar_job.consent_version / consent_at`（版本带处理方，如 `avatar-consent-v1:mock`，换处理方需重新同意）。
-- 照片：正面 / 侧面 / 背面全身 + 面部特写 + 最多 3 张补充。浏览器端压缩到最长边 1600px 并重新编码为 JPEG（去掉 EXIF）；服务端按文件头识别 JPG/PNG/WebP、限制 8MB、记录宽高，质量提示（分辨率过低、全身照横拍、文件过小）写入 `quality_flags`。
-- 生成：至少需要正面，以及侧面或背面一张。`avatar_job` 状态 draft → queued → processing → succeeded / failed，可取消（canceled）、可重试。前端每 2 秒轮询 `GET /api/avatar/jobs/[id]`，每次查询推进一步。
+- 同意卡分两项：(a) 同意上传并存储本人照片用于生成 3D 形象（必选）；(b) 同意把照片发送给 fal.ai（Tripo 3D）处理——只在配置了真实服务 key 时出现，可选，不勾选只能生成示意模型，之后可在“修改授权”里改。`avatar_job.consent_version` 同时记录两项：`avatar-consent-v2:store` 或 `avatar-consent-v2:store+tripo_fal`（旧版 v1 同意失效，需重新确认）。提交时带上卡片版本（`offerVersion`），处理方变了会要求刷新重读。
+- 照片：只收正面 / 侧面 / 背面三张全身照。面部特写与补充照片不参与生成，已不再收集（以前上传的仍可查看、删除）。浏览器端压缩到最长边 1600px 并重新编码为 JPEG；服务端在解析前限制请求体（8MB + 表单开销，按实际读取字节计，覆盖 chunked 与谎报长度），再剥离元数据后存储（`lib/avatar/strip.ts`：JPEG 去 EXIF/GPS/XMP/IPTC/注释，PNG 只留图像与色彩块，WebP 去 EXIF/XMP；EXIF 里非默认的方向会写回一个只含方向的最小 EXIF，其余字段不保留）。按文件头识别 JPG/PNG/WebP，质量提示写入 `quality_flags`。
+- 生成：示意模式需要正面 + 侧面或背面；真实服务需要正面 + 侧面（背面可选）。`avatar_job` 状态 draft → queued → processing → succeeded / failed，可取消、可重试。前端每 2 秒轮询 `GET /api/avatar/jobs/[id]`，每次查询推进一步。外部任务编号与状态地址存在 `provider_task_id / provider_status_url`，服务重启后可继续轮询。重新生成成功后删除旧的 GLB。
 - 生成服务（`lib/avatar/providers.ts`）：
-  - `mock`（默认）：不访问外部网络，约 3 秒后返回程序生成的通用人台（`public/models/mock-mannequin.glb`，来源见 `public/models/LICENSE.md`），徽章“非本人示意模型”。
-  - `tripo_fal`：`AVATAR3D_PROVIDER=tripo_fal` 且设置 `FAL_KEY` 才启用，调用 fal.ai 托管的 Tripo H3.1 Multiview-to-3D，只发送正面、侧面、背面三张；徽章“AI 生成 3D 形象 · 还原度未验证”。缺 key 时回落 mock。未实测（没有 key）。
+  - `mock`（默认）：不访问外部网络，约 3 秒后返回程序生成的通用人台，徽章“非本人示意模型”。
+  - `tripo_fal`：`AVATAR3D_PROVIDER=tripo_fal` + `FAL_KEY` 且用户勾选了 (b) 才使用，调用 fal.ai 托管的 Tripo H3.1 Multiview-to-3D，只发送三张全身照，请求头带 `X-Fal-Store-IO: 0`；徽章“AI 生成 3D 形象 · 还原度未验证”。未实测（没有 key）。
   - 两种模式都显示“合身：未验证”。Meshy 备选适配器未实现。
+- 第三方副本删除：真实服务的任务结束并把 GLB 转存到本站后，调用 fal Platform API `DELETE https://api.fal.ai/v1/models/requests/<request_id>/payloads` 删除该请求的 payload 与输出文件；删除单个形象、一键删除、取消时也会请求。结果写回 `provider_status_url`（`remote-purge:sent|failed|pending:<时间>`），界面显示“第三方副本删除请求已发送 / 失败”；失败和“任务未结束”由 `npm run avatar:purge` 重试。没有 key 时不发任何外部请求。注意：fal 文档说明请求输入里的 CDN 文件不会被删除，本站不把照片上传到 fal 存储（Supabase 用 15 分钟签名 URL，本地开发用内联 data URI）；fal 侧是否仍有不可删副本未核实。该接口要求 key 具备相应权限，未实测。
+- 30 天删除：生成成功时给本次用到的照片写 `avatar_photo.expires_at = 成功时间 + 30 天`（已有期限不延后）。执行方式两种：
+  - `npm run avatar:purge`（`scripts/purge-avatars.ts`）：清理全部用户的到期照片（删存储文件并软删除记录），并重试第三方副本删除；只输出计数。需要由运营方用定时任务每天调用，例如 `0 4 * * * cd /path/to/app && npm run avatar:purge`。比赛版本机演示**没有**配置定时任务。本地 PGlite 只允许一个进程打开，运行前先停掉开发服务器。
+  - 惰性清理：打开 `/profile/avatar` 时清理本人的到期照片。旧数据没有 `expires_at` 的，按用过它的成功作业的完成时间补写。
 - 存储（`lib/storage/`）：设置 `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` 时用 Supabase Storage 私有桶 `avatar-private`（建桶见 `supabase/storage.sql`，需发起用户手动执行），否则写本地 `.data/uploads/<userId>/`。浏览器只能经 `GET /api/avatar/files/<key>` 读取本人文件，他人请求一律 404。
-- 删除：单张照片可删；“一键删除”清空该用户存储前缀下全部文件，照片软删除、作业标记 canceled，之后需重新同意。原始照片在形象生成 30 天后惰性清理。
-- 查看器：`components/AvatarViewer.tsx`（R3F，可拖动旋转；props `{ src, badges, poster?, height?, label? }`，说明见 `components/AvatarViewer.README.md`）。
+- 删除：单张照片可删；单个形象可删（保留照片与同意）；“一键删除”清空该用户存储前缀下全部文件，照片软删除、作业标记 canceled，之后需重新同意。
+- 查看器：`components/AvatarViewer.tsx`（R3F，可拖动旋转；props `{ src, badges, poster?, height?, label?, showReset?, onReset? }`，说明见 `components/AvatarViewer.README.md`）。转动或缩放后右下角浮出“复位视角”，弹簧动画回到正面，可随时被拖动打断；减弱动态时直接跳回。`showReset` 默认 true，传 false 可隐藏。
+- 测试：`npm test`（node:test + tsx）覆盖元数据剥离与到期清理，测试图全部由代码生成。
 
-API：`GET|DELETE /api/avatar`、`POST /api/avatar/consent`、`POST /api/avatar/photos`（multipart：slot、file）、`DELETE /api/avatar/photos/[id]`、`POST /api/avatar/jobs`、`GET|DELETE /api/avatar/jobs/[id]`、`GET /api/avatar/files/[...key]`。
+API：`GET|DELETE /api/avatar`、`POST /api/avatar/consent`（`{ store, thirdParty, offerVersion }`）、`POST /api/avatar/photos`（multipart：slot、file）、`DELETE /api/avatar/photos/[id]`、`POST /api/avatar/jobs`、`GET|DELETE /api/avatar/jobs/[id]`、`DELETE /api/avatar/jobs/[id]/result`、`GET /api/avatar/files/[...key]`。
 
 ## 数据库
 

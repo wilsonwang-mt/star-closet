@@ -1,13 +1,18 @@
-import { json, withUser } from "@/lib/avatar/http";
+import { json, readBodyLimited, withUser } from "@/lib/avatar/http";
+import { MAX_PHOTO_BYTES } from "@/lib/avatar/image";
 import { addPhoto, AvatarError } from "@/lib/avatar/service";
 
-// 上传一张照片：multipart/form-data，字段 slot（front|side|back|face|extra）与 file。
-// 服务端按文件头识别类型（JPG/PNG/WebP），≤8MB，记录宽高与质量提示。
+// 上传一张照片：multipart/form-data，字段 slot（front|side|back）与 file。
+// 请求体在解析前限制为 8MB + 表单开销（含 chunked 上传）；服务端按文件头识别类型（JPG/PNG/WebP），
+// 剥离 EXIF（含 GPS）等元数据后再存储，记录宽高与质量提示。
+const BODY_LIMIT = MAX_PHOTO_BYTES + 64 * 1024;
+
 export async function POST(req: Request) {
   return withUser(async (userId) => {
-    const len = Number(req.headers.get("content-length") ?? 0);
-    if (len > 9 * 1024 * 1024) throw new AvatarError(413, "单张照片不能超过 8MB");
-    const form = await req.formData().catch(() => null);
+    const type = req.headers.get("content-type") ?? "";
+    if (!type.toLowerCase().startsWith("multipart/form-data")) throw new AvatarError(400, "请用表单上传照片");
+    const body = await readBodyLimited(req, BODY_LIMIT, "单张照片不能超过 8MB");
+    const form = await new Response(Buffer.from(body), { headers: { "content-type": type } }).formData().catch(() => null);
     if (!form) throw new AvatarError(400, "请用表单上传照片");
     const slot = form.get("slot");
     const file = form.get("file");
