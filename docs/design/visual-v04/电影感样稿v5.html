@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>电影感样稿 v5</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,400&family=Noto+Serif+SC:wght@300;400&family=Noto+Sans+SC:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root{--didone:"Bodoni Moda",serif;--serif:"Noto Serif SC",serif;--sans:"Noto Sans SC",-apple-system,"PingFang SC",sans-serif;--champ:#C9A96E}
+*{box-sizing:border-box;margin:0}
+body{min-height:100vh;font-family:var(--sans);display:flex;flex-direction:column;align-items:center;padding:36px 16px 64px;background:#0d0e11;color:#e9e3d8}
+.cap{color:#a39b8e;font-size:13px;letter-spacing:.08em;margin-bottom:28px;text-align:center;max-width:860px;line-height:1.8}
+.stage{display:flex;gap:44px;flex-wrap:wrap;justify-content:center;perspective:1800px}
+.phone{width:372px;height:790px;border-radius:54px;padding:10px;transition:transform .35s ease-out;background:linear-gradient(145deg,#4a4237,#1e1c19 40%,#6a5a40 60%,#2a2520);box-shadow:0 40px 90px rgba(0,0,0,.6)}
+.phone.light{background:linear-gradient(145deg,#fbf3e3,#dcc59a 40%,#f4e6c8 60%,#c7a874)}
+.screen{position:relative;width:100%;height:100%;border-radius:44px;overflow:hidden;isolation:isolate;background:#000}
+.shot{position:absolute;inset:-6%;background-size:cover;background-position:center;animation:dolly 22s ease-in-out infinite alternate}
+@keyframes dolly{0%{transform:scale(1.02) translate(0,0)}100%{transform:scale(1.14) translate(0,-2%)}}
+.intro{animation:intro 3s cubic-bezier(.22,.61,.2,1) both}
+@keyframes intro{from{filter:blur(6px) brightness(.5);transform:scale(1.08)}to{filter:none;transform:none}}
+.vignette{position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 40%,transparent 50%,rgba(0,0,0,.55));pointer-events:none}
+.light .vignette{background:radial-gradient(120% 80% at 50% 40%,transparent 55%,rgba(90,70,40,.25))}
+.fade-top{position:absolute;left:0;right:0;top:0;height:140px;background:linear-gradient(180deg,rgba(0,0,0,.55),transparent)}
+.fade-bot{position:absolute;left:0;right:0;bottom:0;height:330px;background:linear-gradient(0deg,rgba(8,8,10,.85),transparent)}
+.light .fade-top{background:linear-gradient(180deg,rgba(250,244,232,.6),transparent)}
+.light .fade-bot{background:linear-gradient(0deg,rgba(250,244,232,.92),transparent)}
+.beam{position:absolute;left:50%;top:-20px;width:260px;height:520px;transform:translateX(-50%);background:conic-gradient(from 165deg at 50% 0%,transparent 0deg,rgba(255,226,170,.22) 12deg,rgba(255,226,170,.22) 18deg,transparent 30deg);filter:blur(8px);mix-blend-mode:screen;animation:breathe 6s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.6}50%{opacity:1}}
+.dust{position:absolute;left:50%;top:0;width:220px;height:560px;transform:translateX(-50%);-webkit-mask:conic-gradient(from 162deg at 50% 0%,transparent 0deg,#000 14deg,#000 22deg,transparent 36deg);mask:conic-gradient(from 162deg at 50% 0%,transparent 0deg,#000 14deg,#000 22deg,transparent 36deg)}
+.dust i{position:absolute;border-radius:50%;background:radial-gradient(#fff8ea,rgba(255,230,190,.5) 50%,transparent 70%);animation:mote linear infinite}
+@keyframes mote{0%{transform:translate(0,0);opacity:0}15%,85%{opacity:1}100%{transform:translate(16px,-130px);opacity:0}}
+.grain{position:absolute;inset:-50%;pointer-events:none;opacity:.14;mix-blend-mode:overlay;animation:grain 1s steps(6) infinite;
+ background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+@keyframes grain{0%{transform:translate(0,0)}25%{transform:translate(-4%,3%)}50%{transform:translate(3%,-5%)}75%{transform:translate(-5%,-2%)}100%{transform:translate(0,0)}}
+.mast{position:absolute;left:0;right:0;top:24px;padding:0 26px;z-index:5;display:flex;justify-content:space-between;align-items:baseline;color:#f3ede2}
+.light .mast{color:#1F1C18}
+.mast .brand{font-family:var(--didone);font-size:15px;letter-spacing:.42em}
+.mast .issue{font-family:var(--didone);font-style:italic;font-size:11px;opacity:.8}
+.lg{position:absolute;border-radius:24px;overflow:hidden;background:rgba(255,246,230,.08);-webkit-backdrop-filter:blur(14px) saturate(1.3);backdrop-filter:blur(14px) saturate(1.3);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 0 0 .5px rgba(255,255,255,.12),0 18px 40px rgba(0,0,0,.35)}
+.light .lg{background:rgba(255,253,248,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 0 0 .5px rgba(255,255,255,.55),0 14px 34px rgba(110,80,35,.14)}
+.info{left:20px;right:20px;bottom:96px;padding:16px 20px;color:#f3ede2;z-index:5;animation:rise 1.2s cubic-bezier(.2,.7,.2,1) both 1.8s}
+.light .info{color:#1F1C18}
+.kicker{font-family:var(--didone);font-style:italic;font-size:11px;letter-spacing:.12em;opacity:.75}
+.row1{display:flex;justify-content:space-between;align-items:flex-end;margin-top:2px}
+h2{font-family:var(--serif);font-weight:400;font-size:28px;letter-spacing:.12em}
+.no{font-family:var(--didone);font-style:italic;font-size:36px;line-height:.9;background:linear-gradient(100deg,#b8924f,#f2dcaa 45%,#fff3d6 50%,#f2dcaa 55%,#b8924f);background-size:240% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 9s linear infinite}
+.light .no{background-image:linear-gradient(100deg,#6e5222,#9c7a3c 45%,#d8bb80 50%,#9c7a3c 55%,#6e5222)}
+@keyframes shine{to{background-position:-240% 0}}
+.meta{font-size:11px;letter-spacing:.12em;opacity:.75;margin-top:8px}
+@keyframes rise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.cta{position:absolute;left:20px;right:84px;bottom:24px;height:54px;border-radius:999px;display:flex;align-items:center;justify-content:center;z-index:5;
+ font-size:13px;letter-spacing:.22em;color:#1a150d;background:linear-gradient(180deg,#ecd3a0,#c9a96e);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 12px 26px rgba(0,0,0,.4);animation:rise 1s both 2.1s}
+.light .cta{color:#fbf4e6;background:#221d18;box-shadow:0 12px 26px rgba(40,28,14,.25)}
+.gift{position:absolute;right:20px;bottom:24px;width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:6;cursor:pointer;animation:rise 1s both 2.2s}
+.gift svg{width:22px;height:22px}
+.hearts{position:absolute;right:30px;bottom:84px;width:40px;height:300px;pointer-events:none;z-index:6}
+.hearts span{position:absolute;bottom:0;left:8px;font-size:18px;color:#f0c98a;animation:float-up 2.6s ease-out forwards;text-shadow:0 0 12px rgba(240,201,138,.7)}
+@keyframes float-up{0%{transform:translate(0,0) scale(.6);opacity:0}15%{opacity:1;transform:translate(-4px,-30px) scale(1.1)}100%{transform:translate(var(--dx),-280px) scale(.9);opacity:0}}
+.toast{position:absolute;left:20px;top:78px;z-index:6;padding:8px 14px;border-radius:999px;font-size:11px;color:#f3ede2;letter-spacing:.06em;opacity:0;transition:opacity .4s}
+.light .toast{color:#1F1C18}
+.badge{display:inline-block;font-size:10px;letter-spacing:.12em;padding:3px 9px;border-radius:999px;border:1px solid rgba(201,169,110,.8);color:#e8cf9c;margin-top:8px}
+.light .badge{color:#8a6a36}
+.legend{margin-top:34px;max-width:820px;color:#a39b8e;font-size:13px;line-height:1.9;text-align:center}
+</style>
+</head>
+<body>
+<p class="cap">电影感样稿 v5 · 场景为 Weave（Nano Banana Pro）生成的电影画面，界面浮在真实画面之上 · 点右下角礼物按钮看粉丝打赏动效 · 画面与人物均为 AI 生成示意，人物为虚构，非真实品牌或在售商品</p>
+<div class="stage">
+
+<div class="phone" data-tilt><div class="screen">
+  <div class="shot intro" style="background-image:url(keyframes/night-portrait.jpg)"></div>
+  <div class="beam"></div><div class="dust" data-dust></div>
+  <div class="vignette"></div><div class="fade-top"></div><div class="fade-bot"></div>
+  <div class="mast"><span class="brand">STAR CLOSET</span><span class="issue">N°01 — Night Edit</span></div>
+  <div class="lg toast" data-toast>你送出了一个拥抱 · curator_01 收到</div>
+  <div class="lg info">
+    <div class="kicker">The Look · 风格主题衣橱</div>
+    <div class="row1"><h2>周末咖啡馆</h2><span class="no">N°01</span></div>
+    <div class="meta">CURATOR 01 · 5 PIECES · ¥1,165</div>
+  </div>
+  <div class="cta">改成适合我的</div>
+  <div class="lg gift" data-gift aria-label="送礼物"><svg viewBox="0 0 24 24" fill="none" stroke="#e8cf9c" stroke-width="1.4"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></div>
+  <div class="hearts" data-hearts></div>
+  <div class="grain"></div>
+</div></div>
+
+<div class="phone light" data-tilt><div class="screen">
+  <div class="shot intro" style="background-image:url(keyframes/day-portrait.jpg);animation-delay:0s"></div>
+  <div class="vignette"></div><div class="fade-top"></div><div class="fade-bot"></div>
+  <div class="mast"><span class="brand">STAR CLOSET</span><span class="issue">N°01 — Morning Edit</span></div>
+  <div class="lg info">
+    <div class="kicker">The Look · 风格主题衣橱</div>
+    <div class="row1"><h2>周末咖啡馆</h2><span class="no">N°01</span></div>
+    <div class="meta">CURATOR 01 · 5 PIECES · ¥1,165</div>
+  </div>
+  <div class="cta">改成适合我的</div>
+  <div class="lg gift" data-gift aria-label="送礼物"><svg viewBox="0 0 24 24" fill="none" stroke="#8a6a36" stroke-width="1.4"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></div>
+  <div class="hearts" data-hearts></div>
+  <div class="grain" style="opacity:.08"></div>
+</div></div>
+
+<div class="phone" data-tilt><div class="screen">
+  <div class="shot intro" style="background-image:url(keyframes/life-cafe.jpg);background-position:center 30%"></div>
+  <div class="vignette"></div><div class="fade-top"></div><div class="fade-bot"></div>
+  <div class="mast"><span class="brand">STAR CLOSET</span><span class="issue">N°03 — In Your Life</span></div>
+  <div class="lg info">
+    <div class="kicker">My Fitting Room · 生活场景</div>
+    <div class="row1"><h2 style="font-size:24px">周五的咖啡馆</h2><span class="no" style="font-size:30px">¥786</span></div>
+    <div class="meta">开衫 · 亚麻阔腿裤 · 平底玛丽珍 · 帆布托特</div>
+    <span class="badge">AI 生成场景示意 · 合身未验证</span>
+  </div>
+  <div class="cta" style="right:20px">选择单品下单</div>
+  <div class="grain"></div>
+</div></div>
+
+</div>
+<p class="legend">和 v4 的区别：场景不再用 CSS 拼，而是一张统一打光的电影画面；画面缓慢推镜（22 秒一个来回），进场从虚焦暗场推到清晰；夜间版叠加射灯光束和光束里的微尘；界面只保留刊头、一张玻璃信息卡和一个按钮，其余交给画面。第三屏是“生活场景”：模特身上的开衫、亚麻阔腿裤、玛丽珍鞋和托特包都来自我们生成的商品图。正式版的场景动态会换成 Higgsfield 生成的视频。</p>
+<script>
+document.querySelectorAll('[data-dust]').forEach(d=>{for(let i=0;i<26;i++){const s=document.createElement('i');const z=1.5+Math.random()*2.5;s.style.width=s.style.height=z+'px';s.style.left=(25+Math.random()*50)+'%';s.style.top=(25+Math.random()*70)+'%';s.style.animationDuration=(6+Math.random()*7)+'s';s.style.animationDelay=(-Math.random()*10)+'s';d.appendChild(s)}});
+document.querySelectorAll('[data-gift]').forEach(g=>{const scr=g.closest('.screen');const box=scr.querySelector('[data-hearts]');const t=scr.querySelector('[data-toast]');
+ g.addEventListener('click',()=>{const icons=['♥','♥','✦','♥','❀'];for(let i=0;i<7;i++){setTimeout(()=>{const s=document.createElement('span');s.textContent=icons[i%icons.length];s.style.setProperty('--dx',(Math.random()*60-40)+'px');s.style.fontSize=(14+Math.random()*12)+'px';box.appendChild(s);setTimeout(()=>s.remove(),2700)},i*120)}
+ if(t){t.style.opacity=1;clearTimeout(t._h);t._h=setTimeout(()=>t.style.opacity=0,2200)}})});
+setTimeout(()=>document.querySelector('[data-gift]').click(),3200);
+const ph=[...document.querySelectorAll('[data-tilt]')];
+window.addEventListener('mousemove',e=>{const x=e.clientX/innerWidth-.5,y=e.clientY/innerHeight-.5;ph.forEach(p=>p.style.transform=`rotateY(${x*6}deg) rotateX(${-y*5}deg)`)});
+</script>
+</body>
+</html>
