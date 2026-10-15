@@ -17,6 +17,23 @@
 
 尚未接入：2D 试穿、可旋转 GLB、打赏、站内支付。场景视频（`public/scenes/*-web.mp4`）只加载并播放当前显示的那一段，减弱动态时只显示首帧。试衣间里的咖啡馆生活场景只是标注了“AI 生成场景示意 · 合身未验证”的示意图。
 
+## 3D 形象
+
+入口 `/profile/avatar`（登录后，档案页底部也有入口）。流程：同意卡 → 上传照片 → 生成 → 查看 → 删除。存储与第三方处理规则见 AGENTS.md「2026-10-16 个人影像存储决定」（D47）。
+
+- 同意卡：用途、谁处理、保存期、可删除、不用于训练。勾选后才能上传；同意记录在 `avatar_job.consent_version / consent_at`（版本带处理方，如 `avatar-consent-v1:mock`，换处理方需重新同意）。
+- 照片：正面 / 侧面 / 背面全身 + 面部特写 + 最多 3 张补充。浏览器端压缩到最长边 1600px 并重新编码为 JPEG（去掉 EXIF）；服务端按文件头识别 JPG/PNG/WebP、限制 8MB、记录宽高，质量提示（分辨率过低、全身照横拍、文件过小）写入 `quality_flags`。
+- 生成：至少需要正面，以及侧面或背面一张。`avatar_job` 状态 draft → queued → processing → succeeded / failed，可取消（canceled）、可重试。前端每 2 秒轮询 `GET /api/avatar/jobs/[id]`，每次查询推进一步。
+- 生成服务（`lib/avatar/providers.ts`）：
+  - `mock`（默认）：不访问外部网络，约 3 秒后返回程序生成的通用人台（`public/models/mock-mannequin.glb`，来源见 `public/models/LICENSE.md`），徽章“非本人示意模型”。
+  - `tripo_fal`：`AVATAR3D_PROVIDER=tripo_fal` 且设置 `FAL_KEY` 才启用，调用 fal.ai 托管的 Tripo H3.1 Multiview-to-3D，只发送正面、侧面、背面三张；徽章“AI 生成 3D 形象 · 还原度未验证”。缺 key 时回落 mock。未实测（没有 key）。
+  - 两种模式都显示“合身：未验证”。Meshy 备选适配器未实现。
+- 存储（`lib/storage/`）：设置 `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` 时用 Supabase Storage 私有桶 `avatar-private`（建桶见 `supabase/storage.sql`，需发起用户手动执行），否则写本地 `.data/uploads/<userId>/`。浏览器只能经 `GET /api/avatar/files/<key>` 读取本人文件，他人请求一律 404。
+- 删除：单张照片可删；“一键删除”清空该用户存储前缀下全部文件，照片软删除、作业标记 canceled，之后需重新同意。原始照片在形象生成 30 天后惰性清理。
+- 查看器：`components/AvatarViewer.tsx`（props `{ src, badges }`），可旋转版本由并行任务提供。
+
+API：`GET|DELETE /api/avatar`、`POST /api/avatar/consent`、`POST /api/avatar/photos`（multipart：slot、file）、`DELETE /api/avatar/photos/[id]`、`POST /api/avatar/jobs`、`GET|DELETE /api/avatar/jobs/[id]`、`GET /api/avatar/files/[...key]`。
+
 ## 数据库
 
 表结构只有一份：`lib/db/schema.ts`（Drizzle），迁移在 `drizzle/`。
