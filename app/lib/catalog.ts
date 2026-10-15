@@ -82,7 +82,10 @@ export async function getCurators(filter: CuratorFilter = {}): Promise<CuratorSu
       .groupBy(schema.outfit.curatorId),
   ]);
   const byCurator = new Map(counts.map((c) => [c.curatorId, Number(c.n)]));
-  return rows.map((r) => ({ ...r, outfitCount: byCurator.get(r.id) ?? 0 }));
+  // 没有搭配的衣橱不对外展示（如 Supabase 里保留的 v0.1 旧记录 curator_01）。
+  return rows
+    .map((r) => ({ ...r, outfitCount: byCurator.get(r.id) ?? 0 }))
+    .filter((r) => r.outfitCount > 0);
 }
 
 export async function getAllItems(): Promise<Item[]> {
