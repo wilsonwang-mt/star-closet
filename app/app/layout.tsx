@@ -1,9 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Bodoni_Moda, Noto_Sans_SC, Noto_Serif_SC } from "next/font/google";
 import { cookies } from "next/headers";
-import Link from "next/link";
-import ThemeToggle, { type ThemePref } from "@/components/ThemeToggle";
-import UserNav from "@/components/UserNav";
+import SiteNav from "@/components/SiteNav";
+import type { ThemePref } from "@/components/ThemeToggle";
 import "./tokens.css";
 import "./globals.css";
 
@@ -37,17 +36,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       className={`${didone.variable} ${serif.variable} ${sans.variable}`}
     >
       <body>
-        <header className="topbar">
-          <Link href="/" className="sc-masthead brand">
-            STAR CLOSET
-          </Link>
-          <nav>
-            <Link href="/">衣橱</Link>
-            <Link href="/fitting-room">试衣间</Link>
-            <UserNav />
-            <ThemeToggle initial={pref} />
-          </nav>
-        </header>
+        <SiteNav initialTheme={pref} />
         <main className="container">{children}</main>
         <footer className="footer sc-meta">
           比赛演示版 · 商品与主理人均为占位数据，图片为 AI 生成示意，不代表任何品牌或合作 · 价格以商家页面为准

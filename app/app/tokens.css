@@ -166,6 +166,25 @@ body { background: var(--sc-bg); color: var(--sc-ink); font-family: var(--sc-fon
 .sc-cta--ghost { color: var(--sc-ink); background: var(--sc-glass-bg); box-shadow: inset 0 1px 0 var(--sc-glass-edge), var(--sc-glass-shadow);
   -webkit-backdrop-filter: blur(var(--sc-glass-blur)); backdrop-filter: blur(var(--sc-glass-blur)); }
 
+/* 顶部悬浮导航：玻璃胶囊条，两端半圆，带投影；向下滚动收起，向上滚动或回到顶部时出现 */
+.sc-nav { position: fixed; z-index: 50; top: calc(env(safe-area-inset-top, 0px) + 12px); left: 50%;
+  width: min(calc(100% - 32px), 720px); height: 52px; padding: 0 8px 0 20px; transform: translateX(-50%);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sc-space-3);
+  border-radius: var(--sc-radius-pill); color: var(--sc-ink); background: var(--sc-glass-bg);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow: inset 0 1px 0 var(--sc-glass-edge), inset 0 0 0 .5px var(--sc-glass-edge-2),
+    0 10px 30px rgba(0, 0, 0, .28), 0 2px 6px rgba(0, 0, 0, .16);
+  transition: transform .45s var(--sc-ease-rise), opacity .3s ease; }
+:root[data-theme="light"] .sc-nav { box-shadow: inset 0 1px 0 var(--sc-glass-edge), inset 0 0 0 .5px var(--sc-glass-edge-2),
+    0 10px 30px rgba(110, 80, 35, .16), 0 2px 6px rgba(110, 80, 35, .10); }
+.sc-nav--hidden { transform: translate(-50%, calc(-100% - 24px)); opacity: 0; pointer-events: none; }
+.sc-nav__brand { font-family: var(--sc-font-didone); font-size: 13px; letter-spacing: .36em; white-space: nowrap; }
+.sc-nav__links { display: flex; align-items: center; gap: var(--sc-space-1); }
+.sc-nav__link { min-height: 36px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: var(--sc-radius-pill);
+  font-size: 13px; letter-spacing: .08em; color: var(--sc-ink-2); text-decoration: none; transition: background .2s, color .2s; }
+.sc-nav__link:hover, .sc-nav__link[aria-current="page"] { color: var(--sc-ink); background: rgba(255, 255, 255, .10); }
+:root[data-theme="light"] .sc-nav__link:hover, :root[data-theme="light"] .sc-nav__link[aria-current="page"] { background: rgba(31, 28, 24, .06); }
+
 .sc-badge { display: inline-block; font-size: 10px; letter-spacing: .12em; padding: 3px 9px; border-radius: var(--sc-radius-pill);
   border: 1px solid rgba(201, 169, 110, .8); color: var(--sc-champ-text); }
 
@@ -187,4 +206,5 @@ body { background: var(--sc-bg); color: var(--sc-ink); font-family: var(--sc-fon
 
 @media (prefers-reduced-motion: reduce) {
   .sc-scene__media, .sc-beam, .sc-grain, .sc-foil, .sc-rise, .sc-hang, .sc-land { animation: none !important; }
+  .sc-nav { transition: none; }
 }
