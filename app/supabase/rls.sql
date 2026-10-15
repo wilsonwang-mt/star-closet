@@ -10,7 +10,7 @@
 -- 应用本身经 Drizzle 以表所有者身份直连数据库，不受 RLS 影响；
 -- 本文件只收紧 Data API 这条路：目录四张表公开只读，其余表（账号、试衣间）一律不开放，
 -- 由服务端代码按当前登录用户读写。
--- 若日后改用 Supabase Auth，再为 look / look_item 增加按 auth.uid() 的本人读写策略。
+-- 若日后改用 Supabase Auth，再为 look / look_item / profile / avatar_* 增加按 auth.uid() 的本人读写策略。
 
 begin;
 
@@ -54,8 +54,14 @@ create policy catalog_public_read on public.outfit_item for select to anon, auth
 drop policy if exists catalog_public_read on public.item;
 create policy catalog_public_read on public.item for select to anon, authenticated using (true);
 
--- 4. 账号（"user" / session / account / verification）与试衣间（look / look_item）：
+-- 4. 账号（"user" / session / account / verification）、试衣间（look / look_item）、
+--    个人档案与 3D 形象（profile / avatar_photo / avatar_job）：
 --    已开启 RLS、无任何策略、无授权，Data API 无法访问；只能经服务端读写。
+--    profile 含可选身体数据，avatar_* 指向用户照片与生成结果，属于敏感个人数据，下面再显式收紧一次。
+alter table public.profile enable row level security;
+alter table public.avatar_photo enable row level security;
+alter table public.avatar_job enable row level security;
+revoke all on table public.profile, public.avatar_photo, public.avatar_job from anon, authenticated;
 
 -- 5. 建项目时勾选“Enable automatic RLS”会生成 public.rls_auto_enable()（SECURITY DEFINER 的事件触发器函数）。
 --    它只该由建表事件触发，收回 Data API 角色的调用权限；不影响自动开启 RLS。

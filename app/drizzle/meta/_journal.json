@@ -8,6 +8,13 @@
       "when": 1792082135682,
       "tag": "0000_flashy_tag",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792089470888,
+      "tag": "0001_curly_champions",
+      "breakpoints": true
     }
   ]
 }
