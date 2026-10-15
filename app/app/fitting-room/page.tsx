@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AutoVideo from "@/components/AutoVideo";
 import LookCard from "@/components/LookCard";
 import Scene from "@/components/Scene";
 import { getCurrentUser } from "@/lib/auth";
@@ -9,12 +10,9 @@ export const dynamic = "force-dynamic";
 function LifeScene() {
   return (
     <figure className="sc-glass card sc-rise" style={{ margin: 0, padding: 10 }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/scenes/life-cafe.jpg"
-        alt="AI 生成的咖啡馆生活场景示意"
-        style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", objectPosition: "50% 30%", borderRadius: 16, display: "block" }}
-      />
+      <div role="img" aria-label="AI 生成的咖啡馆生活场景示意" style={{ borderRadius: 16, overflow: "hidden" }}>
+        <AutoVideo className="life-video" src="/scenes/life-cafe-web.mp4" poster="/scenes/life-cafe.jpg" />
+      </div>
       <figcaption className="row" style={{ justifyContent: "space-between", padding: "10px 6px 2px" }}>
         <span className="sc-meta">生活场景 · 即将上线</span>
         <span className="sc-badge">AI 生成场景示意 · 合身未验证</span>

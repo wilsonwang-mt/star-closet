@@ -17,6 +17,14 @@ button, input, textarea, select { font: inherit; color: inherit; }
 
 /* ---------- 场景层：固定在最底，内容浮在上面 ---------- */
 .app-scene { position: fixed; z-index: -1; }
+/* 视频自带运镜：停用 22 秒推镜，只保留 3 秒进场 */
+.sc-scene__media.is-video { animation: sc-intro var(--sc-dur-intro) var(--sc-ease-cine) both; }
+/* 夜间：窄屏用竖屏视频，宽屏用横屏视频 */
+.scene-wide { display: none; }
+@media (min-width: 900px) {
+  .scene-portrait { display: none; }
+  .scene-wide { display: block; }
+}
 /* 信息较多的页面压暗场景，保证文字可读 */
 .scene-dim { position: absolute; inset: 0; pointer-events: none; background: color-mix(in srgb, var(--sc-bg) 55%, transparent); }
 :root[data-theme="light"] .scene-dim { background: color-mix(in srgb, var(--sc-bg) 25%, transparent); }
@@ -60,6 +68,7 @@ body { overflow-x: hidden; }
 .hero { text-shadow: 0 1px 14px rgba(0, 0, 0, .5); }
 :root[data-theme="light"] .hero { text-shadow: 0 1px 12px rgba(250, 244, 232, .8); }
 @media (prefers-color-scheme: light) { :root:not([data-theme]) .hero { text-shadow: 0 1px 12px rgba(250, 244, 232, .8); } }
+.life-video { width: 100%; aspect-ratio: 772 / 960; max-height: 70dvh; object-fit: cover; object-position: 50% 30%; display: block; }
 .serif-note { font-family: var(--sc-font-serif); font-size: 13px; line-height: 1.85; color: var(--sc-ink-2); margin: 0; }
 .muted { color: var(--sc-ink-2); }
 .small { font-size: 12px; }
