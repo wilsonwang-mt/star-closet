@@ -57,6 +57,17 @@ create policy catalog_public_read on public.item for select to anon, authenticat
 -- 4. 账号（"user" / session / account / verification）与试衣间（look / look_item）：
 --    已开启 RLS、无任何策略、无授权，Data API 无法访问；只能经服务端读写。
 
+-- 5. 建项目时勾选“Enable automatic RLS”会生成 public.rls_auto_enable()（SECURITY DEFINER 的事件触发器函数）。
+--    它只该由建表事件触发，收回 Data API 角色的调用权限；不影响自动开启 RLS。
+do $$
+begin
+  if exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+             where n.nspname = 'public' and p.proname = 'rls_auto_enable') then
+    revoke execute on function public.rls_auto_enable() from public, anon, authenticated;
+  end if;
+end
+$$;
+
 commit;
 
 -- 执行后自查（应看到 public 下所有表 rowsecurity = true）：
