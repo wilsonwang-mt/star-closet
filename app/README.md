@@ -43,7 +43,7 @@ npm run dev                  # http://localhost:3000
 2026-10-16 已在发起用户的 Supabase 项目（新加坡区）实测：
 - `npm run db:setup` 建表并写入 37 件单品、7 套搭配；`supabase/rls.sql` 已执行。目录四表对 anon 只读，账号与试衣间表对 Data API 无任何权限；Supabase 安全顾问只剩“已开 RLS 但无策略”的 INFO，这是有意的拒绝全部。
 - 注册 → AI 改编 → 加入试衣间：用户、会话与试衣间数据写入 Supabase，试衣间页从库里读回。
-- AI 改编（`claude-opus-5-5`，effort `low`）单次耗时约 10–13 秒，超过 10 秒的目标，待决定是否提速。
+- AI 改编（`claude-opus-5-5`，effort `low`）单次耗时约 10–13 秒。发起用户 2026-10-16 决定保持模型与速度，只加等待动画（`components/AdaptWaiting.tsx`）。
 
 连接串注意：把 `[YOUR-PASSWORD]` 整体（含方括号）换成密码；密码含 `@ # / ? %` 等字符需先做百分号编码。
 

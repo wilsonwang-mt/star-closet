@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import AdaptWaiting from "./AdaptWaiting";
 import ItemList, { type ListedItem } from "./ItemList";
 import type { Item, Outfit } from "@/lib/catalog";
 import type { AdaptResult } from "@/lib/adapt/types";
@@ -44,6 +45,7 @@ export default function Adapter({ outfit, catalog, aiEnabled }: { outfit: Outfit
     setLoading(true);
     setError(null);
     setSaved(null);
+    setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     try {
       const res = await fetch("/api/adapt", {
         method: "POST",
@@ -174,7 +176,9 @@ export default function Adapter({ outfit, catalog, aiEnabled }: { outfit: Outfit
         {error ? <p className="error">{error}</p> : null}
       </section>
 
-      {result && items ? (
+      {loading ? (
+        <AdaptWaiting aiEnabled={aiEnabled} ref={resultRef} />
+      ) : result && items ? (
         <section className="sc-glass card stack sc-rise" ref={resultRef}>
           <div className="spread">
             <div>

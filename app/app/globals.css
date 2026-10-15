@@ -147,6 +147,19 @@ details > summary::-webkit-details-marker { display: none; }
 .stack > .sc-rise:nth-child(3) { animation-delay: .2s; }
 .stack > .sc-rise:nth-child(n + 4) { animation-delay: .3s; }
 
+/* ---------- 改编等待 ---------- */
+.wait-step { color: var(--sc-champ-text); animation: wait-fade .6s var(--sc-ease-rise) both; }
+@keyframes wait-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.wait-bar { position: relative; height: 1px; background: var(--sc-rule); overflow: hidden; }
+.wait-bar i { position: absolute; inset: 0 auto 0 0; width: 35%; background: linear-gradient(90deg, transparent, var(--sc-champ), transparent);
+  animation: wait-sweep 1.8s ease-in-out infinite; }
+@keyframes wait-sweep { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+.skeleton-row { animation: wait-pulse 1.8s ease-in-out infinite; }
+.skeleton-block { background: color-mix(in srgb, var(--sc-ink) 10%, transparent); }
+.skeleton-line { display: block; height: 10px; border-radius: 5px; background: color-mix(in srgb, var(--sc-ink) 12%, transparent); }
+@keyframes wait-pulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+
 @media (prefers-reduced-motion: reduce) {
   .sc-glass--changed::after { animation: none; }
+  .wait-step, .wait-bar i, .skeleton-row { animation: none; }
 }
