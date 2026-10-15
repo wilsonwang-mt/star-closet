@@ -1,0 +1,59 @@
+name: Verify static previews
+
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/verify-static-preview.yml]
+  workflow_run:
+    workflows: [pages build and deployment]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Check published HTML, PDF and concept image
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import time
+          import urllib.request
+
+          base = "https://wilsonwang-mt.github.io/star-closet/"
+          checks = {
+              "": None,
+              "presentation/star-closet-hackathon.html": "d8bd8d3c3f0128da58384b54ba7acdd91402d9eb8215bb486118f51ce9f274d0",
+              "design/preview.html": None,
+              "presentation/star-closet-hackathon.pdf": "bec10d72d0cc5afff00be4cdc581ac399a401f8f4dfb214d3a32ac4ce70dd758",
+              "design/concepts/visual-atlas-20261015.png": "64fe56a5e5754d71847cc0f5e946612092255f458ed9e28a32b64c9b6e9e0d0f",
+          }
+          for attempt in range(20):
+              try:
+                  for path, expected_hash in checks.items():
+                      with urllib.request.urlopen(base + path, timeout=20) as response:
+                          content = response.read()
+                          if response.status != 200:
+                              raise RuntimeError(f"HTTP {response.status}: {path}")
+                          if expected_hash and hashlib.sha256(content).hexdigest() != expected_hash:
+                              raise RuntimeError(f"Content mismatch: {path}")
+                          if path.endswith(".html") or path == "":
+                              text = content.decode("utf-8")
+                              if "Star Closet" not in text:
+                                  raise RuntimeError(f"Unexpected HTML: {path}")
+                              if path.startswith("presentation/") and text.count('class="slide"') != 22:
+                                  raise RuntimeError("Expected 22 slides")
+                          print(f"HTTP 200, {len(content)} bytes: {base + path}", flush=True)
+                  print("All static preview checks passed", flush=True)
+                  break
+              except Exception as error:
+                  print(f"Attempt {attempt + 1}/20: {error}", flush=True)
+                  if attempt == 19:
+                      raise
+                  time.sleep(15)
+          PY
