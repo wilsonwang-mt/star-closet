@@ -4,6 +4,7 @@
 
 ## 打开与阅读
 
+- [线上HTML Slides](https://wilsonwang-mt.github.io/star-closet/presentation/star-closet-hackathon.html)、[线上PDF](https://wilsonwang-mt.github.io/star-closet/presentation/star-closet-hackathon.pdf)、[线上设计画廊](https://wilsonwang-mt.github.io/star-closet/design/preview.html)：静态发布与公开文件检查已通过。
 - [PDF](star-closet-hackathon.pdf)：手机上优先阅读，可在GitHub文件页预览或下载。
 - [HTML Slides](star-closet-hackathon.html)：在GitHub文件页选择下载，再用浏览器打开。GitHub源码页不会直接运行HTML。
 - [静态设计总览](../design/concepts/visual-atlas-20261015.png)：新生成的四象限概念，不是旧原图恢复或网站截图。
@@ -23,4 +24,6 @@ HTML正文、样式、脚本和图像都在一个文件中，无外部字体或�
 
 实际浏览器、PDF与文件检查结果以[交付记录](../交付记录.md)和[评审记录](../评审记录.md)为准。受管Chromium禁止直接访问file://，本轮通过仅绑定127.0.0.1的临时HTTP服务检查同一HTML；没有开放互联网预览。HTML无外部自动请求，但本次未在用户手机或Mac的本地文件模式实测。
 
-这些是静态文档检查，不证明衣橱应用已实现、服饰GLB已存在或达到性能目标；真实支付、供应、部署与网站应用尚未实施。
+这些是静态文档检查，不证明衣橱应用已实现、服饰GLB已存在或达到性能目标；真实支付、供应和网站应用尚未实施。
+
+后续更新静态材料时，需要同步实际发布源gh-pages，并更新公开文件检查中的摘要。仅推main中的文档不会自动同步这个独立发布分支。

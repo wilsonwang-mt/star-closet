@@ -2,6 +2,8 @@
 
 2026-10-15补交的概念探索。图片是新生成的视觉参考，人物、品牌和商品信息均为虚构，不是运行中的网站或真实可旋转模型。
 
+[打开线上设计画廊](https://wilsonwang-mt.github.io/star-closet/design/preview.html) · [线上Slides](https://wilsonwang-mt.github.io/star-closet/presentation/star-closet-hackathon.html)
+
 ![浅弧衣橱首页、聚光详情、搜索和手机的四象限概念](concepts/visual-atlas-20261015.png)
 
 - 左上：首页浅弧预览，中央衣橱最大，两侧露出相邻卡，附头像、姓名、风格介绍与入口。
@@ -11,4 +13,4 @@
 
 [完整设计探索](设计探索.md) · [素材来源与边界](素材清单.md) · [Slides PDF](../presentation/star-closet-hackathon.pdf) · [HTML画廊文件](preview.html)
 
-GitHub可直接显示本页设计图。HTML画廊需下载浏览器打开，或在静态托管启用后访问对应线上地址；源码页不是已发布网页。
+GitHub可直接显示本页设计图。HTML画廊已静态发布，也可下载后用浏览器打开；源码页不是已发布网页。

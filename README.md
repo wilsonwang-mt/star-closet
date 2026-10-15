@@ -16,6 +16,15 @@
 - [静态视觉总览](docs/design/concepts/visual-atlas-20261015.png)：本轮云端重新生成的概念图；不是原图恢复、GLB 或应用截图。
 - [设计探索](docs/design/设计探索.md)与[素材清单](docs/design/素材清单.md)：视觉规范、来源及使用边界。
 
+## 线上预览
+
+- [HTML Slides](https://wilsonwang-mt.github.io/star-closet/presentation/star-closet-hackathon.html)
+- [静态设计画廊](https://wilsonwang-mt.github.io/star-closet/design/preview.html)
+- [手机阅读PDF](https://wilsonwang-mt.github.io/star-closet/presentation/star-closet-hackathon.pdf)
+- [全部材料入口](https://wilsonwang-mt.github.io/star-closet/)
+
+GitHub Pages部署和[远端公开文件检查](https://github.com/wilsonwang-mt/star-closet/actions/runs/38678624420)均已成功。发布内容是静态方案文档。
+
 ## 阅读入口
 
 | 内容 | 文档 |
@@ -37,5 +46,5 @@
 
 [研究摘要](docs/研究摘要.md)与[原始 HTML 研究简报](research/明星衣橱_Hackathon研究简报.html)保留 2026-10-12 的证据与建议。一个房间、三个镜头、6–8 件及至少一个 GLB 属于历史候选范围，不是首版批准或完成记录；最新明确用户指令优先。
 
-当前没有网站应用安装、启动、构建或功能测试结果。静态Slides已通过五种视口、导航、无脚本阅读与打印检查，PDF共22页；实体手机未实测。静态线上发布已获授权，GitHub Pages设置接口被当前云端代理403拦截，网页预览是否上线以[交付记录](docs/交付记录.md)为准；PDF和设计图可先在GitHub文件页预览。项目资料以本仓库为版本来源。
+当前没有网站应用安装、启动、构建或功能测试结果。静态Slides已通过五种视口、导航、无脚本阅读与打印检查，PDF共22页；实体手机未实测。静态线上发布已完成，准确范围与验证见[交付记录](docs/交付记录.md)。项目资料以本仓库为版本来源。
 
