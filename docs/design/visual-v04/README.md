@@ -16,6 +16,8 @@
 
 - [米白美术馆样稿v2.html](米白美术馆样稿v2.html)：Liquid Glass + 香槟金，装饰最丰富的一版。
 - [米白美术馆样稿v3.html](米白美术馆样稿v3.html)：更通透的玻璃，浅色 / 深色双模式对比（深色排由脚本克隆生成）。
+- [米白美术馆样稿v4.html](米白美术馆样稿v4.html)：**当前待定稿版本**。真实商品图、杂志排版（Bodoni 刊头、思源宋体、N° 编号、竖排图注）、重力进场与阻尼摆动、镜头推近与景深、光束内微尘、胶片颗粒，浅色 / 深色双模式。
+- `img/`：6 张去背景商品图（AI 生成示意，非真实品牌或在售商品），已缩放到最长边 900px 并裁边。
 - 参考板与 Refero 参考截图只存本地 `.local/visual-refs/`（第三方截图，不入库）。
 
 ## 已生成的商品图（Weave，Nano Banana Pro + Bria 去背景）
@@ -31,7 +33,7 @@
 | 燕麦亚麻阔腿裤 | https://media.weavy.ai/image/upload/v1792060604/uploads/TKmZ7BkDX7Uvrg6TT2XmWNFfUMI2/umcybip1dellrrwrwxju.png | https://media.weavy.ai/image/upload/v1792060519/uploads/TKmZ7BkDX7Uvrg6TT2XmWNFfUMI2/ls5avgydkxxbewy4iybn.png |
 | 驼色平底玛丽珍 | https://media.weavy.ai/image/upload/v1792060637/uploads/TKmZ7BkDX7Uvrg6TT2XmWNFfUMI2/eqg9lzbom4kptrmbugas.png | https://media.weavy.ai/image/upload/v1792060534/uploads/TKmZ7BkDX7Uvrg6TT2XmWNFfUMI2/vorgrgxttjv88q39hu65.png |
 
-本机下载这些图片时网络中断，尚未落地成文件；下一步先重新下载并人工检查画质与抠图边缘。
+已下载到 `img/` 并人工检查：面料纹理真实，抠图边缘干净。
 
 ## 下一步（v4 样稿）
 
