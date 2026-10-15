@@ -26,7 +26,7 @@
 - 表结构以 `app/lib/db/schema.ts`（Drizzle）为唯一来源，迁移由 Drizzle 生成；Supabase 专用的权限 SQL 放在 `app/supabase/`。不得另写一套与之并行的建表 SQL。
 - `public` 下每张表都必须开启行级安全（RLS）。Supabase 的 Data API 会把 `public` 暴露给 anon key，未开启 RLS 的表等于公开可读写；账号表只允许服务端访问。
 - 数据库连接串、Supabase URL 与各类 key 只放 `app/.env.local` 或环境变量，不进仓库、不输出到日志；secret / service_role key 只在服务端使用。
-- 认证实现沿用现有 better-auth（数据存在 Supabase）还是改用 Supabase Auth，待发起用户确认；确认前默认沿用。
+- 认证沿用现有 better-auth，账号数据存在 Supabase。2026-10-16 用户评估改用 Supabase Auth（约 3–4 小时）后决定“暂时不需要改用”，作为后续选项保留，需要时再提醒用户。
 - Claude Code 通过 Supabase 官方 MCP 连接时，默认限定单一项目、只读；改表结构走迁移文件，由发起用户执行或确认。
 - 静态目录 JSON 保留为兜底，Supabase 不可用时演示仍能运行。
 - 仍不允许：真实支付；把任何人的身体照片、试穿照片上传到 Supabase Storage 或仓库（个人影像存储另行决定）。Supabase 是托管数据库，使用它不等于部署网站；网站部署仍需另行确认。
