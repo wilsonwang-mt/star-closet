@@ -7,16 +7,21 @@ import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { db, dbKind, schema } from "../lib/db";
 
+type CuratorJson = {
+  curator_id: string;
+  display_name: string;
+  closet_type: string;
+  closet_name: string;
+  intro: string;
+};
+
+// v0.1 用单个 curator；v0.2 用 curators[]，搭配用 curator_id 指明所属衣橱。两种格式都接受。
 type CatalogJson = {
-  curator: {
-    curator_id: string;
-    display_name: string;
-    closet_type: string;
-    closet_name: string;
-    intro: string;
-  };
+  curator?: CuratorJson;
+  curators?: CuratorJson[];
   outfits: {
     outfit_id: string;
+    curator_id?: string;
     name: string;
     style_note: string;
     occasion_tags: string[];
@@ -40,22 +45,32 @@ type CatalogJson = {
 };
 
 const CATEGORIES = new Set(["上装", "下装", "外套", "鞋", "包", "配饰"]);
+const IMAGE_RIGHTS = ["自有拍摄", "商家书面授权", "AI 生成"];
+
+function curatorsOf(c: CatalogJson): CuratorJson[] {
+  return c.curators ?? (c.curator ? [c.curator] : []);
+}
 
 function validate(c: CatalogJson) {
   const errors: string[] = [];
+  const curators = curatorsOf(c);
+  if (curators.length === 0) errors.push("没有主理人（curator 或 curators）");
+  const cids = new Set(curators.map((x) => x.curator_id));
   const ids = new Set<string>();
   for (const i of c.items) {
     if (ids.has(i.item_id)) errors.push(`单品编号重复：${i.item_id}`);
     ids.add(i.item_id);
     if (!CATEGORIES.has(i.category)) errors.push(`${i.item_id} 类别不合规：${i.category}`);
     if (!Number.isInteger(i.price) || i.price <= 0) errors.push(`${i.item_id} 价格不是正整数`);
-    if (i.image && !["自有拍摄", "商家书面授权"].includes(i.image_rights ?? ""))
-      errors.push(`${i.item_id} 有图片但图片来源不合规`);
+    if (i.image && !IMAGE_RIGHTS.includes(i.image_rights ?? ""))
+      errors.push(`${i.item_id} 有图片但图片来源不合规（只能是 ${IMAGE_RIGHTS.join(" / ")}）`);
   }
   const oids = new Set<string>();
   for (const o of c.outfits) {
     if (oids.has(o.outfit_id)) errors.push(`搭配编号重复：${o.outfit_id}`);
     oids.add(o.outfit_id);
+    if (curators.length > 1 && !o.curator_id) errors.push(`${o.outfit_id} 缺少 curator_id`);
+    if (o.curator_id && !cids.has(o.curator_id)) errors.push(`${o.outfit_id} 的 curator_id 不存在：${o.curator_id}`);
     for (const id of o.item_ids) if (!ids.has(id)) errors.push(`${o.outfit_id} 引用了不存在的单品 ${id}`);
   }
   if (errors.length) throw new Error("目录校验失败：\n" + errors.join("\n"));
@@ -77,14 +92,14 @@ async function main() {
 
   await db.transaction(async (tx) => {
     // 目录整体重写；用户的试衣间引用单品编号，所以单品只做 upsert、不删除。
-    const c = catalog.curator;
-    await tx
-      .insert(schema.curator)
-      .values({ id: c.curator_id, displayName: c.display_name, closetType: c.closet_type, closetName: c.closet_name, intro: c.intro })
-      .onConflictDoUpdate({
-        target: schema.curator.id,
-        set: { displayName: c.display_name, closetType: c.closet_type, closetName: c.closet_name, intro: c.intro },
-      });
+    const curators = curatorsOf(catalog);
+    for (const c of curators) {
+      const row = { displayName: c.display_name, closetType: c.closet_type, closetName: c.closet_name, intro: c.intro };
+      await tx
+        .insert(schema.curator)
+        .values({ id: c.curator_id, ...row })
+        .onConflictDoUpdate({ target: schema.curator.id, set: row });
+    }
 
     for (const i of catalog.items) {
       const row = {
@@ -109,7 +124,7 @@ async function main() {
     for (const [idx, o] of catalog.outfits.entries()) {
       const row = {
         id: o.outfit_id,
-        curatorId: c.curator_id,
+        curatorId: o.curator_id ?? curators[0].curator_id,
         name: o.name,
         styleNote: o.style_note,
         occasionTags: o.occasion_tags,
