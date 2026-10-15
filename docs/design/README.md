@@ -5,7 +5,7 @@
 
 [设计画廊线上入口](https://wilsonwang-mt.github.io/star-closet/design/preview.html) · [Slides 线上入口](https://wilsonwang-mt.github.io/star-closet/presentation/star-closet-hackathon.html)
 
-入口沿用既有静态发布地址；v0.3 修改需随本轮发布同步，具体可见版本以实际线上结果为准。
+入口沿用既有静态发布地址，v0.3画廊已发布并通过本版远端校验，实际记录见[交付记录](../交付记录.md)。
 
 ## 本轮新增的设计表达
 
@@ -45,4 +45,4 @@
 
 [素材来源与边界](素材清单.md) · [v0.3 PNG](concepts/platform-v03-atlas-20261015.png) · [v0.2 基线 PNG](concepts/visual-atlas-20261015.png) · [HTML 画廊文件](preview.html) · [Slides PDF](../presentation/star-closet-hackathon.pdf)
 
-HTML 画廊支持随目录离线打开；GitHub 源码页不等于可访问预览。PDF 是否覆盖 v0.3 需以演示文档的实际更新与导出状态为准。
+HTML 画廊支持随目录离线打开；GitHub 源码页不等于可访问预览。本轮PDF已更新为v0.3的26页，详见演示打开说明。

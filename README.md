@@ -2,6 +2,19 @@
 
 **v0.3 · 2026-10-15定位调整**：让每个人发现喜欢的审美，通过AI搭配、个人试衣间和自己的形象理解服装，再完成可信选购。Star Closet / 明星衣橱暂作工作名称，不再只面向明星或真实实体衣橱。
 
+## 团队从这里开始
+
+最新产品需求以 **main分支的[PRD](docs/PRD.md)** 为准，确认依据看[决策记录](docs/决策记录.md)；[变更清单](docs/定位调整与需求追踪.md)说明这次保留、新增和替代了什么。Slides用于解释方案，历史研究不覆盖最新要求。
+
+团队本地同步可在工作已保存的情况下执行：
+
+```sh
+git switch main
+git pull --ff-only origin main
+```
+
+这会在分支分歧时停止，不覆盖团队成员现有提交。具体分工与候选下一步见[任务清单](docs/任务清单.md)及[冲刺与团队](docs/两天冲刺与团队.md)。
+
 ## 产品两侧
 
 - **主理人及团队**：明星、网红/穿搭博主、品牌主题、风格主题、审核通过个人都可成为公共衣橱供给；用照片、视频、语音让Agent整理草稿，再确认、审核与发布。五类入口可交叠，账户主体与主题分开。
@@ -32,7 +45,7 @@
 - [HTML Slides](https://wilsonwang-mt.github.io/star-closet/presentation/star-closet-hackathon.html) · [设计画廊](https://wilsonwang-mt.github.io/star-closet/design/preview.html) · [PDF](https://wilsonwang-mt.github.io/star-closet/presentation/star-closet-hackathon.pdf) · [材料入口](https://wilsonwang-mt.github.io/star-closet/)
 - [HTML/PDF文件与打开说明](docs/presentation/README.md)、[设计素材清单](docs/design/素材清单.md)。静态概念与流程图不代表应用、模型或支付已经实现。
 
-线上链接保持稳定；本次v0.3材料更新、检查和实际发布版本以交付记录为准，不把v0.2的上线记录当本次已验证。历史原图保留并注明适用范围。
+线上链接已更新为v0.3，Pages部署和6个公开文件远端校验通过；实际记录见交付记录。历史原图保留并注明基线身份。
 
 ## 当前执行状态
 
