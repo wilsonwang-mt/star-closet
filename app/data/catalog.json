@@ -1,0 +1,816 @@
+{
+  "catalog_version": "0.1",
+  "curator": {
+    "curator_id": "curator_01",
+    "display_name": "占位主理人",
+    "closet_type": "风格主题",
+    "closet_name": "安静的日常衣橱",
+    "intro": "占位：把好穿、好搭、买得到的衣服，配成一整套。"
+  },
+  "outfits": [
+    {
+      "outfit_id": "O01",
+      "name": "占位：周末咖啡馆",
+      "style_note": "柔和的米白与浅棕叠穿，宽松但不拖沓。针织开衫配直筒牛仔裤，用乐福鞋和帆布托特收住整体，适合不想太用力的周末。",
+      "occasion_tags": [
+        "约会",
+        "周末休闲"
+      ],
+      "curator": "curator_01",
+      "item_ids": [
+        "I001",
+        "I002",
+        "I003",
+        "I004",
+        "I005"
+      ]
+    },
+    {
+      "outfit_id": "O02",
+      "name": "占位：利落通勤",
+      "style_note": "黑白基调，线条干净。府绸衬衫配西装直筒裤与短款西装，切尔西靴和腋下包让通勤装不呆板，金色细链提一点亮。",
+      "occasion_tags": [
+        "通勤",
+        "面试"
+      ],
+      "curator": "curator_01",
+      "item_ids": [
+        "I006",
+        "I014",
+        "I019",
+        "I026",
+        "I027",
+        "I032"
+      ]
+    },
+    {
+      "outfit_id": "O03",
+      "name": "占位：户外婚礼宾客",
+      "style_note": "鼠尾草绿碎花裙在草地上很出片，又不会抢新娘风头。披肩应对傍晚降温，藤编包和珍珠耳钉让整体轻盈得体。",
+      "occasion_tags": [
+        "户外婚礼",
+        "婚礼宾客"
+      ],
+      "curator": "curator_01",
+      "item_ids": [
+        "I010",
+        "I021",
+        "I023",
+        "I029",
+        "I031"
+      ]
+    },
+    {
+      "outfit_id": "O04",
+      "name": "占位：秋夜晚餐",
+      "style_note": "香槟缎面吊带裙配驼色羊毛大衣，冷暖对比带出质感。细跟鞋与链条手拿包把场合感拉满。",
+      "occasion_tags": [
+        "约会",
+        "聚会",
+        "婚礼宾客"
+      ],
+      "curator": "curator_01",
+      "item_ids": [
+        "I009",
+        "I017",
+        "I023",
+        "I028",
+        "I032"
+      ]
+    },
+    {
+      "outfit_id": "O05",
+      "name": "占位：周末运动休闲",
+      "style_note": "燕麦卫衣和灰色束脚裤是舒服的底，白板鞋和尼龙斜挎包方便走一整天，墨镜让它看起来是“选过的”。",
+      "occasion_tags": [
+        "运动休闲",
+        "旅行"
+      ],
+      "curator": "curator_01",
+      "item_ids": [
+        "I012",
+        "I016",
+        "I024",
+        "I030",
+        "I033"
+      ]
+    },
+    {
+      "outfit_id": "O06",
+      "name": "占位：海边度假",
+      "style_note": "条纹上衣配亚麻阔腿裤，经典又透气。平底玛丽珍好走路，藤编包和墨镜交代了度假的心情。",
+      "occasion_tags": [
+        "旅行",
+        "周末休闲"
+      ],
+      "curator": "curator_01",
+      "item_ids": [
+        "I011",
+        "I013",
+        "I022",
+        "I029",
+        "I033"
+      ]
+    },
+    {
+      "outfit_id": "O07",
+      "name": "占位：冬日通勤",
+      "style_note": "黑色高领针织衫配驼色百褶裙，风衣叠穿出层次。切尔西靴、羊绒围巾与帆布托特兼顾保暖和实用。",
+      "occasion_tags": [
+        "通勤"
+      ],
+      "curator": "curator_01",
+      "item_ids": [
+        "I007",
+        "I015",
+        "I018",
+        "I026",
+        "I034",
+        "I004"
+      ]
+    }
+  ],
+  "items": [
+    {
+      "item_id": "I001",
+      "name": "占位：米白圆领针织开衫",
+      "category": "上装",
+      "color": "米白",
+      "price": 299,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/001",
+      "image": "/items/cardigan.png",
+      "image_rights": "自有拍摄",
+      "image_rights_note": "占位：AI 生成示意图（Weave），非真实在售商品",
+      "size_note": "均码，偏宽松",
+      "tags": [
+        "针织",
+        "秋冬"
+      ]
+    },
+    {
+      "item_id": "I006",
+      "name": "占位：白色府绸衬衫",
+      "category": "上装",
+      "color": "白",
+      "price": 229,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/006",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "XS–XL",
+      "tags": [
+        "衬衫",
+        "通勤",
+        "四季"
+      ]
+    },
+    {
+      "item_id": "I007",
+      "name": "占位：黑色修身高领针织衫",
+      "category": "上装",
+      "color": "黑",
+      "price": 199,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/007",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "S–L",
+      "tags": [
+        "针织",
+        "秋冬",
+        "通勤"
+      ]
+    },
+    {
+      "item_id": "I008",
+      "name": "占位：雾蓝缎面衬衫",
+      "category": "上装",
+      "color": "雾蓝",
+      "price": 349,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/008",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "S–L",
+      "tags": [
+        "缎面",
+        "通勤",
+        "约会"
+      ]
+    },
+    {
+      "item_id": "I009",
+      "name": "占位：香槟色缎面吊带连衣裙",
+      "category": "上装",
+      "color": "香槟",
+      "price": 599,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/009",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "XS–L",
+      "tags": [
+        "连衣裙",
+        "缎面",
+        "正式"
+      ]
+    },
+    {
+      "item_id": "I010",
+      "name": "占位：鼠尾草绿碎花茶歇裙",
+      "category": "上装",
+      "color": "鼠尾草绿",
+      "price": 459,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/010",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "S–XL",
+      "tags": [
+        "连衣裙",
+        "碎花",
+        "户外",
+        "春夏"
+      ]
+    },
+    {
+      "item_id": "I011",
+      "name": "占位：蓝白条纹长袖T恤",
+      "category": "上装",
+      "color": "蓝/白",
+      "price": 159,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/011",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "S–XL",
+      "tags": [
+        "条纹",
+        "休闲"
+      ]
+    },
+    {
+      "item_id": "I012",
+      "name": "占位：燕麦色宽松卫衣",
+      "category": "上装",
+      "color": "燕麦",
+      "price": 219,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/012",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "均码",
+      "tags": [
+        "休闲",
+        "运动"
+      ]
+    },
+    {
+      "item_id": "I002",
+      "name": "占位：浅蓝直筒牛仔裤",
+      "category": "下装",
+      "color": "浅蓝",
+      "price": 259,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/002",
+      "image": "/items/jeans.png",
+      "image_rights": "自有拍摄",
+      "image_rights_note": "占位：AI 生成示意图（Weave），非真实在售商品",
+      "size_note": "XS–XL，按商家尺码表",
+      "tags": [
+        "牛仔",
+        "四季"
+      ]
+    },
+    {
+      "item_id": "I013",
+      "name": "占位：燕麦亚麻阔腿裤",
+      "category": "下装",
+      "color": "燕麦",
+      "price": 289,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/013",
+      "image": "/items/linen.png",
+      "image_rights": "自有拍摄",
+      "image_rights_note": "占位：AI 生成示意图（Weave），非真实在售商品",
+      "size_note": "S–XL",
+      "tags": [
+        "亚麻",
+        "春夏",
+        "宽松"
+      ]
+    },
+    {
+      "item_id": "I014",
+      "name": "占位：黑色西装直筒裤",
+      "category": "下装",
+      "color": "黑",
+      "price": 329,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/014",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "XS–XL",
+      "tags": [
+        "通勤",
+        "西装"
+      ]
+    },
+    {
+      "item_id": "I015",
+      "name": "占位：驼色百褶中长半裙",
+      "category": "下装",
+      "color": "驼",
+      "price": 279,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/015",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "S–L",
+      "tags": [
+        "半裙",
+        "秋冬"
+      ]
+    },
+    {
+      "item_id": "I016",
+      "name": "占位：灰色运动束脚裤",
+      "category": "下装",
+      "color": "灰",
+      "price": 199,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/016",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "S–XL",
+      "tags": [
+        "运动",
+        "休闲"
+      ]
+    },
+    {
+      "item_id": "I017",
+      "name": "占位：驼色双面羊毛大衣",
+      "category": "外套",
+      "color": "驼",
+      "price": 1299,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/017",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "S–L",
+      "tags": [
+        "羊毛",
+        "秋冬",
+        "正式"
+      ]
+    },
+    {
+      "item_id": "I018",
+      "name": "占位：卡其色风衣",
+      "category": "外套",
+      "color": "卡其",
+      "price": 799,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/018",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "S–L",
+      "tags": [
+        "风衣",
+        "通勤",
+        "春秋"
+      ]
+    },
+    {
+      "item_id": "I019",
+      "name": "占位：黑色短款西装外套",
+      "category": "外套",
+      "color": "黑",
+      "price": 599,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/019",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "S–L",
+      "tags": [
+        "西装",
+        "通勤"
+      ]
+    },
+    {
+      "item_id": "I020",
+      "name": "占位：浅蓝牛仔夹克",
+      "category": "外套",
+      "color": "浅蓝",
+      "price": 359,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/020",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "S–XL",
+      "tags": [
+        "牛仔",
+        "休闲"
+      ]
+    },
+    {
+      "item_id": "I021",
+      "name": "占位：奶白色轻薄披肩",
+      "category": "外套",
+      "color": "奶白",
+      "price": 189,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/021",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "均码",
+      "tags": [
+        "披肩",
+        "户外",
+        "正式"
+      ]
+    },
+    {
+      "item_id": "I003",
+      "name": "占位：浅棕麂皮乐福鞋",
+      "category": "鞋",
+      "color": "浅棕",
+      "price": 359,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/003",
+      "image": "/items/loafers.png",
+      "image_rights": "自有拍摄",
+      "image_rights_note": "占位：AI 生成示意图（Weave），非真实在售商品",
+      "size_note": "35–40，标准码",
+      "tags": [
+        "平底",
+        "麂皮"
+      ]
+    },
+    {
+      "item_id": "I022",
+      "name": "占位：驼色平底玛丽珍鞋",
+      "category": "鞋",
+      "color": "驼",
+      "price": 329,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/022",
+      "image": "/items/maryjane.png",
+      "image_rights": "自有拍摄",
+      "image_rights_note": "占位：AI 生成示意图（Weave），非真实在售商品",
+      "size_note": "35–40，标准码",
+      "tags": [
+        "平底",
+        "复古"
+      ]
+    },
+    {
+      "item_id": "I023",
+      "name": "占位：裸色细跟尖头高跟鞋",
+      "category": "鞋",
+      "color": "裸色",
+      "price": 459,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/023",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "35–39",
+      "tags": [
+        "高跟",
+        "正式"
+      ]
+    },
+    {
+      "item_id": "I024",
+      "name": "占位：白色板鞋",
+      "category": "鞋",
+      "color": "白",
+      "price": 299,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/024",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "35–40",
+      "tags": [
+        "平底",
+        "运动",
+        "休闲"
+      ]
+    },
+    {
+      "item_id": "I025",
+      "name": "占位：金色细带低跟凉鞋",
+      "category": "鞋",
+      "color": "金",
+      "price": 269,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/025",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "35–39",
+      "tags": [
+        "低跟",
+        "户外",
+        "春夏"
+      ]
+    },
+    {
+      "item_id": "I026",
+      "name": "占位：黑色切尔西短靴",
+      "category": "鞋",
+      "color": "黑",
+      "price": 559,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/026",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "35–40",
+      "tags": [
+        "平底",
+        "短靴",
+        "秋冬"
+      ]
+    },
+    {
+      "item_id": "I036",
+      "name": "占位：米色平底穆勒鞋",
+      "category": "鞋",
+      "color": "米",
+      "price": 179,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/036",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "35–40",
+      "tags": [
+        "平底",
+        "户外",
+        "春夏"
+      ]
+    },
+    {
+      "item_id": "I004",
+      "name": "占位：燕麦色帆布托特包",
+      "category": "包",
+      "color": "燕麦",
+      "price": 189,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/004",
+      "image": "/items/tote.png",
+      "image_rights": "自有拍摄",
+      "image_rights_note": "占位：AI 生成示意图（Weave），非真实在售商品",
+      "size_note": "",
+      "tags": [
+        "帆布",
+        "休闲"
+      ]
+    },
+    {
+      "item_id": "I027",
+      "name": "占位：黑色皮质腋下包",
+      "category": "包",
+      "color": "黑",
+      "price": 699,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/027",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "",
+      "tags": [
+        "皮革",
+        "通勤"
+      ]
+    },
+    {
+      "item_id": "I028",
+      "name": "占位：香槟金链条手拿包",
+      "category": "包",
+      "color": "香槟金",
+      "price": 399,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/028",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "",
+      "tags": [
+        "正式",
+        "金属"
+      ]
+    },
+    {
+      "item_id": "I029",
+      "name": "占位：藤编小方包",
+      "category": "包",
+      "color": "原木",
+      "price": 239,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/029",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "",
+      "tags": [
+        "藤编",
+        "户外",
+        "春夏"
+      ]
+    },
+    {
+      "item_id": "I030",
+      "name": "占位：黑色尼龙斜挎包",
+      "category": "包",
+      "color": "黑",
+      "price": 169,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/030",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "",
+      "tags": [
+        "尼龙",
+        "运动"
+      ]
+    },
+    {
+      "item_id": "I037",
+      "name": "占位：草编小手拿包",
+      "category": "包",
+      "color": "米",
+      "price": 129,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/037",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "",
+      "tags": [
+        "草编",
+        "户外",
+        "春夏"
+      ]
+    },
+    {
+      "item_id": "I005",
+      "name": "占位：细金属发夹两件套",
+      "category": "配饰",
+      "color": "金",
+      "price": 59,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/005",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "",
+      "tags": [
+        "金属"
+      ]
+    },
+    {
+      "item_id": "I031",
+      "name": "占位：珍珠耳钉",
+      "category": "配饰",
+      "color": "白",
+      "price": 129,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/031",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "",
+      "tags": [
+        "珍珠",
+        "正式"
+      ]
+    },
+    {
+      "item_id": "I032",
+      "name": "占位：金色细链项链",
+      "category": "配饰",
+      "color": "金",
+      "price": 199,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/032",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "",
+      "tags": [
+        "金属",
+        "正式"
+      ]
+    },
+    {
+      "item_id": "I033",
+      "name": "占位：玳瑁色方框墨镜",
+      "category": "配饰",
+      "color": "玳瑁",
+      "price": 159,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/033",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "",
+      "tags": [
+        "户外",
+        "春夏"
+      ]
+    },
+    {
+      "item_id": "I034",
+      "name": "占位：驼色羊绒围巾",
+      "category": "配饰",
+      "color": "驼",
+      "price": 259,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/034",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "",
+      "tags": [
+        "羊绒",
+        "秋冬"
+      ]
+    },
+    {
+      "item_id": "I035",
+      "name": "占位：黑色细皮带",
+      "category": "配饰",
+      "color": "黑",
+      "price": 139,
+      "currency": "CNY",
+      "price_checked_at": "2026-10-16",
+      "buy_url": "https://example.com/item/035",
+      "image": "",
+      "image_rights": "",
+      "image_rights_note": "",
+      "size_note": "",
+      "tags": [
+        "皮革",
+        "通勤"
+      ]
+    }
+  ]
+}

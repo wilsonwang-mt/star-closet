@@ -1,2 +1,5 @@
 .local/
 .DS_Store
+
+# Claude Code 本地 worktree
+.claude/worktrees/
