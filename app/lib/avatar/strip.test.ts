@@ -10,7 +10,8 @@ test("JPEG：删除 EXIF（含 GPS）、XMP、IPTC、注释，保留方向与图
   const out = stripMetadata(src);
   assert.ok(out);
   assert.ok(!contains(out.bytes, SECRET), "元数据标记仍在文件里");
-  assert.deepEqual([...new Set(out.removed)].sort(), ["COM", "EXIF", "IPTC", "XMP"]);
+  assert.deepEqual([...new Set(out.removed)].sort(), ["APP2", "COM", "EXIF", "IPTC", "XMP"]);
+  assert.ok(contains(out.bytes, "ICC_PROFILE"), "ICC 色彩配置应保留");
   // 只剩一个最小 APP1：只有 Orientation=6，没有 GPS 指针（0x8825）
   const b = out.bytes;
   const app1 = [...b.keys()].filter((i) => b[i] === 0xff && b[i + 1] === 0xe1);
@@ -22,6 +23,15 @@ test("JPEG：删除 EXIF（含 GPS）、XMP、IPTC、注释，保留方向与图
   // 宽高仍可识别，扫描数据原样保留
   assert.deepEqual(sniffImage(b), { mime: "image/jpeg", ext: "jpg", width: 80, height: 120 });
   assert.deepEqual([...b.subarray(-9)], [0x12, 0x34, 0x56, 0x78, 0xff, 0x00, 0x9a, 0xff, 0xd9]);
+});
+
+test("JPEG：丢弃 EOI 之后的附加数据（动态照片视频、副图）", () => {
+  const src = jpegWithExif(80, 120, 1, true);
+  const out = stripMetadata(src)!;
+  assert.ok(out.removed.includes("TRAILER"));
+  assert.ok(!contains(out.bytes, SECRET) && !contains(out.bytes, "ftypmp42"));
+  assert.deepEqual([...out.bytes.subarray(-2)], [0xff, 0xd9]);
+  assert.deepEqual(sniffImage(out.bytes), { mime: "image/jpeg", ext: "jpg", width: 80, height: 120 });
 });
 
 test("JPEG：方向为 1 时不写回任何 EXIF", () => {

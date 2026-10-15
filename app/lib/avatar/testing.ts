@@ -13,8 +13,8 @@ function segment(marker: number, payload: number[]) {
   return [0xff, marker, ...be16(payload.length + 2), ...payload];
 }
 
-/** 带 EXIF（方向=orientation、GPS 子 IFD）、XMP、IPTC、COM 的最小 JPEG 结构（像素数据为占位）。 */
-export function jpegWithExif(width = 80, height = 120, orientation = 6): Uint8Array {
+/** 带 EXIF（方向=orientation、GPS 子 IFD）、XMP、MPF、IPTC、COM 的最小 JPEG 结构（像素数据为占位）；trailer 为 true 时在 EOI 后附加数据（模拟动态照片）。 */
+export function jpegWithExif(width = 80, height = 120, orientation = 6, trailer = false): Uint8Array {
   // TIFF（大端）：IFD0 两个字段——Orientation 与 GPS IFD 指针；GPS IFD 一个 ASCII 字段放 SECRET。
   const secret = bytesOf(SECRET + "\0");
   const ifd0 = 8;
@@ -36,6 +36,8 @@ export function jpegWithExif(width = 80, height = 120, orientation = 6): Uint8Ar
     ...segment(0xe0, [...bytesOf("JFIF\0"), 1, 1, 0, 0, 1, 0, 1, 0, 0]),
     ...segment(0xe1, [...bytesOf("Exif\0\0"), ...tiff]),
     ...segment(0xe1, [...bytesOf("http://ns.adobe.com/xap/1.0/\0"), ...bytesOf(`<x:xmpmeta>${SECRET}</x:xmpmeta>`)]),
+    ...segment(0xe2, [...bytesOf("ICC_PROFILE\0"), 1, 1, ...bytesOf("icc-placeholder")]),
+    ...segment(0xe2, [...bytesOf("MPF\0"), ...bytesOf(SECRET)]),
     ...segment(0xed, [...bytesOf("Photoshop 3.0\0"), ...bytesOf(SECRET)]),
     ...segment(0xfe, bytesOf(SECRET)),
     ...segment(0xdb, [0, ...new Array(64).fill(1)]),
@@ -43,6 +45,7 @@ export function jpegWithExif(width = 80, height = 120, orientation = 6): Uint8Ar
     ...segment(0xda, [1, 1, 0, 0, 63, 0]),
     0x12, 0x34, 0x56, 0x78, 0xff, 0x00, 0x9a,
     0xff, 0xd9,
+    ...(trailer ? [...bytesOf("ftypmp42"), ...bytesOf(SECRET), 0xff, 0xd8, 0xff, 0xd9] : []),
   ]);
 }
 

@@ -462,8 +462,10 @@ export async function tickJob(userId: string, jobId: string): Promise<JobView | 
           .where(and(eq(schema.avatarJob.id, job.id), eq(schema.avatarJob.status, "processing")))
           .returning();
         if (done) {
-          // D47：原始照片自生成成功起保留 30 天。
-          await setPhotoExpiry(userId, done.inputPhotoIds, now);
+          // D47：原始照片自生成成功起保留 30 天。对本人全部在用照片生效：
+          // 以前上传、不参与生成的面部特写与补充照片也随之到期，不会无限期保留。
+          const all = await livePhotos(userId);
+          await setPhotoExpiry(userId, all.map((p) => p.id), now);
           await removeOlderResults(userId, done.id);
         } else {
           // 期间被取消或删除：丢弃结果文件。

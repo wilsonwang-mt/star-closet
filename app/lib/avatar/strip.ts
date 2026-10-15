@@ -1,7 +1,7 @@
 // 服务端剥离照片元数据（EXIF 含 GPS、XMP、IPTC、文字注释等），不依赖 sharp 等原生库。
 // 只删元数据段/块，不动像素数据，因此不会二次压缩、也不改变宽高。
-// - JPEG：删除 APP1（Exif / XMP）、APP3–APP15（含 APP13 IPTC）与 COM 注释；保留 APP0（JFIF）、
-//   APP2（ICC 色彩配置）、APP14（Adobe 色彩变换）和全部图像段。若原图 EXIF 带非默认的方向（Orientation），
+// - JPEG：删除 APP1（Exif / XMP）、非 ICC 的 APP2（如 MPF）、APP3–APP15（含 APP13 IPTC）、COM 注释，
+//   以及 EOI 之后的附加数据（动态照片视频、副图等）；保留 APP0（JFIF）、APP2 ICC 色彩配置、APP14（Adobe）和全部图像段。若原图 EXIF 带非默认的方向（Orientation），
 //   重新写入一个只含方向字段的最小 EXIF，保证剥离后不会“躺倒”；其余字段（拍摄时间、设备、GPS 等）一律不保留。
 // - PNG：只保留白名单内的块（图像数据与色彩相关），删除 eXIf、tEXt、zTXt、iTXt、tIME 等。
 // - WebP：删除 EXIF 与 XMP 块，清掉 VP8X 头里对应的标志位并重算 RIFF 长度。
@@ -93,8 +93,22 @@ function stripJpeg(b: Uint8Array): StripResult | null {
     if (len < 2 || i + 2 + len > b.byteLength) return null;
     const seg = b.subarray(i, i + 2 + len);
     if (marker === 0xda) {
-      // 扫描段之后是熵编码数据，原样保留到文件末尾（其中不含元数据段）。
-      parts.push(b.subarray(i));
+      // 扫描段之后是熵编码数据，保留到第一个 EOI（FF D9）为止。熵编码数据里 FF 后只会跟 00 或 D0–D7，
+      // 渐进式 JPEG 的扫描之间只有 C4/DB/DA/DD 等段，所以第一个 FF D9 就是真正的结尾。
+      // EOI 之后的附加数据（手机“动态照片”附带的视频、MPF 副图/深度图等）一律丢弃。
+      let end = -1;
+      for (let k = i + 2 + len; k + 1 < b.byteLength; k++) {
+        if (b[k] === 0xff && b[k + 1] === 0xd9) {
+          end = k + 2;
+          break;
+        }
+      }
+      if (end < 0) {
+        parts.push(b.subarray(i));
+      } else {
+        parts.push(b.subarray(i, end));
+        if (end < b.byteLength) removed.push("TRAILER");
+      }
       i = b.byteLength;
       break;
     }
@@ -106,6 +120,9 @@ function stripJpeg(b: Uint8Array): StripResult | null {
       } else {
         removed.push("XMP");
       }
+    } else if (marker === 0xe2 && ascii(payload, 0, 12) !== "ICC_PROFILE\0") {
+      // APP2 只保留 ICC 色彩配置；MPF（多图索引，指向 EOI 之后的副图）等一并删除。
+      removed.push("APP2");
     } else if (marker >= 0xe3 && marker <= 0xef && marker !== 0xee) {
       removed.push(marker === 0xed ? "IPTC" : `APP${marker - 0xe0}`);
     } else if (marker === 0xfe) {
