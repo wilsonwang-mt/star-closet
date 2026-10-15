@@ -1,50 +1,43 @@
-# 明星衣橱 · Star Closet
+# Star Closet · AI策展衣橱与个人试穿平台
 
-**静态发布补充（2026-10-15）**：用户已要求分别提供线上预览，因此本轮Slides与设计材料的静态发布已获授权；文中应用开发、真实交易与应用部署的限制继续适用。发布完成须以实际可访问的URL核验为准。
+**v0.3 · 2026-10-15定位调整**：让每个人发现喜欢的审美，通过AI搭配、个人试衣间和自己的形象理解服装，再完成可信选购。Star Closet / 明星衣橱暂作工作名称，不再只面向明星或真实实体衣橱。
 
-以人物审美、电影式镜头和真实可旋转服饰，连接灵感发现、商品理解与选购。
+## 产品两侧
 
-**当前交付为产品文档、静态视觉与演示材料；网站应用尚未编码，技术栈尚未批准。** 用户已允许本轮静态 HTML Slides 作为文档交付例外；这不代表网站应用、真实支付或部署获得授权。
+- **主理人及团队**：明星、网红/穿搭博主、品牌主题、风格主题、审核通过个人都可成为公共衣橱供给；用照片、视频、语音让Agent整理草稿，再确认、审核与发布。五类入口可交叠，账户主体与主题分开。
+- **大众消费者**：文字/语音表达穿搭诉求，收集服装配饰到个人试衣间，建立本人形象并一键试穿，选择商品与购买路径。点赞收藏、付费私密衣橱和粉丝内容权益纳入完整规划。
 
-## 本轮补交 · 2026-10-15
+“准确3D人物、实时渲染”是长远目标，尚未通过模型、尺寸、时延或合身验证。核心服饰完整可旋转模型目标继续保留；2D生成图、旋转人偶和真实穿着适配分别表达。
 
-原定 10 月 15 日 08:00（新加坡时间）的文件交付未完成，本轮在执行器恢复后重新整理落盘，不倒填完成时间。已合并的文档基线为提交 279ea59；本批材料的实际提交、导出与验证以[交付记录](docs/交付记录.md)为准。
+## 商业策略
 
-- [HTML Slides](docs/presentation/star-closet-hackathon.html)：22页，已完成实际浏览器检查；下载后打开，源码页不运行HTML。
-- [Slides PDF](docs/presentation/star-closet-hackathon.pdf)：22页，适合手机直接预览和保存。
-- [静态设计预览](docs/design/README.md)与[HTML画廊](docs/design/preview.html)：首页、聚光详情、搜索与手机概念。
-- [静态视觉总览](docs/design/concepts/visual-atlas-20261015.png)：本轮云端重新生成的概念图；不是原图恢复、GLB 或应用截图。
-- [设计探索](docs/design/设计探索.md)与[素材清单](docs/design/素材清单.md)：视觉规范、来源及使用边界。
+入驻付费服务，或免入驻按有效净成交分享同一个佣金池；补充粉丝独家内容门票与个人私密衣橱服务。价格、比例、阈值和市场未定。数字内容、个人服务、B2B交付和实物订单分别记账；个人衣橱仅本人查看。
 
-## 线上预览
-
-- [HTML Slides](https://wilsonwang-mt.github.io/star-closet/presentation/star-closet-hackathon.html)
-- [静态设计画廊](https://wilsonwang-mt.github.io/star-closet/design/preview.html)
-- [手机阅读PDF](https://wilsonwang-mt.github.io/star-closet/presentation/star-closet-hackathon.pdf)
-- [全部材料入口](https://wilsonwang-mt.github.io/star-closet/)
-
-GitHub Pages部署和[远端公开文件检查](https://github.com/wilsonwang-mt/star-closet/actions/runs/38678624420)均已成功。发布内容是静态方案文档。
+优先验证可信供给、建橱效率、搭配复访和单位贡献，再扩大高成本试穿、粉丝内容与订阅。完整可行性、资源整合、运营和经济假设见下列材料。
 
 ## 阅读入口
 
 | 内容 | 文档 |
-|---|---|
-| 产品全貌与确认依据 | [产品策略](docs/产品策略.md)、[完整 PRD](docs/PRD.md)、[决策记录](docs/决策记录.md) |
-| 需求与实施状态 | [需求说明](docs/需求说明.md)、[功能清单](docs/功能清单.md)、[任务清单](docs/任务清单.md) |
-| 用户体验 | [信息架构与搜索](docs/信息架构与搜索.md)、[服饰详情与 3D 体验](docs/服饰详情与3D体验.md) |
-| 商业与实现 | [交易与履约](docs/交易与履约方案.md)、[技术决策](docs/技术决策.md)、[实现架构与功能映射](docs/实现架构与功能映射.md) |
-| 比赛与协作 | [两天冲刺与团队](docs/两天冲刺与团队.md)、[协作流程](docs/协作流程.md)、[AGENTS.md](AGENTS.md) |
+| --- | --- |
+| 产品全貌 | [产品策略](docs/产品策略.md)、[完整PRD](docs/PRD.md)、[需求说明](docs/需求说明.md) |
+| 这次改了什么 | [定位调整与需求追踪](docs/定位调整与需求追踪.md)、[决策记录](docs/决策记录.md) |
+| 商业与运营 | [商业模式与平台运营](docs/商业模式与平台运营.md)、[交易与履约](docs/交易与履约方案.md) |
+| 创建与消费体验 | [入驻与Agent建橱](docs/入驻与Agent建橱.md)、[信息架构与搜索](docs/信息架构与搜索.md)、[功能清单](docs/功能清单.md) |
+| 真实感与试穿 | [AI试穿与个人形象](docs/AI试穿与个人形象.md)、[服饰详情与3D体验](docs/服饰详情与3D体验.md)、[设计探索](docs/design/设计探索.md) |
+| 实现与比赛 | [实现映射](docs/实现架构与功能映射.md)、[技术决策](docs/技术决策.md)、[冲刺与团队](docs/两天冲刺与团队.md)、[任务清单](docs/任务清单.md) |
+| 事实与协作 | [交付记录](docs/交付记录.md)、[独立评审](docs/评审记录.md)、[协作流程](docs/协作流程.md)、[AGENTS](AGENTS.md) |
 
-## 当前状态
+## 线上与静态材料
 
-- **已确认方向**：浅弧首页、暗色玻璃界面、电影式衣橱、聚光与详情卡、真实可旋转服饰、完整搜索及手机操作。方向确认不等于功能已经实现。
-- **重点评估**：站内统一购买与后台整合供给；商家、市场、币种、支付与履约未定，外链不是唯一既定模式。
-- **仍待验证**：真实 3D 素材、目标设备、性能、技术栈、供应及商业责任。核心旋转服饰须有真实模型；图片回退不算三维目标完成。
-- **尚无确认合作**：人物、品牌、商品来源和供货授权需逐项落实。原件、推荐、同款和相似款分别标示。
+- [HTML Slides](https://wilsonwang-mt.github.io/star-closet/presentation/star-closet-hackathon.html) · [设计画廊](https://wilsonwang-mt.github.io/star-closet/design/preview.html) · [PDF](https://wilsonwang-mt.github.io/star-closet/presentation/star-closet-hackathon.pdf) · [材料入口](https://wilsonwang-mt.github.io/star-closet/)
+- [HTML/PDF文件与打开说明](docs/presentation/README.md)、[设计素材清单](docs/design/素材清单.md)。静态概念与流程图不代表应用、模型或支付已经实现。
 
-## 历史资料与运行
+线上链接保持稳定；本次v0.3材料更新、检查和实际发布版本以交付记录为准，不把v0.2的上线记录当本次已验证。历史原图保留并注明适用范围。
 
-[研究摘要](docs/研究摘要.md)与[原始 HTML 研究简报](research/明星衣橱_Hackathon研究简报.html)保留 2026-10-12 的证据与建议。一个房间、三个镜头、6–8 件及至少一个 GLB 属于历史候选范围，不是首版批准或完成记录；最新明确用户指令优先。
+## 当前执行状态
 
-当前没有网站应用安装、启动、构建或功能测试结果。静态Slides已通过五种视口、导航、无脚本阅读与打印检查，PDF共22页；实体手机未实测。静态线上发布已完成，准确范围与验证见[交付记录](docs/交付记录.md)。项目资料以本仓库为版本来源。
+用户已授权产品文档、静态设计/演示、静态预览及提交合并。本轮未创建网站应用、接入真实AI/支付/供给或采集身体资料；应用实施范围、技术栈和首版还需决定。用户已说明时尚顾问/博主组队，不推定已有明星、品牌、供应商或素材合作。
 
+[原研究摘要](docs/研究摘要.md)与[2026-10-12原始HTML](research/明星衣橱_Hackathon研究简报.html)作为历史证据保留；旧排除试穿/收藏与明星单一定位不再覆盖v0.3需求。
+
+仓库：[wilsonwang-mt/star-closet](https://github.com/wilsonwang-mt/star-closet)。

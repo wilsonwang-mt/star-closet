@@ -3,9 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Star Closet 静态设计探索画廊：浅弧衣橱首页、服饰聚光、搜索发现与手机布局。">
+  <meta name="description" content="Star Closet v0.3 静态设计探索：公共衣橱发现、Agent建橱、搭配与本人化身试穿、三类访问权益。">
   <meta name="theme-color" content="#080d12">
-  <title>Star Closet · 设计探索画廊</title>
+  <link rel="icon" href="data:,">
+  <title>Star Closet v0.3 · 设计探索画廊</title>
   <style>
     :root {
       color-scheme: dark;
@@ -77,6 +78,36 @@
     .view li::marker { color: var(--accent); }
     .note { margin-top: 24px; padding: 16px 18px; background: #e0c6a00a; border-left: 2px solid #e0c6a066; border-radius: 0 12px 12px 0; color: #c9c2b6; font-size: 13px; }
     .dimensions { color: var(--accent); font-size: 14px; margin-top: 20px; line-height: 2; }
+    .version-note { margin-top: 28px; max-width: 1020px; padding: 18px 22px; border: 1px solid var(--line); border-radius: 16px; color: var(--muted); font-size: 14px; background: #ffffff03; }
+    .version-note strong { color: var(--text); font-weight: 500; }
+    .ecosystem, .journeys-section, .access-section { padding-block: 66px; border-top: 1px solid var(--line); scroll-margin-top: 24px; }
+    .entrances { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 30px; }
+    .entrance { flex: 1 1 175px; padding: 23px 20px; border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(155deg, #ffffff08, #ffffff01); }
+    .entrance h3 { font-size: 19px; font-weight: 500; }
+    .entrance p { margin-top: 12px; color: var(--muted); font-size: 13px; }
+    .section-footnote { margin-top: 22px; font-size: 14px; color: var(--muted); }
+    .flow-board { padding: clamp(22px, 3vw, 38px); margin-top: 28px; border: 1px solid var(--line); border-radius: 24px; background: linear-gradient(135deg, #ffffff07, #ffffff01); }
+    .flow-header { display: flex; justify-content: space-between; align-items: baseline; gap: 18px; margin-bottom: 28px; }
+    .flow-header h3 { font-size: clamp(23px, 2.4vw, 30px); font-weight: 500; }
+    .flow-header p { color: var(--accent); font-size: 12px; }
+    .flow-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 20px; padding: 0; margin: 0; list-style: none; }
+    .flow-step { position: relative; min-height: 195px; padding: 20px 16px; border: 1px solid #e3c79b29; border-radius: 15px; background: #0b1219b3; }
+    .flow-step:not(:last-child)::after { content: ""; position: absolute; right: -14px; top: 50%; width: 7px; height: 7px; border-top: 1px solid var(--accent); border-right: 1px solid var(--accent); transform: rotate(45deg); }
+    .flow-icon { display: block; width: 32px; height: 32px; margin-bottom: 22px; fill: none; stroke: var(--accent); stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+    .flow-step h4 { margin: 0; font-size: 17px; font-weight: 500; }
+    .flow-step p { margin-top: 10px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+    .flow-board--personal { background: linear-gradient(135deg, #a3c9dd0b, #ffffff01); }
+    .flow-board--personal .flow-step { border-color: #a3c9dd2e; }
+    .flow-board--personal .flow-icon { stroke: #b4d0df; }
+    .flow-note { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+    .request-example { max-width: 950px; margin-bottom: 30px; font-size: clamp(22px, 2.5vw, 34px); line-height: 1.5; font-weight: 400; color: #e7e3d9; }
+    .access-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 30px; }
+    .access-card { padding: 28px; border: 1px solid var(--line); border-radius: 20px; background: #ffffff03; }
+    .access-kind { font-size: 12px; color: var(--accent); }
+    .access-card h3 { margin-top: 17px; font-size: 23px; line-height: 1.4; font-weight: 500; }
+    .access-card p { margin-top: 16px; color: var(--muted); font-size: 14px; }
+    .access-card .access-rule { padding-top: 16px; border-top: 1px solid var(--line); font-size: 12px; }
+    .baseline-intro { margin-top: 44px; margin-bottom: 26px; }
     .directions-section { padding-block: 70px; border-top: 1px solid var(--line); scroll-margin-top: 28px; }
     .directions { display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-flow: dense; gap: 18px; margin-top: 30px; }
     .direction { padding: 26px; border: 1px solid var(--line); border-radius: 20px; background: linear-gradient(150deg, #ffffff06, #ffffff01); }
@@ -96,6 +127,12 @@
       .view .lead { max-width: 740px; }
       .directions { grid-template-columns: 1fr; }
       .direction { padding: 24px; }
+      .flow-steps { grid-template-columns: 1fr; gap: 16px; }
+      .flow-step { min-height: 0; padding: 18px 20px 18px 70px; }
+      .flow-icon { position: absolute; left: 20px; top: 19px; margin-bottom: 0; }
+      .flow-step:not(:last-child)::after { right: 50%; top: auto; bottom: -12px; transform: rotate(135deg); }
+      .flow-step p { margin-top: 5px; }
+      .access-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 640px) {
       .nav-shell { padding: 13px 15px; gap: 12px; }
@@ -112,6 +149,11 @@
       .image-frame > a { border-radius: 12px; }
       .notes-grid { grid-template-columns: 1fr; gap: 26px; }
       .directions-section, .materials { padding-block: 46px; }
+      .ecosystem, .journeys-section, .access-section { padding-block: 44px; }
+      .entrance { flex-basis: 100%; }
+      .flow-header { display: block; }
+      .flow-header p { margin-top: 8px; }
+      .version-note { padding: 16px 18px; }
       footer { display: block; }
       footer p + p { margin-top: 10px; }
     }
@@ -140,100 +182,120 @@
     <nav class="nav-shell" aria-label="设计画廊导航">
       <a class="brand" href="#main">STAR CLOSET <small>DESIGN STUDY</small></a>
       <div class="nav-links">
-        <a href="#overview">概念总览</a>
-        <a href="#views">关键视图</a>
-        <a href="#directions">探索方向</a>
+        <a href="#journeys">双向流程</a>
+        <a href="#access">访问权益</a>
+        <a href="#platform-overview">v0.3 概念</a>
         <a class="slides-link" href="../presentation/star-closet-hackathon.html">产品 Slides ↗</a>
       </div>
     </nav>
   </header>
   <main id="main" class="shell">
     <section class="hero" aria-labelledby="page-title">
-      <p class="eyebrow">静态概念探索 · 2026.10.15</p>
-      <h1 id="page-title">一间衣橱，<br>一种风格的入口。</h1>
-      <p class="hero-copy">以深色空间、玻璃卡片和有层次的光影，连接人物审美与服饰发现。从首页的浅弧选择，到单品的聚光舞台，探索一条连贯的浏览体验。</p>
+      <p class="eyebrow">v0.3 静态概念探索 · 2026.10.15</p>
+      <h1 id="page-title">主理人、品牌与主题，<br>连接每个人的风格。</h1>
+      <p class="hero-copy">从公共衣橱发现，到 Agent 协助创作者建橱；从一句穿搭诉求，到服装配饰搭配、个人试衣间与本人化身试穿。空间可以被策展，不必复刻真实房间。</p>
       <div class="actions">
-        <a class="button button--primary" href="concepts/visual-atlas-20261015.png">打开完整概念图 <span class="arrow" aria-hidden="true">↗</span></a>
+        <a class="button button--primary" href="#platform-overview">查看 v0.3 概念图 <span class="arrow" aria-hidden="true">↓</span></a>
         <a class="button" href="../presentation/star-closet-hackathon.html">查看产品 Slides <span aria-hidden="true">↗</span></a>
       </div>
+      <p class="version-note"><strong>本页是设计评审材料。</strong>新 v0.3 概念图展示建橱、搭配、试穿与个人空间；另保留 v0.2 早先视觉基线。所有人像、商品、数量和预览都是虚构静态示意，没有执行上传、录音、Agent、试穿或支付。</p>
     </section>
 
-    <figure id="overview" class="overview">
-      <div class="image-frame">
-        <a href="concepts/visual-atlas-20261015.png" aria-label="打开完整静态概念总览 PNG">
-          <img class="overview-image" src="concepts/visual-atlas-20261015.png" width="1586" height="992" alt="四象限静态概念总览：左上为浅弧剖切衣橱首页，右上为聚光夹克及玻璃卡，左下为中文搜索，右下为手机竖横屏布局。">
-        </a>
-      </div>
-      <figcaption><span>本次在云端重新生成的视觉总览。点击图片，可打开原尺寸 PNG。</span><span class="figure-label">静态概念 · 非可交互网页</span></figcaption>
+    <figure id="platform-overview" class="overview">
+      <div class="image-frame"><a href="concepts/platform-v03-atlas-20261015.png" aria-label="打开完整 v0.3 静态平台概念图"><img class="overview-image" src="concepts/platform-v03-atlas-20261015.png" width="1586" height="992" alt="v0.3 四象限静态概念：左上多模态建橱及Agent草稿审核，右上语音诉求与服装配饰搭配，左下虚构成人化身试穿示意，右下仅本人衣橱及独立创作者内容解锁入口。"></a></div>
+      <figcaption><span>v0.3 新生成的平台概念图。所有人物、商品、数量与预览均为示例。</span><span class="figure-label">静态概念 · 非真实试穿</span></figcaption>
     </figure>
 
-    <section id="views" aria-label="四个关键视图">
-      <article class="view" aria-labelledby="home-title">
-        <figure class="visual">
-          <div class="image-frame"><a href="concepts/visual-atlas-20261015.png" aria-label="在完整概念图中查看首页布局"><div class="crop"><img src="concepts/visual-atlas-20261015.png" width="1586" height="992" loading="lazy" alt="首页静态概念：中央最大正面的剖切衣橱，两侧相邻衣橱部分露出，卡下有头像、姓名、风格和进入按钮。"></div></a></div>
-          <figcaption>首页选择 · 静态概念</figcaption>
-        </figure>
-        <div>
-          <p class="eyebrow">选择一间衣橱</p>
-          <h2 id="home-title">让空间先讲述，<br>这是谁的风格。</h2>
-          <p class="lead">浅弧形卡片给衣橱留出舞台。中央最大、正对用户，两侧用透视、远近与遮挡提示下一间。</p>
-          <ul>
-            <li>卡下保留头像、姓名、一句风格介绍与进入按钮。</li>
-            <li>横向切换后，相邻衣橱来到中央。</li>
-            <li>搜索保持明显，让目标明确的用户直接找到内容。</li>
-          </ul>
-        </div>
+    <section id="views" aria-label="v0.3 的四个关键视图">
+      <article class="view" aria-labelledby="creator-view-title">
+        <figure class="visual"><div class="image-frame"><a href="concepts/platform-v03-atlas-20261015.png" aria-label="打开完整概念图查看多模态建橱"><div class="crop"><img src="concepts/platform-v03-atlas-20261015.png" width="1586" height="992" loading="lazy" alt="左上静态概念：照片、视频和语音素材进入Agent草稿，随后有编辑审核提示，右侧展示策展空间。"></div></a></div><figcaption>多模态建橱 · 草稿与审核的静态示意</figcaption></figure>
+        <div><p class="eyebrow">创作者与团队</p><h2 id="creator-view-title">把素材交给 Agent，<br>把发布决定留给人。</h2><p class="lead">照片、视频和语音帮助整理故事与服饰，先形成可编辑草稿，再核对来源、资产和公开范围。</p><ul><li>Agent 追问缺失信息，不把推测写成事实。</li><li>审核后才能发布；图中尚未呈现完整发布结果。</li><li>素材整理不等于已经制作真实可旋转 3D。</li></ul></div>
       </article>
+      <article class="view view--reverse" aria-labelledby="request-view-title">
+        <figure class="visual"><div class="image-frame"><a href="concepts/platform-v03-atlas-20261015.png" aria-label="打开完整概念图查看搭配诉求"><div class="crop crop--tr"><img src="concepts/platform-v03-atlas-20261015.png" width="1586" height="992" loading="lazy" alt="右上静态概念：语音诉求、场景风格预算条件、服装鞋包组合，以及加入个人试衣间入口，旁边为虚构成人穿搭示意。"></div></a></div><figcaption>从诉求到组合 · 商品与人物均为虚构示例</figcaption></figure>
+        <div><p class="eyebrow">大众搭配发现</p><h2 id="request-view-title">一句话，<br>找到服装与配饰的组合。</h2><p class="lead">按场景、风格和预算表达诉求，从公共策展中寻找搭配，再把候选组合加入个人试衣间。</p><ul><li>语音与文字都是入口，确认条件后再推荐。</li><li>说明衣服、鞋包、来源与选择理由。</li><li>示例名称和数量不是真实商品或运营数据。</li></ul></div>
+      </article>
+      <article class="view" aria-labelledby="avatar-view-title">
+        <figure class="visual"><div class="image-frame"><a href="concepts/platform-v03-atlas-20261015.png" aria-label="打开完整概念图查看本人化身试穿"><div class="crop crop--bl"><img src="concepts/platform-v03-atlas-20261015.png" width="1586" height="992" loading="lazy" alt="左下静态概念：虚构成人形象、多角度小图和服装配饰候选卡，用于讨论个人试衣间，不是本人精确重建或合身测试。"></div></a></div><figcaption>本人化身试穿目标 · 静态生成示意，非 fit 验证</figcaption></figure>
+        <div><p class="eyebrow">个人试衣间</p><h2 id="avatar-view-title">在本人形象上，<br>比较喜欢的搭配。</h2><p class="lead">组合保留在个人试衣间，化身未就绪时先创建或导入，再进入一键试穿的目标体验。</p><p class="note">图中的人像、多角度和候选款式都是生成示意，尚未建立真实商品与模型的逐项映射；不同领型卡片不构成服饰对应验收。它不能证明精确本人重建、3D、尺码、布料或合身准确性。</p></div>
+      </article>
+      <article class="view view--reverse" aria-labelledby="private-view-title">
+        <figure class="visual"><div class="image-frame"><a href="concepts/platform-v03-atlas-20261015.png" aria-label="打开完整概念图查看个人衣橱和独立内容入口"><div class="crop crop--br"><img src="concepts/platform-v03-atlas-20261015.png" width="1586" height="992" loading="lazy" alt="右下静态概念：标注仅本人可见的个人衣橱；下方另列独立创作者内容与门票解锁入口。两者不是相同权益。"></div></a></div><figcaption>仅本人衣橱 ＋ 独立创作者内容入口 · 两种权益</figcaption></figure>
+        <div><p class="eyebrow">个人空间与内容权益</p><h2 id="private-view-title">自己的衣橱，<br>只属于自己。</h2><p class="lead">个人私密衣橱仅本人可见，不提供邀请、团队访问或分享。图下方的独家创作者内容是另一个门票入口。</p><p class="note">两入口同页仅是静态示意：个人订阅或容量服务不自动包含门票；购买门票也不会公开个人衣橱。私域数据不向创作者开放，后续布局仍需清楚分区。</p></div>
+      </article>
+    </section>
 
-      <article class="view view--reverse" aria-labelledby="garment-title">
-        <figure class="visual">
-          <div class="image-frame"><a href="concepts/visual-atlas-20261015.png" aria-label="在完整概念图中查看服饰聚焦"><div class="crop crop--tr"><img src="concepts/visual-atlas-20261015.png" width="1586" height="992" loading="lazy" alt="单品静态概念：白色夹克位于暖色射灯舞台上，右侧悬浮半透明玻璃信息卡，底部画有旋转和复位提示。"></div></a></div>
-          <figcaption>服饰聚光 · 静态概念，非三维模型</figcaption>
-        </figure>
-        <div>
-          <p class="eyebrow">把目光交给一件衣服</p>
-          <h2 id="garment-title">灯光聚焦，<br>细节成为主角。</h2>
-          <p class="lead">选中服饰后，以射灯、柔和补光和轮廓分离形成中央舞台；右侧玻璃卡提供故事、材质与操作。</p>
-          <ul>
-            <li>衣服需要真实立体、可旋转，灯光随观察角度产生自然明暗。</li>
-            <li>玻璃模糊背景，文字和服饰纹理保持锐利。</li>
-            <li>购买入口应匹配真实供货与交易能力，展示清楚的规则。</li>
-          </ul>
-          <p class="note">当前只有静态图，没有可旋转模型。白色夹克的表现也不能证明深色、反光或半透明面料已经验证。</p>
-        </div>
-      </article>
+    <section id="ecosystem" class="ecosystem" aria-labelledby="ecosystem-title">
+      <div class="section-intro">
+        <p class="eyebrow">公共衣橱的五类发现入口</p>
+        <h2 id="ecosystem-title">可以来自一个人，<br>也可以来自一种主题。</h2>
+        <p>公共策展不等于真实私藏或实体住宅。发布主体、内容来源、主题与访问范围分别表达。</p>
+      </div>
+      <div class="entrances">
+        <article class="entrance"><h3>明星</h3><p>主理人或获授权团队的主题与风格策展。</p></article>
+        <article class="entrance"><h3>网红／穿搭博主</h3><p>创作者把审美、服饰与穿搭故事组织成空间。</p></article>
+        <article class="entrance"><h3>品牌主题</h3><p>围绕系列、活动或品牌表达组织内容。</p></article>
+        <article class="entrance"><h3>风格主题</h3><p>按审美、场景与服饰关系发现搭配灵感。</p></article>
+        <article class="entrance"><h3>审核个人</h3><p>个人策展经审核后进入公共发现范围。</p></article>
+      </div>
+      <p class="section-footnote">这些入口允许交叉：主理人可以同时是穿搭博主，品牌也可以发布风格主题。个人公开策展不会自动公开其私密衣橱。</p>
+    </section>
 
-      <article class="view" aria-labelledby="search-title">
-        <figure class="visual">
-          <div class="image-frame"><a href="concepts/visual-atlas-20261015.png" aria-label="在完整概念图中查看搜索布局"><div class="crop crop--bl"><img src="concepts/visual-atlas-20261015.png" width="1586" height="992" loading="lazy" alt="搜索静态概念：中文关键词、品牌风格类别筛选、已选条件和三张服饰结果卡；生成的筛选与结果存在错配。"></div></a></div>
-          <figcaption>搜索与发现 · 静态概念，包含生成内容错配</figcaption>
-        </figure>
-        <div>
-          <p class="eyebrow">不止一种发现方式</p>
-          <h2 id="search-title">可以闲逛，<br>也可以直接找到。</h2>
-          <p class="lead">除了浏览衣橱，用户也会带着姓名、审美或商品目标而来。搜索与导航需要提供同样完整的路径。</p>
-          <p class="dimensions">明星姓名 ／ 风格 ／ 标签 ／ 品牌 ／ 服饰类别</p>
-          <p class="note">这张生成图存在筛选条件与结果错配，例如选中品牌与结果品牌不同。它只用于讨论布局；正式搜索必须依据真实元数据，验证筛选、类型和商品关系。</p>
-        </div>
+    <section id="journeys" class="journeys-section" aria-labelledby="journeys-title">
+      <div class="section-intro">
+        <p class="eyebrow">两条互相连接的产品流程</p>
+        <h2 id="journeys-title">一侧把风格组织起来，<br>一侧把灵感穿到自己身上。</h2>
+        <p>以下为流程概念图。每一步都有真实内容、资产或权限前提，不代表对应功能已实现。</p>
+      </div>
+      <article class="flow-board" aria-labelledby="creator-flow-title">
+        <div class="flow-header"><h3 id="creator-flow-title">创作者／团队 · Agent 建橱</h3><p>静态概念流程 · 审核后发布</p></div>
+        <ol class="flow-steps" aria-label="创作者建橱流程">
+          <li class="flow-step"><svg class="flow-icon" viewBox="0 0 32 32" aria-hidden="true"><rect x="4" y="5" width="24" height="22" rx="3"/><circle cx="11" cy="12" r="2"/><path d="m5 23 7-7 5 5 4-4 6 7"/></svg><h4>照片／视频／语音</h4><p>提供素材、故事与使用范围。</p></li>
+          <li class="flow-step"><svg class="flow-icon" viewBox="0 0 32 32" aria-hidden="true"><rect x="10" y="10" width="12" height="12" rx="3"/><path d="M16 4v6m0 12v6M4 16h6m12 0h6M7 7l4 4m10 10 4 4M25 7l-4 4M11 21l-4 4"/></svg><h4>Agent 建草稿</h4><p>整理信息，追问缺失，不把推测当事实。</p></li>
+          <li class="flow-step"><svg class="flow-icon" viewBox="0 0 32 32" aria-hidden="true"><rect x="4" y="5" width="24" height="22" rx="3"/><path d="M4 11h24M9 17h8m-8 5h13"/></svg><h4>编辑与预览</h4><p>核对服饰、来源、主题和空间内容。</p></li>
+          <li class="flow-step"><svg class="flow-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 27 8v8c0 6-5 10-11 13C10 26 5 22 5 16V8Z"/><path d="m10 16 4 4 8-9"/></svg><h4>审核内容与边界</h4><p>区分公开内容、门票内容与私密材料。</p></li>
+          <li class="flow-step"><svg class="flow-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M5 17v10h22V17M16 22V4m-7 7 7-7 7 7"/></svg><h4>审核后发布</h4><p>通过后进入对应发现与访问范围。</p></li>
+        </ol>
+        <p class="flow-note">照片和视频可以辅助整理，但不会自动成为完整真实 3D。核心服饰仍需要可核验的三维资产；草稿失败或待补充时保留编辑状态，不自动公开。</p>
       </article>
+      <article class="flow-board flow-board--personal" aria-labelledby="personal-flow-title">
+        <div class="flow-header"><h3 id="personal-flow-title">大众用户 · 从诉求到本人试穿</h3><p>静态概念流程 · 个人形象由本人控制</p></div>
+        <p class="request-example">“周末看展，想穿得简洁，<br>但有一点亮点。”</p>
+        <ol class="flow-steps" aria-label="用户搭配与试穿流程">
+          <li class="flow-step"><svg class="flow-icon" viewBox="0 0 32 32" aria-hidden="true"><rect x="12" y="3" width="8" height="17" rx="4"/><path d="M7 14v2a9 9 0 0 0 18 0v-2M16 25v5m-5 0h10"/></svg><h4>语音／文字诉求</h4><p>表达场景、风格、预算等已知条件。</p></li>
+          <li class="flow-step"><svg class="flow-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="m10 5 6 3 6-3 7 8-5 4-2-3v15H10V14l-2 3-5-4Z"/><path d="M16 8v7"/></svg><h4>服装与配饰搭配</h4><p>看到组合、来源、理由与替代选择。</p></li>
+          <li class="flow-step"><svg class="flow-icon" viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="3" width="22" height="26" rx="2"/><path d="M16 3v26M9 13h3m8 0h3M5 22h22"/></svg><h4>个人试衣间</h4><p>保留候选组合，比较不同搭配。</p></li>
+          <li class="flow-step"><svg class="flow-icon" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="9" r="5"/><path d="M6 29v-5a10 10 0 0 1 20 0v5M11 23v6m10-6v6"/></svg><h4>准备本人化身</h4><p>未就绪时创建或导入，明确使用范围。</p></li>
+          <li class="flow-step"><svg class="flow-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M9 4H4v5m19-5h5v5M4 23v5h5m14 0h5v-5"/><circle cx="16" cy="10" r="3"/><path d="m10 24 1-8h10l1 8M16 16v8"/></svg><h4>一键试穿与比较</h4><p>在本人形象上查看效果，准确性待验证。</p></li>
+        </ol>
+        <p class="flow-note">一键试穿是目标体验，不等于当前已具备精确尺码判断、布料仿真或合身保证。本人化身与试衣间仅本人可见，不向创作者开放。</p>
+      </article>
+      <div class="material-links"><a href="../入驻与Agent建橱.md">入驻与 Agent 建橱 ↗</a><a href="../AI试穿与个人形象.md">AI 试穿与个人形象 ↗</a></div>
+    </section>
 
-      <article class="view view--reverse" aria-labelledby="mobile-title">
-        <figure class="visual">
-          <div class="image-frame"><a href="concepts/visual-atlas-20261015.png" aria-label="在完整概念图中查看手机布局"><div class="crop crop--br"><img src="concepts/visual-atlas-20261015.png" width="1586" height="992" loading="lazy" alt="手机版式静态概念：左侧竖屏首页，右侧横屏服饰检视和信息卡，尚未完整呈现侧卡露出与横屏提醒。"></div></a></div>
-          <figcaption>手机竖屏与横屏 · 布局探索</figcaption>
-        </figure>
-        <div>
-          <p class="eyebrow">为手指和视野重新构图</p>
-          <h2 id="mobile-title">竖屏挑选，<br>横屏走近细节。</h2>
-          <p class="lead">首页支持手指滑动和点击。进入衣橱前提醒横握手机，横屏后把更多宽度留给服饰。</p>
-          <ul>
-            <li>横屏时服饰与信息分区，长内容再展开。</li>
-            <li>旋转设备应保留当前衣橱、服饰与浏览位置。</li>
-            <li>是否继续支持竖屏空间浏览，仍需验证。</li>
-          </ul>
-          <p class="note">图中未充分体现首页相邻卡片露出及进入前横屏提醒；这些已确认要求仍以文字规范为准。尚未执行真实手机交互测试。</p>
-        </div>
-      </article>
+    <section id="access" class="access-section" aria-labelledby="access-title">
+      <div class="section-intro"><p class="eyebrow">三种访问语义</p><h2 id="access-title">公开、门票与个人私密，<br>各有清楚的边界。</h2><p>付费创作者内容与付费个人衣橱是不同服务，不能共用模糊的“私密”概念。</p></div>
+      <div class="access-grid">
+        <article class="access-card"><span class="access-kind">公共策展</span><h3>先发现，<br>理解一种风格。</h3><p>浏览公开内容，点赞与收藏喜欢的衣橱、服饰或组合。</p><p class="access-rule">不包括作者草稿或私人材料。</p></article>
+        <article class="access-card"><span class="access-kind">粉丝门票内容</span><h3>为指定内容，<br>获得相应访问权。</h3><p>公开预览与锁定内容分开，购买前说明内容范围、费用与权益规则。</p><p class="access-rule">不会因此获得作者的所有私密资料。</p></article>
+        <article class="access-card"><span class="access-kind">个人私密空间 · 仅本人可见</span><h3>自己的衣橱，<br>自己的形象。</h3><p>付费个人衣橱承载本人服饰、搭配和形象资料，仅本人可见。</p><p class="access-rule">不进公共搜索，不提供邀请、团队访问或分享。</p></article>
+      </div>
+      <p class="section-footnote">点赞收藏不会购买商品、解锁门票或改变私密权限。团队协作仅用于创作者公共建橱。具体定价、期限、续费与退款规则仍需细化；本页没有支付或权限操作。</p>
+      <div class="material-links"><a href="../商业模式与平台运营.md">商业模式与平台运营 ↗</a></div>
+    </section>
+
+    <section id="baseline" class="materials" aria-labelledby="baseline-title">
+      <div class="section-intro"><p class="eyebrow">v0.2 早先视觉基线 · 原文件保留</p><h2 id="baseline-title">浅弧、玻璃与聚光，继续保留。</h2><p>此图于 10 月 15 日早先生成，原 PNG 未改动。它不覆盖 v0.3 的完整平台与双流程，只保留空间材质、光影和手机构图参考。</p></div>
+      <figure id="overview" class="overview">
+        <div class="image-frame"><a href="concepts/visual-atlas-20261015.png" aria-label="打开 v0.2 早先视觉基线 PNG"><img class="overview-image" src="concepts/visual-atlas-20261015.png" width="1586" height="992" loading="lazy" alt="保留的v0.2早先视觉基线：浅弧剖切衣橱、服饰聚光、中文搜索及手机布局，非v0.3完整方案。"></a></div>
+        <figcaption><span>v0.2 静态基线。人物、品牌与商品均为虚构；图片不是模型或网页功能。</span><span class="figure-label">原 PNG 保留</span></figcaption>
+      </figure>
+      <div class="notes-grid">
+        <div><h3>浅弧与主体信息</h3><p>中央衣橱最大正对，两侧露出邻项；新定位下卡片支持主理人、品牌或主题，不限实体衣橱。</p></div>
+        <div><h3>聚光与真实 3D 目标</h3><p>单品中央舞台、环境光与右侧玻璃信息卡保留；核心服饰仍要求真实立体可旋转，静态图不计完成。</p></div>
+        <div><h3>早先搜索的错配</h3><p>生成图存在已选品牌和结果品牌不同等条件错配。它只讨论布局，不能作为真实搜索结果或商品数据。</p></div>
+        <div><h3>手机规范仍有效</h3><p>竖屏挑选与横屏检视继续探索；侧邻卡露出和进入前横屏提醒未充分画出，以文字要求为准。</p></div>
+      </div>
     </section>
 
     <section id="directions" class="directions-section" aria-labelledby="directions-title">
@@ -252,18 +314,19 @@
       <div class="section-intro"><h2 id="materials-title">看清设计，也看清材料的身份。</h2></div>
       <div class="notes-grid">
         <div><h3>虚构内容</h3><p>人物、房间、服饰、品牌与示例文案仅供研究。STAR CLOSET 是工作名称，没有据此确认明星合作、商品事实或名称可用性。</p></div>
-        <div><h3>静态材料</h3><p>总览于 2026 年 10 月 15 日在云端重新生成，尺寸为 1586 × 992。它是 PNG，不是 GLB、真实三维场景或已完成的网站应用。</p></div>
-        <div><h3>文字规范优先</h3><p>生成的账号图标、购买按钮和商品字段不自动成为获批功能。图形偏差、筛选错配与示例版型需在后续设计中修正。</p></div>
-        <div><h3>仍待验证</h3><p>尚未实测参考网站 miniroom.5title.com，也未据此验证对比度、旋转、触摸、响应式或性能；不声称已达到或超过参考效果。</p></div>
+        <div><h3>新概念与旧基线</h3><p>v0.3 新概念图与 v0.2 早先基线均为 1586 × 992 的云端生成 PNG；双流程另以 HTML/CSS 图解表达。它们都不是 GLB、真实试穿场景或已完成的网站应用。</p></div>
+        <div><h3>文字规范优先</h3><p>v0.3 需求优先于旧图；账号、购买与字段不能证明功能已实现。图片偏差、筛选错配和示例版型需在后续设计中修正。</p></div>
+        <div><h3>检查与验证边界</h3><p>本页已做桌面、手机竖横屏视口的静态阅读检查。尚未实测 miniroom.5title.com；产品应用的对比度、三维旋转、触摸、试穿与性能仍待验证，不声称超过参考效果。</p></div>
       </div>
       <div class="material-links">
-        <a href="concepts/visual-atlas-20261015.png">完整 PNG ↗</a>
+        <a href="concepts/platform-v03-atlas-20261015.png">v0.3 完整 PNG ↗</a>
+        <a href="concepts/visual-atlas-20261015.png">v0.2 基线 PNG ↗</a>
         <a href="../presentation/star-closet-hackathon.html">产品 Slides ↗</a>
         <a href="设计探索.md">设计说明 Markdown ↗</a>
         <a href="素材清单.md">素材清单 Markdown ↗</a>
       </div>
     </section>
   </main>
-  <footer class="shell"><p>STAR CLOSET · 设计评审材料</p><p>本页为静态画廊，图片中的产品按钮不可操作。</p></footer>
+  <footer class="shell"><p>STAR CLOSET · v0.3 设计评审材料</p><p>本页为静态画廊，没有上传、录音、Agent、试穿或支付功能。</p></footer>
 </body>
 </html>

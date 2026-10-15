@@ -27,11 +27,12 @@ jobs:
 
           base = "https://wilsonwang-mt.github.io/star-closet/"
           checks = {
-              "": None,
-              "presentation/star-closet-hackathon.html": "d8bd8d3c3f0128da58384b54ba7acdd91402d9eb8215bb486118f51ce9f274d0",
-              "design/preview.html": None,
-              "presentation/star-closet-hackathon.pdf": "bec10d72d0cc5afff00be4cdc581ac399a401f8f4dfb214d3a32ac4ce70dd758",
-              "design/concepts/visual-atlas-20261015.png": "64fe56a5e5754d71847cc0f5e946612092255f458ed9e28a32b64c9b6e9e0d0f",
+              "": "6530c134346dbf415759199145a4621b717b79dd054f97c60710f99281258784",
+              "presentation/star-closet-hackathon.html": "95eeb76c004daf6343306b14b3aaa57f50f033290598c2a6da681c31c1dc2ab9",
+              "design/preview.html": "6bbe0473f527f041c7bebf1eadbad00193115eefbb91da1e701591671b58749d",
+              "presentation/star-closet-hackathon.pdf": "bd3e29017676091bde07cde99c4eb776fbddcf34ab54e612fc6080ae8b59ce7b",
+              "design/concepts/platform-v03-atlas-20261015.png": "a24934dabd4bd5c9c5ecd0d3685249cb1b90f8f405c9d8a4b1aa28fe7c99e922",
+              "design/concepts/visual-atlas-20261015.png": "64fe56a5e5754d71847cc0f5e946612092255f458ed9e28a32b64c9b6e9e0d0f"
           }
           for attempt in range(20):
               try:
@@ -46,8 +47,8 @@ jobs:
                               text = content.decode("utf-8")
                               if "Star Closet" not in text:
                                   raise RuntimeError(f"Unexpected HTML: {path}")
-                              if path.startswith("presentation/") and text.count('class="slide"') != 22:
-                                  raise RuntimeError("Expected 22 slides")
+                              if path.startswith("presentation/") and text.count('class="slide"') != 26:
+                                  raise RuntimeError("Expected 26 slides")
                           print(f"HTTP 200, {len(content)} bytes: {base + path}", flush=True)
                   print("All static preview checks passed", flush=True)
                   break

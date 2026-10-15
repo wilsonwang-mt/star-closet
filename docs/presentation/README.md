@@ -1,29 +1,29 @@
-# Star Closet · 视觉化 Slides
+# Star Closet v0.3 · 视觉化 Slides
 
-2026-10-15 新加坡时间补交版，22页。原定当天08:00交付未完成，本文件不倒填完成时间。
+2026-10-15定位调整版，26页。覆盖多主体公共衣橱、Agent建橱、语音搭配、个人试衣间、本人形象试穿与商业/运营方案；替代旧22页叙事。原08:00补交事实保留于交付记录。
 
-## 打开与阅读
+## 阅读
 
-- [线上HTML Slides](https://wilsonwang-mt.github.io/star-closet/presentation/star-closet-hackathon.html)、[线上PDF](https://wilsonwang-mt.github.io/star-closet/presentation/star-closet-hackathon.pdf)、[线上设计画廊](https://wilsonwang-mt.github.io/star-closet/design/preview.html)：静态发布与公开文件检查已通过。
-- [PDF](star-closet-hackathon.pdf)：手机上优先阅读，可在GitHub文件页预览或下载。
-- [HTML Slides](star-closet-hackathon.html)：在GitHub文件页选择下载，再用浏览器打开。GitHub源码页不会直接运行HTML。
-- [静态设计总览](../design/concepts/visual-atlas-20261015.png)：新生成的四象限概念，不是旧原图恢复或网站截图。
-- [浏览器预览截图](previews/)：包含产品愿景、首页、聚光详情、手机阅读、信息架构与冲刺计划。
+- [线上HTML Slides](https://wilsonwang-mt.github.io/star-closet/presentation/star-closet-hackathon.html) · [线上PDF](https://wilsonwang-mt.github.io/star-closet/presentation/star-closet-hackathon.pdf) · [线上设计画廊](https://wilsonwang-mt.github.io/star-closet/design/preview.html)
+- [HTML单文件](star-closet-hackathon.html)：源码页不运行HTML，下载后用浏览器打开。
+- [26页PDF](star-closet-hackathon.pdf)：适合手机保存与阅读。
+- [9张预览截图](previews/)：产品愿景、首页、聚光、手机阅读、架构、计划、画廊、Agent及化身概念。
+- [素材清单](../design/素材清单.md)：新v0.3与旧v0.2两张概念图的来源、摘要及局限。
 
-HTML正文、样式、脚本和图像都在一个文件中，无外部字体或资源依赖。继续阅读与案例来源链接需联网，仓库文档还需相应访问权限。
+稳定线上地址会在本轮gh-pages更新后显示v0.3，实际发布状态见[交付记录](../交付记录.md)，不复用旧版成功记录。
 
-桌面可用方向键、PageUp/PageDown、Home/End、空格和Shift+空格翻页，或使用底部按钮、目录、全屏与打印。手机可使用底部按钮或横滑；竖向滚动阅读当前页。目录支持Escape关闭；减弱动态偏好受尊重。关闭JavaScript后全部页面顺序显示。
+HTML正文、样式、脚本和两份图像均内嵌，无外部字体和自动网络依赖。文档与案例来源链接需联网。桌面支持方向键、PageUp/Down、Home/End、空格与Shift+空格、目录与打印；手机支持按钮、横滑和本页竖滚。关闭JavaScript后26页顺序显示。
 
-## 内容
+## 方案与事实
 
-产品定义与用户任务、核心体验、首页浅弧展示、搜索、信息架构、聚光服饰、完整详情、手机、真实模型生产线、市场假设、商业模式、交易路线、实现架构、比赛范围、冲刺计划、团队、交接、风险与提交标准。
+新图为虚构成人、品牌、商品和数量。试穿人像的多角度、侧背与写实感不证明真实重建、模型精度或合身；个人私域和另购内容门票分开。旧图仅保留浅弧、玻璃、光影和手机版式基线，其搜索字段错配不能作为真实结果。
 
-图中人物、品牌、服饰和商品资料为虚构示例。搜索概念图存在筛选与结果错配，已在对应页注明；完整搜索要求以[信息架构与搜索](../信息架构与搜索.md)为准。模型、来源、供给与商品资料需要后续真实核验。
+本轮未执行Agent、录音、上传、本人重建、真实试穿、付费或商品交易。用户已提出这些完整需求，实际首版、收费方式/阈值、路线与指标待定。
 
-## 验证边界
+## 本版验证
 
-实际浏览器、PDF与文件检查结果以[交付记录](../交付记录.md)和[评审记录](../评审记录.md)为准。受管Chromium禁止直接访问file://，本轮通过仅绑定127.0.0.1的临时HTTP服务检查同一HTML；没有开放互联网预览。HTML无外部自动请求，但本次未在用户手机或Mac的本地文件模式实测。
+已实际检查26页的五种视口、导航焦点、键盘、合成触摸含跨区域多指、无脚本阅读、打印恢复、PDF26标题与中文字体，并检查画廊滚动后的懒加载图片。PDF第9/16页已目测，不是逐页人工视觉验收。
 
-这些是静态文档检查，不证明衣橱应用已实现、服饰GLB已存在或达到性能目标；真实支付、供应和网站应用尚未实施。
+受管Chromium禁止file://，本次通过仅绑定127.0.0.1的临时HTTP服务运行。实体手机、用户Mac本地文件模式与网站应用均未测试。完整证据见交付和评审记录。
 
-后续更新静态材料时，需要同步实际发布源gh-pages，并更新公开文件检查中的摘要。仅推main中的文档不会自动同步这个独立发布分支。
+后续更新须同步main资料与实际gh-pages静态源，并更新公开文件验证摘要。当前没有自动同步main到gh-pages的机制；Git历史保存旧HTML/PDF快照。
