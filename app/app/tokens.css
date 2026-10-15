@@ -56,7 +56,7 @@
 
   --sc-ink: #1f1c18;
   --sc-ink-2: #5e574d;
-  --sc-ink-3: #8a8174;
+  --sc-ink-3: #726a5e;
   --sc-rule: rgba(31, 28, 24, .18);
 
   --sc-champ-text: #8a6a36;
@@ -84,7 +84,7 @@
     --sc-scene-fade-top: linear-gradient(180deg, rgba(250, 244, 232, .6), transparent);
     --sc-scene-fade-bottom: linear-gradient(0deg, rgba(250, 244, 232, .92), transparent);
     --sc-vignette: radial-gradient(120% 80% at 50% 40%, transparent 55%, rgba(90, 70, 40, .25));
-    --sc-ink: #1f1c18; --sc-ink-2: #5e574d; --sc-ink-3: #8a8174; --sc-rule: rgba(31, 28, 24, .18);
+    --sc-ink: #1f1c18; --sc-ink-2: #5e574d; --sc-ink-3: #726a5e; --sc-rule: rgba(31, 28, 24, .18);
     --sc-champ-text: #8a6a36;
     --sc-foil: linear-gradient(100deg, #6e5222 0%, #9c7a3c 45%, #d8bb80 50%, #9c7a3c 55%, #6e5222 100%);
     --sc-glass-bg: rgba(255, 253, 248, .28); --sc-glass-edge: rgba(255, 255, 255, .9); --sc-glass-edge-2: rgba(255, 255, 255, .55);

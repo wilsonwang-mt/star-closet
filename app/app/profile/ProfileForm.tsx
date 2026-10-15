@@ -94,6 +94,7 @@ function TagPicker({
           maxLength={20}
           placeholder="自定义，回车添加"
           aria-label={`自定义${label}`}
+          style={{ flex: 1, minWidth: 0 }}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
@@ -102,7 +103,12 @@ function TagPicker({
             }
           }}
         />
-        <button type="button" className="sc-cta sc-cta--ghost compact" onClick={addDraft}>
+        <button
+          type="button"
+          className="sc-cta sc-cta--ghost compact"
+          style={{ flex: "none", minWidth: 64, whiteSpace: "nowrap" }}
+          onClick={addDraft}
+        >
           添加
         </button>
       </div>

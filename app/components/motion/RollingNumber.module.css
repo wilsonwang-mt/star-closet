@@ -1,6 +1,13 @@
 /* 里程表式数字：每一位一条竖排 0–9，只动 transform。行高用 em，跟随父级字号。 */
-.digits { display: inline-flex; vertical-align: bottom; font-variant-numeric: lining-nums tabular-nums; }
-.col { display: inline-block; height: 1.2em; line-height: 1.2em; overflow: hidden; }
+/* 基线：每一位的竖排条带要 overflow 裁切，被裁切的盒子没有文字基线，会落到下边缘（看起来像下标）。
+ * 所以容器最前面放一个看不见、零宽的“0”（.ghost）提供基线；各位顶对齐，行高统一 1.2em，
+ * 条带里每个数字与 .ghost 处在同样高度的行里，字形基线正好与相邻文字对齐。 */
+.digits {
+  display: inline-flex; align-items: flex-start; vertical-align: baseline; line-height: 1.2em;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.ghost { flex: 0 0 0; width: 0; min-width: 0; visibility: hidden; white-space: nowrap; align-self: baseline; }
+.col { display: block; height: 1.2em; overflow: hidden; }
 .strip { display: block; will-change: transform; }
 .strip > span { display: block; height: 1.2em; text-align: center; }
 .tabular { font-variant-numeric: lining-nums tabular-nums; }

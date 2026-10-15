@@ -46,6 +46,25 @@ export default function Adapter({ outfit, catalog, aiEnabled }: { outfit: Outfit
   // 改编前的那一套：等待时光束扫过它；结果出现时先以它开场，再换掉被换的单品，总价从它的总价滚到新值
   const [before, setBefore] = useState<ListedItem[]>(outfit.items);
   const recRef = useRef<SpeechRecognitionLike | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  // 输入为空时点“改编这一套”：不改编，聚焦输入框并给一行提示（按钮不用原生 disabled，点了总有反馈）
+  const [needInput, setNeedInput] = useState(false);
+
+  function tryAdapt(text: string) {
+    if (!text.trim()) {
+      setNeedInput(true);
+      inputRef.current?.focus();
+      return;
+    }
+    setNeedInput(false);
+    void adapt(text);
+  }
+
+  function pickExample(ex: string, run = false) {
+    setRequest(ex);
+    setNeedInput(false);
+    if (run) void adapt(ex);
+  }
 
   async function adapt(text: string) {
     const current = items ?? outfit.items;
@@ -137,6 +156,10 @@ export default function Adapter({ outfit, catalog, aiEnabled }: { outfit: Outfit
 
   const originalIds = new Set(outfit.items.map((i) => i.id));
   const resultRef = useRef<HTMLElement | null>(null);
+  // 服务端判定没有改动（或没听懂）→ 提示态；手动替换后又回到原搭配 → 也不提供保存
+  const unchanged = !!result && !result.changed;
+  const sameAsOriginal =
+    !!items && items.length === outfit.items.length && items.every((i) => originalIds.has(i.id));
 
   return (
     <div className="stack">
@@ -166,15 +189,19 @@ export default function Adapter({ outfit, catalog, aiEnabled }: { outfit: Outfit
           <span className="sc-badge">{aiEnabled ? "AI 改编" : "非 AI · 规则模式"}</span>
         </div>
         <textarea
+          ref={inputRef}
           value={request}
-          onChange={(e) => setRequest(e.target.value)}
+          onChange={(e) => {
+            setRequest(e.target.value);
+            if (e.target.value.trim()) setNeedInput(false);
+          }}
           placeholder="例如：预算 800 以内，户外婚礼，换成平底鞋"
           maxLength={300}
           aria-label="改编要求"
         />
         <div className="chips">
           {EXAMPLES.map((ex) => (
-            <button key={ex} className="chip" onClick={() => setRequest(ex)}>
+            <button key={ex} className="chip" onClick={() => pickExample(ex)}>
               {ex}
             </button>
           ))}
@@ -184,11 +211,43 @@ export default function Adapter({ outfit, catalog, aiEnabled }: { outfit: Outfit
             {listening ? "停止语音" : "语音输入"}
           </button>
         </div>
+        {needInput ? (
+          <p className="sc-meta fade-in" role="status" style={{ margin: 0, color: "var(--sc-champ-text)" }}>
+            先写一句要求，或点上面的示例
+          </p>
+        ) : null}
         {error ? <p className="error">{error}</p> : null}
       </section>
 
       {loading ? (
         <AdaptWaiting aiEnabled={aiEnabled} items={before} ref={resultRef} />
+      ) : result && unchanged ? (
+        // 提示态：没听懂，或这句要求在这套里没有可改动的地方。不显示结果列表，也不提供保存。
+        <section className="sc-glass card stack adapt-result fade-in" ref={resultRef} aria-live="polite">
+          <div>
+            <span className="sc-kicker">{result.recognized ? "Nothing to change" : "Try again"}</span>
+            <h2 className="section-title">{result.recognized ? "没有可改动的地方" : "没听懂这句要求"}</h2>
+          </div>
+          <p className="serif-note" style={{ color: "var(--sc-ink)", margin: 0 }}>
+            {result.recognized
+              ? result.summary
+              : "可以说说预算、场合、想换或不要的单品，比如："}
+          </p>
+          {result.recognized && result.notes.length ? (
+            <ul className="small muted" style={{ margin: 0, paddingLeft: 18 }}>
+              {result.notes.map((n) => (
+                <li key={n}>{n}</li>
+              ))}
+            </ul>
+          ) : null}
+          <div className="chips">
+            {EXAMPLES.map((ex) => (
+              <button key={ex} className="chip" onClick={() => pickExample(ex, true)}>
+                {ex}
+              </button>
+            ))}
+          </div>
+        </section>
       ) : result && items ? (
         <section className="sc-glass card stack adapt-result" ref={resultRef}>
           <div className="spread">
@@ -235,18 +294,27 @@ export default function Adapter({ outfit, catalog, aiEnabled }: { outfit: Outfit
       ) : null}
 
       <div className="cta-bar">
-        {result && items ? (
+        {result && items && !unchanged && !loading ? (
           <>
-            <button className="sc-cta" onClick={() => save(result.mode, items)} disabled={saved === result.mode}>
-              {saved === result.mode ? "已加入试衣间" : "加入试衣间"}
+            <button
+              className="sc-cta"
+              onClick={() => save(result.mode, items)}
+              disabled={saved === result.mode || sameAsOriginal}
+            >
+              {sameAsOriginal ? "和原搭配相同" : saved === result.mode ? "已加入试衣间" : "加入试衣间"}
             </button>
-            <button className="sc-cta sc-cta--ghost" onClick={() => adapt(request)} disabled={loading || !request.trim()}>
-              {loading ? "改编中" : "重新改编"}
+            <button className="sc-cta sc-cta--ghost" onClick={() => tryAdapt(request)}>
+              重新改编
             </button>
           </>
         ) : (
-          <button className="sc-cta" disabled={loading || !request.trim()} onClick={() => adapt(request)}>
-            {loading ? "正在改编…" : "改编这一套"}
+          <button
+            className="sc-cta"
+            disabled={loading}
+            aria-disabled={!request.trim() || undefined}
+            onClick={() => tryAdapt(request)}
+          >
+            {loading ? "正在改编…" : unchanged ? "换一句再改编" : "改编这一套"}
           </button>
         )}
       </div>

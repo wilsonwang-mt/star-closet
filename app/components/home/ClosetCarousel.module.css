@@ -50,6 +50,11 @@
   background: var(--sc-champ);
 }
 .chip:focus-visible { outline: 1px solid var(--sc-champ); outline-offset: -2px; border-radius: 8px; }
+/* 触控热区 44px：视觉高度 32px 不变，透明伪元素上下各扩 6px（::after 已用于选中圆点） */
+.chip::before { content: ""; position: absolute; inset: -6px 0; }
+/* 与另一组筛选组合后没有结果：置灰、不可选 */
+.chip[aria-disabled="true"] { opacity: .4; cursor: not-allowed; }
+.chip[aria-disabled="true"]:hover { color: var(--sc-ink-3); }
 .sep { flex: none; width: .5px; height: 14px; margin: 0 6px; background: var(--sc-rule); }
 
 /* ---------- 舞台（透视层） ---------- */
@@ -82,6 +87,10 @@
   /* Safari：圆角裁切在 transform 子元素上需要单独的合成层 */
   -webkit-mask-image: -webkit-radial-gradient(white, black);
 }
+/* 点“走进衣橱”：先轻压一下（约 120ms）再开始共享元素过渡，弱网下也立刻有反馈。用独立的 scale 属性，不覆盖 transform */
+.media { transition: scale .12s cubic-bezier(.2, .7, .2, 1); }
+.media[data-pressed] { scale: .97; }
+@media (prefers-reduced-motion: reduce) { .media { transition: none; } .media[data-pressed] { scale: none; } }
 .videoWrap { position: absolute; inset: 0; }
 .media img, .video {
   position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;

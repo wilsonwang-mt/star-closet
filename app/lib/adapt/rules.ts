@@ -7,7 +7,8 @@
 //   配饰沿用原搭配件数（最多 2 件，原搭配只有 0–1 件时为 1 件）；下装、外套、鞋、包各最多 1 件。
 //   配饰放宽到 2 件是因为目录里有 5 套主理人原搭配带 2 件配饰（O08、O25、O26、O33、O57），保留原搭配不能被校验删掉。
 // 尺码：只有用户在要求里说了尺码（如“XL”“44 码”）才按单品 sizes 过滤；“均码”总是可选。
-import { CATEGORY_ORDER, type Category, type Gender, type Item, type Outfit } from "../catalog";
+import type { Gender, Item, Outfit } from "../catalog";
+import { CATEGORY_ORDER, type Category } from "../catalog-core";
 
 export function allowedGenders(outfitGender: string): Gender[] {
   if (outfitGender === "男装") return ["男装", "中性"];
@@ -134,12 +135,12 @@ export function enforceRules<P extends { itemId: string }>(
     const n = used.get(it.category) ?? 0;
     const cap = caps[it.category as Category] ?? 1;
     if (n >= cap) {
-      notes.push(`${it.category}最多 ${cap} 件，去掉了「${clean(it.name)}」`);
+      notes.push(`${it.category}最多 ${cap} 件，没有采用「${clean(it.name)}」`);
       continue;
     }
     used.set(it.category, n + 1);
     kept.push(p);
   }
-  if (outside.length) notes.push(`有 ${outside.length} 件单品不适用于这套搭配（性别或尺码不符），已去掉`);
+  if (outside.length) notes.push(`有 ${outside.length} 件推荐单品不适用于这套搭配（性别或尺码不符），没有采用`);
   return { picks: kept, notes };
 }

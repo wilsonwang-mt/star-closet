@@ -5,10 +5,13 @@
 //   浏览器才截取新画面，同名元素 closet-hero（首页中央预览 ⇄ 衣橱页全屏场景）用弹簧 linear() 放大推进。
 // - 不支持：用 Motion 在页面最上层放一张同图的覆盖层，从卡片位置弹簧放大到全屏，新页面就绪后淡出。
 // - 减弱动态：不做放大，只整页淡入淡出（CSS 里 closet-hero 的命名只在 no-preference 下生效）。
+// - 弱网：点击先给卡片一个按下态（约 120ms），再开始过渡；过渡的更新阶段浏览器会冻结画面，最多冻结 700ms，
+//   新页面还没来就跳过这次 View Transition，改走覆盖层放大兜底（画面立刻有反馈），新页面就绪后覆盖层淡出。
+//   中央卡片停稳后由 warmCloset() 预取路由并预加载场景海报，多数情况下点击时新页面已在缓存里。
 import { animate } from "motion/react";
 import { springCss, springs } from "@/lib/motion";
 
-type Router = { push: (href: string, options?: { scroll?: boolean }) => void };
+type Router = { push: (href: string, options?: { scroll?: boolean }) => void; prefetch?: (href: string) => void };
 type Kind = "enter" | "back";
 
 let pendingReady: (() => void) | null = null;
@@ -17,7 +20,9 @@ type Handoff = { id: string; t: number; frame: string | null; at: number };
 let handoff: Handoff | null = null;
 
 /** 目标页面的场景（或首页中央卡片）已挂进 DOM：放行截图。 */
+let lastReadyAt = 0;
 export function signalHeroReady() {
+  lastReadyAt = performance.now();
   pendingReady?.();
 }
 
@@ -58,49 +63,93 @@ export function peekHandoff(id: string): { frame: string | null; startAt: number
 
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-type VTDocument = Document & { startViewTransition?: (cb: () => Promise<void>) => { finished: Promise<void> } };
+type ViewTransition = {
+  finished: Promise<void>;
+  ready: Promise<void>;
+  updateCallbackDone: Promise<void>;
+  skipTransition: () => void;
+};
+type VTDocument = Document & { startViewTransition?: (cb: () => Promise<void>) => ViewTransition };
+
+/** 过渡更新阶段（画面冻结）的上限：超过就放弃 View Transition，改走覆盖层兜底。 */
+const FREEZE_MAX_MS = 700;
+/** 按下态先显示这么久再开始过渡（冻结前让按下反馈真正画到屏幕上）。 */
+const PRESS_MS = 120;
+
+const warmed = new Set<string>();
+/** 中央卡片停稳后调用：预取衣橱页路由，并预加载衣橱页首屏要用的场景海报。 */
+export function warmCloset(router: Router, href: string, poster: string, wide: string) {
+  if (warmed.has(href)) return;
+  warmed.add(href);
+  router.prefetch?.(href);
+  const img = new Image();
+  img.decoding = "async";
+  img.src = window.matchMedia("(min-width: 900px)").matches ? wide : poster;
+}
+
+const ignore = () => {};
 
 export function navigateWithHero(router: Router, href: string, kind: Kind, source: HTMLElement | null) {
   const doc = document as VTDocument;
   arrival = { kind, at: performance.now() };
+  router.prefetch?.(href);
 
-  if (typeof doc.startViewTransition === "function") {
-    const root = document.documentElement;
-    const { easing, duration } = springCss(springs.enter);
-    root.style.setProperty("--vt-spring", easing);
-    root.style.setProperty("--vt-dur", `${duration}ms`);
-    root.dataset.vt = kind;
-    const vt = doc.startViewTransition(
-      () =>
-        new Promise<void>((resolve) => {
-          // 新页面迟迟不来时（网络慢）最多冻结 2.5 秒，之后照常显示。
-          const timer = window.setTimeout(done, 2500);
-          function done() {
-            window.clearTimeout(timer);
-            pendingReady = null;
-            // 注意：过渡的更新阶段浏览器暂停渲染，requestAnimationFrame 不会触发，这里直接放行
-            resolve();
-          }
-          pendingReady = done;
-          router.push(href);
-        }),
-    );
-    vt.finished.finally(() => {
-      delete root.dataset.vt;
-    });
+  if (typeof doc.startViewTransition !== "function") {
+    if (kind === "enter" && source && !reducedMotion()) overlayEnter(source);
+    router.push(href);
     return;
   }
 
-  if (kind === "enter" && source && !reducedMotion()) {
-    overlayEnter(source);
-  }
-  router.push(href);
+  // 按下态：卡片轻压（CSS [data-pressed]），画到屏幕上之后再冻结画面开始过渡
+  if (source) source.dataset.pressed = "";
+  window.setTimeout(() => startHeroTransition(doc, router, href, kind, source), source ? PRESS_MS : 0);
+}
+
+function startHeroTransition(doc: VTDocument, router: Router, href: string, kind: Kind, source: HTMLElement | null) {
+  const root = document.documentElement;
+  const { easing, duration } = springCss(springs.enter);
+  root.style.setProperty("--vt-spring", easing);
+  root.style.setProperty("--vt-dur", `${duration}ms`);
+  root.dataset.vt = kind;
+  let timedOut = false;
+  const vt = doc.startViewTransition!(
+    () =>
+      new Promise<void>((resolve) => {
+        const timer = window.setTimeout(() => {
+          // 新页面没在上限内就绪（弱网）：结束冻结，跳过这次过渡，改用覆盖层放大兜底
+          timedOut = true;
+          window.clearTimeout(timer);
+          pendingReady = null;
+          resolve();
+        }, FREEZE_MAX_MS);
+        pendingReady = () => {
+          window.clearTimeout(timer);
+          pendingReady = null;
+          // 注意：过渡的更新阶段浏览器暂停渲染，requestAnimationFrame 不会触发，这里直接放行
+          resolve();
+        };
+        router.push(href);
+      }),
+  );
+  // 过渡被跳过或被浏览器中止时这些 promise 会 reject：一律吞掉，避免未捕获的 TimeoutError / AbortError
+  vt.ready.catch(ignore);
+  vt.updateCallbackDone
+    .then(() => {
+      if (!timedOut) return;
+      vt.skipTransition();
+      if (kind === "enter" && source && !reducedMotion()) overlayEnter(source);
+    })
+    .catch(ignore);
+  vt.finished.catch(ignore).finally(() => {
+    delete root.dataset.vt;
+    if (source) delete source.dataset.pressed;
+  });
 }
 
 // 无 View Transitions 时的模拟：覆盖层铺满视口、图片 cover；起点用等比缩放 + clip-path 裁成卡片的位置和圆角。
 function overlayEnter(source: HTMLElement) {
   const img = source.querySelector("img");
-  const src = img?.currentSrc || img?.src;
+  const src = (handoff && performance.now() - handoff.at < 2500 ? handoff.frame : null) || img?.currentSrc || img?.src;
   if (!src) return;
   const r = source.getBoundingClientRect();
   const vw = window.innerWidth;
@@ -136,21 +185,26 @@ function overlayEnter(source: HTMLElement) {
     springs.enter,
   );
 
-  let ready = false;
+  // 新页面可能在覆盖层出现之前就已就绪（超时与覆盖层创建之间）：那就只等放大动画结束
+  let ready = !!arrival && lastReadyAt > arrival.at;
   let grown = false;
   const finish = () => {
     if (!ready || !grown) return;
     animate(layer, { opacity: [1, 0] }, { duration: 0.45, ease: "easeOut" }).then(() => layer.remove());
   };
-  pendingReady = () => {
-    pendingReady = null;
+  const onReady = () => {
+    if (pendingReady === onReady) pendingReady = null;
     ready = true;
     finish();
   };
+  if (!ready) pendingReady = onReady;
   grow.then(() => {
     grown = true;
     finish();
   });
-  // 保险：无论如何 3 秒后移除
-  window.setTimeout(() => layer.remove(), 3000);
+  // 保险：弱网下新页面可能来得很慢，最多保留 8 秒（之后无论如何移除）
+  window.setTimeout(() => {
+    if (pendingReady === onReady) pendingReady = null;
+    layer.remove();
+  }, 8000);
 }

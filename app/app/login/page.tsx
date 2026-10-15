@@ -5,6 +5,29 @@ import { Suspense, useState } from "react";
 import Scene from "@/components/Scene";
 import { authClient } from "@/lib/auth-client";
 
+// better-auth 返回英文错误；按错误码映射成中文，未知错误统一兜底，不透传英文。
+const AUTH_ERRORS: Record<string, string> = {
+  INVALID_EMAIL_OR_PASSWORD: "邮箱或密码不正确",
+  INVALID_PASSWORD: "邮箱或密码不正确",
+  USER_NOT_FOUND: "邮箱或密码不正确",
+  CREDENTIAL_ACCOUNT_NOT_FOUND: "邮箱或密码不正确",
+  INVALID_EMAIL: "邮箱格式不正确",
+  USER_ALREADY_EXISTS: "这个邮箱已注册，直接登录",
+  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: "这个邮箱已注册，直接登录",
+  PASSWORD_TOO_SHORT: "密码至少 8 位",
+  PASSWORD_TOO_LONG: "密码太长了，请换一个短一点的",
+  EMAIL_NOT_VERIFIED: "邮箱还没有验证",
+  TOO_MANY_REQUESTS: "尝试次数太多，请稍后再试",
+  FAILED_TO_CREATE_USER: "注册失败，请稍后再试",
+  FAILED_TO_CREATE_SESSION: "登录失败，请稍后再试",
+};
+
+function authErrorText(err: { code?: string; status?: number }, mode: "signin" | "signup") {
+  if (err.code && AUTH_ERRORS[err.code]) return AUTH_ERRORS[err.code];
+  if (err.status === 429) return AUTH_ERRORS.TOO_MANY_REQUESTS;
+  return mode === "signup" ? "注册失败，请稍后再试" : "登录失败，请稍后再试";
+}
+
 function LoginForm() {
   const router = useRouter();
   const next = useSearchParams().get("next");
@@ -26,7 +49,7 @@ function LoginForm() {
         : await authClient.signIn.email({ email, password });
     setLoading(false);
     if (res.error) {
-      setError(res.error.message ?? "登录失败");
+      setError(authErrorText(res.error, mode));
       return;
     }
     router.push(target);
@@ -60,7 +83,19 @@ function LoginForm() {
           autoComplete={mode === "signin" ? "current-password" : "new-password"}
         />
       </label>
-      {error ? <p className="error">{error}</p> : null}
+      {error ? (
+        <p className="error" role="alert">
+          {error}
+          {mode === "signup" && error === AUTH_ERRORS.USER_ALREADY_EXISTS ? (
+            <>
+              {" "}
+              <button type="button" className="link-btn" onClick={() => { setMode("signin"); setError(null); }}>
+                去登录
+              </button>
+            </>
+          ) : null}
+        </p>
+      ) : null}
       <button className="sc-cta" disabled={loading}>
         {loading ? "请稍候…" : mode === "signin" ? "登录" : "注册并登录"}
       </button>

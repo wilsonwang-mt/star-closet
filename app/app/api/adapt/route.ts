@@ -1,10 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getAllItems, getOutfit, sumPrice } from "@/lib/catalog";
+import { getAllItems, getOutfit } from "@/lib/catalog";
 import { adaptWithAi, hasAiKey } from "@/lib/adapt/ai";
 import { adaptOffline } from "@/lib/adapt/offline";
-import { buildCandidatePool, enforceRules, fitsSize, parseSizes } from "@/lib/adapt/rules";
+import { finalizeAdapt } from "@/lib/adapt/finalize";
+import { buildCandidatePool } from "@/lib/adapt/rules";
 import type { AdaptDraft, AdaptResult } from "@/lib/adapt/types";
 
 const Body = z.object({
@@ -36,31 +37,7 @@ export async function POST(req: Request) {
     draft = adaptOffline(outfit, parsed.data.request, pool);
   }
 
-  // 服务端校验：只接受候选池内（且符合用户所说尺码）的单品，去重并按类目上限截断。
-  const wish = parseSizes(parsed.data.request);
-  const sized = pool.filter((i) => fitsSize(i, wish));
-  const checked = enforceRules(draft.picks, outfit, sized);
-  extraNotes.unshift(...checked.notes);
-
-  // 总价与预算由服务端计算，不采用模型给出的数字。
-  const byId = new Map(sized.map((i) => [i.id, i]));
-  const items = checked.picks
-    .map((p) => {
-      const it = byId.get(p.itemId);
-      return it ? { ...it, reason: p.reason } : null;
-    })
-    .filter((x): x is NonNullable<typeof x> => x !== null);
-  const total = sumPrice(items);
-  const overBudget = draft.budget !== null && total > draft.budget;
-
-  const result: AdaptResult = {
-    mode: draft.mode,
-    items,
-    summary: draft.summary,
-    budget: draft.budget,
-    total,
-    overBudget,
-    notes: [...draft.notes, ...extraNotes],
-  };
+  // 服务端校验、总价与“去掉了…”说明（按原搭配与结果的实际差异生成）见 lib/adapt/finalize.ts。
+  const result: AdaptResult = finalizeAdapt(outfit, draft, pool, parsed.data.request, extraNotes);
   return NextResponse.json(result);
 }

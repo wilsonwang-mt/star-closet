@@ -21,7 +21,14 @@ import {
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ClosetView } from "@/components/closet/data";
 import SceneVideo from "@/components/closet/SceneVideo";
-import { captureHandoff, navigateWithHero, peekArrival, peekHandoff, signalHeroReady } from "@/components/closet/transition";
+import {
+  captureHandoff,
+  navigateWithHero,
+  peekArrival,
+  peekHandoff,
+  signalHeroReady,
+  warmCloset,
+} from "@/components/closet/transition";
 import { RollingDigits } from "@/components/motion/RollingNumber";
 import { REDUCED_QUERY, WIDE_QUERY, useMedia } from "@/components/closet/useMedia";
 import { clamp, reducedFade, springs } from "@/lib/motion";
@@ -79,6 +86,9 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
     [closets, gender, ctype],
   );
   const listKey = `${gender ?? "*"}|${ctype ?? "*"}`;
+  // 每个筛选项与另一组当前选择组合后的数量：为 0 的置灰不可选，避免筛出空结果
+  const countWith = (g: string | null, t: string | null) =>
+    closets.filter((c) => (!g || c.gender === g) && (!t || c.closetType === t)).length;
   const n = list.length;
 
   const startIndex = Math.max(0, list.findIndex((c) => c.id === initialId));
@@ -316,10 +326,12 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [n, snapTo, stop, pos]);
 
-  // 键盘：左右键切换，Home / End 到两端（输入框内不拦截）
+  // 键盘：焦点在轮播区域内时，左右键切换，Home / End 到两端（焦点在筛选、Index 等别处时不拦截）
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || isTyping(e.target)) return;
+      const stage = stageRef.current;
+      if (!stage || !(e.target instanceof Node) || !stage.contains(e.target)) return;
       if (e.key === "ArrowLeft") go(-1);
       else if (e.key === "ArrowRight") go(1);
       else if (e.key === "Home" && e.target === stageRef.current) snapTo(0, 0, "step");
@@ -331,6 +343,19 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [go, snapTo, n]);
+
+  // 筛选工具栏：左右键在 chip 之间移动焦点（不会带动上方轮播）
+  const onToolbarKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "Home" && e.key !== "End") return;
+    const chips = Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>("button"));
+    const i = chips.indexOf(document.activeElement as HTMLButtonElement);
+    if (i < 0) return;
+    e.preventDefault();
+    const next =
+      e.key === "Home" ? 0 : e.key === "End" ? chips.length - 1 : clamp(i + (e.key === "ArrowRight" ? 1 : -1), 0, chips.length - 1);
+    chips[next].focus();
+    chips[next].scrollIntoView({ block: "nearest", inline: "nearest" });
+  };
 
   // ---------- 走进衣橱 ----------
   const heroRef = useRef<HTMLDivElement | null>(null);
@@ -362,6 +387,12 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
     return () => window.clearTimeout(t);
   }, [current?.id]);
   const ambient = closets.find((c) => c.id === ambientId) ?? current;
+  // 中央卡片停稳后预取这一间的衣橱页并预加载场景海报：点“走进衣橱”时多半已在缓存里，过渡不必等网络
+  useEffect(() => {
+    if (!ambient) return;
+    const t = window.setTimeout(() => warmCloset(router, `/closet/${ambient.id}`, ambient.poster, ambient.wide), 400);
+    return () => window.clearTimeout(t);
+  }, [ambient, router]);
 
   const progress = useTransform(pos, (p) => (n ? (clamp(p, 0, n - 1) + 1) / n : 0));
   const geo = useMemo(() => ({ unit, wideMv }), [unit, wideMv]);
@@ -394,13 +425,18 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
         <header className={styles.head}>
           <div>
             <span className="sc-kicker">
-              N°<RollingDigits value={n ? active + 1 : 0} /> — The Closets
+              {n ? (
+                <>
+                  N°<RollingDigits value={active + 1} /> —{" "}
+                </>
+              ) : null}
+              The Closets
             </span>
             <h1 id="closets-title" className={styles.title}>
               想走进谁的衣橱？
             </h1>
           </div>
-          <div className={styles.filters} role="toolbar" aria-label="筛选衣橱">
+          <div className={styles.filters} role="toolbar" aria-label="筛选衣橱" onKeyDown={onToolbarKey}>
             <button type="button" className={styles.chip} aria-pressed={!gender} onClick={() => setGender(null)}>
               全部
             </button>
@@ -410,7 +446,12 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
                 type="button"
                 className={styles.chip}
                 aria-pressed={gender === g}
-                onClick={() => setGender(gender === g ? null : g)}
+                aria-disabled={(gender !== g && countWith(g, ctype) === 0) || undefined}
+                title={gender !== g && countWith(g, ctype) === 0 ? "这个组合下暂时没有衣橱" : undefined}
+                onClick={() => {
+                  if (gender !== g && countWith(g, ctype) === 0) return;
+                  setGender(gender === g ? null : g);
+                }}
               >
                 {g}
               </button>
@@ -422,7 +463,12 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
                 type="button"
                 className={styles.chip}
                 aria-pressed={ctype === t}
-                onClick={() => setCtype(ctype === t ? null : t)}
+                aria-disabled={(ctype !== t && countWith(gender, t) === 0) || undefined}
+                title={ctype !== t && countWith(gender, t) === 0 ? "这个组合下暂时没有衣橱" : undefined}
+                onClick={() => {
+                  if (ctype !== t && countWith(gender, t) === 0) return;
+                  setCtype(ctype === t ? null : t);
+                }}
               >
                 {t}
               </button>

@@ -18,6 +18,9 @@ export function RollingDigits({ value, pad = 2, className }: { value: number; pa
   return (
     <span className={`${styles.digits} ${className ?? ""}`}>
       <span className="sr-only">{text}</span>
+      <span className={styles.ghost} aria-hidden="true">
+        0
+      </span>
       {chars.map((ch, i) => {
         // 按“从右数第几位”做 key：位数变化时个位不重新挂载
         const place = chars.length - 1 - i;

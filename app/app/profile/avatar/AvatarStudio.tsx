@@ -197,7 +197,16 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
     const t = setInterval(async () => {
       const res = await fetch(`/api/avatar/jobs/${jobId}`, { cache: "no-store" }).catch(() => null);
       if (stop || !res || !res.ok) return;
-      setJob((await res.json()) as JobView);
+      const next = (await res.json()) as JobView;
+      if (next.status === "succeeded") {
+        // 成功时服务端给本次用到的照片写了删除日期：重新拉一次整体状态，照片下方立刻显示“X月X日自动删除”
+        const full = await fetch("/api/avatar", { cache: "no-store" }).catch(() => null);
+        if (!stop && full && full.ok) {
+          setState((await full.json()) as AvatarState);
+          return;
+        }
+      }
+      if (!stop) setJob(next);
     }, 2000);
     return () => {
       stop = true;
@@ -279,7 +288,8 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
     if (!res || !res.ok) return setMsg({ at: "job", ok: false, text: await readError(res, "删除失败") });
     const body = (await res.json()) as { job: JobView };
     setJob(body.job);
-    setMsg({ at: "job", ok: true, text: "已删除这个 3D 形象，照片仍保留" });
+    // 卡片里已有“这个形象已删除…”的状态说明，这里只给读屏播报，不再就近重复显示
+    setMsg({ at: "sr", ok: true, text: "已删除这个 3D 形象，照片仍保留" });
   }
 
   async function deleteEverything() {
@@ -500,7 +510,10 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
             </div>
           </div>
         ) : null}
-        {job?.resultDeleted ? <p className="sc-meta">这个形象已删除，照片仍保留，可以重新生成。</p> : null}
+        {/* 一键删除后照片也没了，那时结果写在删除卡里，这里不再重复 */}
+        {job?.resultDeleted && state.photos.length > 0 ? (
+          <p className="sc-meta">这个形象已删除，照片仍保留，可以重新生成。</p>
+        ) : null}
         {remote ? (
           <p className={s.status} data-tone={remote.bad ? "bad" : undefined}>
             {remote.text}

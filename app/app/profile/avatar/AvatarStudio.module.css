@@ -80,23 +80,27 @@
   color: var(--sc-ink);
 }
 
+/* 两行结构：第一行“标签 + 必填/二选一”，第二行“删除”。三列很窄时也不折行、各格对齐 */
 .caption {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sc-space-1);
+  display: grid;
+  justify-items: start;
+  align-content: start;
+  gap: 0;
   min-height: 36px;
   font-size: 13px;
+  white-space: nowrap;
 }
+.caption > span { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; }
 
-.req { color: var(--sc-ink-3); font-size: var(--sc-fs-caption); }
+.req { color: var(--sc-ink-3); font-size: var(--sc-fs-caption); white-space: nowrap; }
 
 .small {
+  position: relative;
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
   min-height: 36px;
-  padding: 0 var(--sc-space-2);
-  margin-right: calc(-1 * var(--sc-space-2));
+  padding: 0;
   border: 0;
   background: none;
   color: var(--sc-ink-2);
@@ -107,6 +111,8 @@
   cursor: pointer;
 }
 .small:disabled { opacity: .5; cursor: default; }
+/* 热区上下各扩 4px、左右各扩 8px：视觉不变，可点区域 ≥44px 高 */
+.small::after { content: ""; position: absolute; inset: -4px -8px; }
 
 .hint { font-size: var(--sc-fs-caption); letter-spacing: .04em; line-height: 1.6; color: var(--sc-ink-3); }
 .warn { color: var(--sc-champ-text); }

@@ -17,13 +17,14 @@ export default async function OutfitPage({ params }: { params: Promise<{ id: str
   const idx = all.findIndex((o) => o.id === outfit.id);
   return (
     <>
-      <Scene dim />
+      {/* 场景用这套搭配自己的封面照片，与衣橱页的搭配卡衔接 */}
+      <Scene dim cover={outfit.cover} />
       <section className="hero sc-rise" style={{ minHeight: "42dvh" }}>
         {/* 回到这套搭配所在的衣橱，并定位到这张搭配卡 */}
         <Link
           href={`/closet/${outfit.curatorId}#look-${outfit.id}`}
-          className="sc-meta"
-          style={{ textDecoration: "none", marginBottom: "auto" }}
+          className="sc-meta back-link"
+          style={{ marginBottom: "auto" }}
         >
           ← 返回衣橱
         </Link>

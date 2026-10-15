@@ -19,26 +19,44 @@ button, input, textarea, select { font: inherit; color: inherit; }
 .app-scene { position: fixed; z-index: -1; }
 /* 视频自带运镜：停用 22 秒推镜，只保留 3 秒进场 */
 .sc-scene__media.is-video { animation: sc-intro var(--sc-dur-intro) var(--sc-ease-cine) both; }
+/* 环境色铺底：只在宽屏显示；静态图，不做动画 */
+.scene-ambient {
+  display: none; position: absolute; inset: -12%; width: 124%; height: 124%; object-fit: cover; pointer-events: none;
+  filter: blur(56px) saturate(1.08); opacity: .92;
+}
 /* 夜间：窄屏用竖屏视频，宽屏用横屏视频 */
 .scene-wide { display: none; }
 @media (min-width: 900px) {
   .scene-portrait { display: none; }
   .scene-wide { display: block; }
-  /* 日间暂无横屏视频：竖屏画面居中，两侧渐隐到米白底色，避免铺满时裁切过重 */
-  .scene-day {
+  /* 日间暂无横屏视频：竖屏画面居中，两侧大范围羽化；底下的 .scene-ambient 用同一画面模糊放大铺满全宽，
+   * 羽化区过渡到环境色而不是米色空白，看不到画面边缘。搭配页封面（竖幅）同理。 */
+  .scene-day, .scene-cover {
     left: 0; right: 0; margin: 0 auto; width: calc(112dvh * 9 / 16);
-    -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
-    mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 26%, #000 74%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 26%, #000 74%, transparent);
   }
+  .scene-cover { width: calc(112dvh * 900 / 1117); }
+  .scene-ambient { display: block; }
+}
+.scene-cover-scrim {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(0deg,
+    color-mix(in srgb, var(--sc-bg) 96%, transparent) 0%,
+    color-mix(in srgb, var(--sc-bg) 90%, transparent) 44%,
+    color-mix(in srgb, var(--sc-bg) 72%, transparent) 60%,
+    color-mix(in srgb, var(--sc-bg) 30%, transparent) 72%,
+    transparent 84%);
 }
 /* 信息较多的页面压暗场景，保证文字可读 */
 .scene-dim { position: absolute; inset: 0; pointer-events: none; background: color-mix(in srgb, var(--sc-bg) 55%, transparent); }
 :root[data-theme="light"] .scene-dim { background: color-mix(in srgb, var(--sc-bg) 25%, transparent); }
 @media (prefers-color-scheme: light) { :root:not([data-theme]) .scene-dim { background: color-mix(in srgb, var(--sc-bg) 25%, transparent); } }
 :root[data-theme="dark"] .scene-day,
+:root[data-theme="dark"] .scene-day-ambient,
 :root[data-theme="light"] .scene-night,
 :root[data-theme="light"] .scene-night-only { display: none; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme]) .scene-day { display: none; } }
+@media (prefers-color-scheme: dark) { :root:not([data-theme]) .scene-day, :root:not([data-theme]) .scene-day-ambient { display: none; } }
 @media (prefers-color-scheme: light) { :root:not([data-theme]) .scene-night, :root:not([data-theme]) .scene-night-only { display: none; } }
 
 /* ---------- 顶部悬浮胶囊导航（视觉规范 6.1）----------
@@ -83,9 +101,9 @@ section, figure { scroll-margin-top: var(--nav-offset); }
 .site-nav .sc-nav__link[aria-current] { color: var(--sc-ink); background: var(--nav-hover); }
 .site-nav__placeholder { visibility: hidden; }
 
-/* 圆形图标按钮：40px（≥36px 可点），按下轻压 */
+/* 圆形图标按钮：44px（触控热区 ≥44pt，导航栏高 52px 内居中），按下轻压 */
 .sc-nav__icon-btn {
-  position: relative; width: 40px; height: 40px; flex: none; padding: 0; border: 0; border-radius: 50%;
+  position: relative; width: 44px; height: 44px; flex: none; padding: 0; border: 0; border-radius: 50%;
   display: grid; place-items: center; background: transparent; color: var(--sc-ink-2); cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: background-color .2s ease, color .2s ease, transform var(--spring-dur) var(--spring);
@@ -245,7 +263,9 @@ body { overflow-x: hidden; }
 
 /* ---------- 按钮 ---------- */
 .sc-cta { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
-.sc-cta:disabled { filter: saturate(.35) brightness(.75); cursor: not-allowed; }
+/* 禁用态：两种主题都要一眼看出不可用（浅色主题近黑底上调亮度看不出差别），统一降不透明度 */
+.sc-cta:disabled, .sc-cta[aria-disabled="true"] { opacity: .45; box-shadow: none; filter: saturate(.6); }
+.sc-cta:disabled { cursor: not-allowed; }
 .sc-cta.compact { min-height: 40px; padding: 0 16px; font-size: 12px; letter-spacing: .16em; }
 .cta-bar {
   position: sticky; bottom: 0; z-index: 5; display: flex; gap: 10px;
@@ -279,9 +299,15 @@ select.swap { margin-top: 6px; max-width: 240px; padding: 5px 10px; font-size: 1
   border: 0; border-radius: var(--sc-radius-pill); padding: 7px 12px; font-size: 12px; cursor: pointer; min-height: 36px;
   background: color-mix(in srgb, var(--sc-bg) 30%, transparent); box-shadow: inset 0 0 0 .5px var(--sc-rule);
 }
-input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--sc-champ); }
-/* 勾选行：整行可点，高度 ≥36px */
-label.check-row { min-height: 36px; align-items: center; cursor: pointer; }
+/* 返回链接：热区 44px 高、只占文字宽度（原来是 343×18 的整行细条） */
+.back-link { display: inline-flex; align-items: center; align-self: flex-start; min-height: 44px; padding: 0 12px 0 0; text-decoration: none; }
+/* 触控热区 ≥44px：视觉尺寸不变，用透明伪元素把热区上下各扩 4px（36px → 44px） */
+.chip, .link-btn { position: relative; }
+.chip::after, .link-btn::after { content: ""; position: absolute; inset: -4px 0; }
+.link-btn::after { inset: -4px -8px; }
+input[type="checkbox"] { width: 20px; height: 20px; flex: none; margin: 0; accent-color: var(--sc-champ); cursor: pointer; }
+/* 勾选行：整行 label 都是热区，高度 ≥44px */
+label.check-row { min-height: 44px; align-items: center; cursor: pointer; padding: 4px 0; }
 
 details > summary { list-style: none; }
 details > summary::-webkit-details-marker { display: none; }
@@ -312,7 +338,7 @@ details > summary::-webkit-details-marker { display: none; }
  * 只动 transform / opacity。按下 120ms 内压到 .97，松开按弹簧回弹；transition 可随时打断，从当前位置继续。
  * 悬停抬升只在有精确指针的设备（桌面）上生效；阴影加深用伪元素的 opacity 做，不改 box-shadow。 */
 .sc-cta, .chip, .link-btn {
-  transition: transform var(--spring-dur) var(--spring), filter .2s ease;
+  transition: transform var(--spring-dur) var(--spring), filter .2s ease, opacity .2s ease;
   -webkit-tap-highlight-color: transparent;
 }
 .sc-cta:not(:disabled):active, .chip:active { transform: scale(.97); transition-duration: .12s, .2s; }

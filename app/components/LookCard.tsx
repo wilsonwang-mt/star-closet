@@ -63,7 +63,8 @@ export default function LookCard({ look }: { look: Look }) {
       </div>
       {chosen.length ? (
         <button className="sc-cta" onClick={() => setOpen(!open)} aria-expanded={open}>
-          {chosen.length === look.items.length ? "整套购买" : `购买所选 ${chosen.length} 件`}
+          {/* 站内没有支付：按钮只生成去商家页面的购物清单，文案与页面说明一致 */}
+          {open ? "收起购物清单" : `生成购物清单（${chosen.length} 件）`}
         </button>
       ) : null}
       {open && chosen.length ? (

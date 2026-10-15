@@ -11,7 +11,7 @@
     "db:generate": "drizzle-kit generate",
     "db:setup": "tsx --env-file-if-exists=.env.local scripts/setup-db.ts",
     "avatar:purge": "tsx --env-file-if-exists=.env.local scripts/purge-avatars.ts",
-    "test": "tsx --test lib/avatar/*.test.ts"
+    "test": "tsx --test lib/avatar/*.test.ts lib/adapt/*.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.134.0",

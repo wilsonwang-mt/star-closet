@@ -1,6 +1,9 @@
 // 商品目录读取（v0.2：多衣橱）。字段含义见 docs/supply/目录结构与搜索维度.md。
 import { and, arrayContains, asc, count, eq, inArray, type SQL } from "drizzle-orm";
 import { db, schema } from "./db";
+import { sumPrice, type Category } from "./catalog-core";
+
+export { CATEGORY_ORDER, sumPrice, type Category } from "./catalog-core";
 
 export type Item = typeof schema.item.$inferSelect;
 export type Curator = typeof schema.curator.$inferSelect;
@@ -13,12 +16,10 @@ export type Outfit = typeof schema.outfit.$inferSelect & {
 export type Gender = "女装" | "男装" | "中性";
 export type ClosetType = "风格主题" | "穿搭博主" | "个人主理人" | "品牌主题" | "明星";
 export type BudgetTier = "平价" | "适中" | "进阶";
-export type Category = (typeof CATEGORY_ORDER)[number];
 
 export const GENDERS: readonly Gender[] = ["女装", "男装", "中性"];
 export const CLOSET_TYPES: readonly ClosetType[] = ["风格主题", "穿搭博主", "个人主理人", "品牌主题", "明星"];
 export const BUDGET_TIERS: readonly BudgetTier[] = ["平价", "适中", "进阶"];
-export const CATEGORY_ORDER = ["上装", "下装", "外套", "鞋", "包", "配饰"] as const;
 
 /** 首页衣橱卡片：衣橱本身 + 搭配数量。 */
 export type CuratorSummary = Curator & { outfitCount: number };
@@ -51,9 +52,6 @@ export type ItemFilter = {
   occasion?: string;
 };
 
-export function sumPrice(items: Pick<Item, "price">[]) {
-  return items.reduce((s, i) => s + i.price, 0);
-}
 
 /** 第一间衣橱（按编号）。旧首页使用；新代码请用 getCurators()。 */
 export async function getCurator(): Promise<Curator | undefined> {
