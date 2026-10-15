@@ -183,7 +183,8 @@
   linear-gradient(180deg, color-mix(in srgb, var(--sc-bg) 40%, transparent), color-mix(in srgb, var(--sc-bg) 92%, transparent) 88%); }
 
 /* ---------- 全部衣橱索引（竖向滚动内容） ---------- */
-.index { width: min(100% - 32px, 720px); margin-top: 64px; }
+/* 与导航胶囊同一宽栏（globals.css --sc-col-wide）：宽屏时与中央预览卡左右对齐 */
+.index { width: min(100% - 32px, var(--sc-col-wide)); margin-top: 64px; }
 .indexHead { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; padding: 0 4px; }
 .rows { display: grid; gap: 8px; }
 .row {

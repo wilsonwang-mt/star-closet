@@ -10,7 +10,7 @@
 // - 被去掉的单品由服务端按实际差异生成说明（见 finalize.ts），这里不写“去掉了…”。
 import type { Item, Outfit } from "../catalog";
 import { CATEGORY_ORDER, sumPrice } from "../catalog-core";
-import { fitsSize, parseSizes, relevantCategories, sizeText, type SizeWish } from "./rules";
+import { fitsSize, interchangeable, parseSizes, relevantCategories, sizeText, type SizeWish } from "./rules";
 import type { AdaptDraft } from "./types";
 
 type Constraints = {
@@ -115,9 +115,6 @@ function score(it: Item, c: Constraints) {
   return s;
 }
 
-const isDress = (i: Item) => i.tags.includes("连衣裙") || i.subcategory === "连衣裙";
-// 马甲只换马甲：针织马甲顶替衬衫会让上身只剩一件马甲
-const isVest = (i: Item) => (i.subcategory ?? "").includes("马甲");
 const overlap = (a: string[], b: string[]) => a.filter((x) => b.includes(x)).length;
 const clean = (name: string) => name.replace(/^占位：/, "");
 
@@ -151,8 +148,7 @@ function candidatesFor(
     (i) =>
       i.category === orig.category &&
       !used.has(i.id) &&
-      isDress(i) === isDress(orig) &&
-      isVest(i) === isVest(orig) &&
+      interchangeable(i, orig) &&
       !violation(i, c) &&
       extra(i),
   );

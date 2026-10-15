@@ -11,10 +11,11 @@ import { useRouter } from "next/navigation";
 import { motion, useScroll, useTransform, type MotionValue } from "motion/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import ItemThumb from "@/components/ItemThumb";
+import LinkPending from "@/components/LinkPending";
 import type { ClosetView } from "./data";
 import SceneVideo from "./SceneVideo";
 import { captureHandoff, navigateWithHero, peekArrival, peekHandoff, signalHeroReady } from "./transition";
-import { REDUCED_QUERY, WIDE_QUERY, useMedia } from "./useMedia";
+import { COLS3_QUERY, REDUCED_QUERY, WIDE_QUERY, useMedia } from "./useMedia";
 import { clamp, reducedFade, springCss, springs } from "@/lib/motion";
 import styles from "./ClosetExperience.module.css";
 
@@ -30,6 +31,11 @@ export type LookView = {
   items: { id: string; name: string; image: string | null; color: string }[];
 };
 
+// 回退路径（无 CSS scroll-driven animations）的浮起区间：同一行里越靠右越晚，形成先后（与 CSS 里 animation-range 对应）
+const STAGGER: Record<2 | 3, Offset[]> = {
+  2: [["start end", "0.5 1"], ["-0.12 1", "0.45 1"]],
+  3: [["start end", "0.5 1"], ["-0.08 1", "0.46 1"], ["-0.16 1", "0.42 1"]],
+};
 const two = (n: number) => String(n).padStart(2, "0");
 const yuan = (n: number) => `¥${n.toLocaleString("zh-CN")}`;
 
@@ -37,6 +43,7 @@ export default function ClosetExperience({ closet, looks }: { closet: ClosetView
   const router = useRouter();
   const wide = useMedia(WIDE_QUERY);
   const reduced = useMedia(REDUCED_QUERY) === true;
+  const cols = useMedia(COLS3_QUERY) ? 3 : 2;
   // 只在客户端导航时有值；服务端与首次加载都是 null，不会造成水合不一致
   const [arrival] = useState(() => (typeof window === "undefined" ? null : peekArrival()));
   // 首页定格的那一帧：先显示它，视频从同一时刻接着播（过渡前后同一画面，没有重影）
@@ -112,7 +119,7 @@ export default function ClosetExperience({ closet, looks }: { closet: ClosetView
         </div>
       </div>
 
-      <section className={styles.first} aria-labelledby="closet-title">
+      <section className={`wide-col ${styles.first}`} aria-labelledby="closet-title">
         <motion.div {...rise(0)}>
           <Link href={`/?c=${closet.id}`} className={styles.back} onClick={back}>
             <svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true">
@@ -162,7 +169,7 @@ export default function ClosetExperience({ closet, looks }: { closet: ClosetView
         </motion.a>
       </section>
 
-      <section id="looks" className={styles.looks} aria-labelledby="looks-title">
+      <section id="looks" className={`wide-col ${styles.looks}`} aria-labelledby="looks-title">
         <ScrollRise as="header" className={styles.looksHead} js={jsScroll} reduced={reduced} offset={["start end", "end 0.8"]}>
           <span className="sc-kicker">The Looks</span>
           <h2 id="looks-title" className="section-title">
@@ -180,7 +187,7 @@ export default function ClosetExperience({ closet, looks }: { closet: ClosetView
               className={styles.lookWrap}
               js={jsScroll}
               reduced={reduced}
-              offset={i % 2 ? ["-0.12 1", "0.45 1"] : ["start end", "0.5 1"]}
+              offset={STAGGER[cols][i % cols]}
             >
               <Link href={`/outfit/${o.id}`} className={`sc-glass ${styles.look}`}>
                 <div className={styles.cover}>
@@ -219,6 +226,7 @@ export default function ClosetExperience({ closet, looks }: { closet: ClosetView
                     </span>
                   </div>
                 </div>
+                <LinkPending label={`正在打开 ${o.name.replace(/^占位：/, "")}`} />
               </Link>
             </ScrollRise>
           ))}

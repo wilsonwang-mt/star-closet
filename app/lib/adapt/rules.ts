@@ -25,6 +25,17 @@ export function buildCandidatePool(outfit: Pick<Outfit, "curatorId" | "gender">,
   return [...own, ...rest];
 }
 
+// ---- 同类替换 ----
+
+export const isDress = (i: Pick<Item, "tags" | "subcategory">) => i.tags.includes("连衣裙") || i.subcategory === "连衣裙";
+// 马甲只换马甲：针织马甲顶替衬衫会让上身只剩一件马甲
+export const isVest = (i: Pick<Item, "subcategory">) => (i.subcategory ?? "").includes("马甲");
+
+/** a 能否顶替 b：同类目，且连衣裙只换连衣裙、马甲只换马甲（规则模式与逐件替换下拉共用）。 */
+export function interchangeable(a: Pick<Item, "category" | "tags" | "subcategory">, b: Pick<Item, "category" | "tags" | "subcategory">) {
+  return a.category === b.category && isDress(a) === isDress(b) && isVest(a) === isVest(b);
+}
+
 function countBy(items: Pick<Item, "category">[]) {
   const m = new Map<string, number>();
   for (const i of items) m.set(i.category, (m.get(i.category) ?? 0) + 1);

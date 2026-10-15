@@ -211,6 +211,24 @@ section, figure { scroll-margin-top: var(--nav-offset); }
   .site-nav__burger i, .sc-nav__icon-btn { transition: none; }
 }
 
+/* ---------- 宽屏栏宽 ----------
+ * --sc-col-wide：导航胶囊、首页标题/信息/索引、衣橱页第一屏与搭配网格共用的宽栏，≥1100px 时与首页中央预览卡同宽
+ * （预览卡宽度公式见 ClosetCarousel.module.css：受视口高度约束的 16:9，最大 1120px），最小 720px。
+ * 720px 的 .container 只留给阅读型内容（搭配页、试衣间、档案）。窄于 1100px 时宽栏就是 720px，与原来一致。 */
+:root { --sc-col-wide: 720px; }
+@media (min-width: 1100px) {
+  :root { --sc-col-wide: clamp(720px, calc((100svh - 330px) * 16 / 9), min(64vw, 1120px)); }
+}
+.site-nav { width: min(calc(100% - 32px), var(--sc-col-wide)); }
+@media (min-width: 640px) {
+  .site-menu { right: max(16px, calc(50% - var(--sc-col-wide) / 2)); }
+}
+/* 在 .container 里放出宽栏：宽度取宽栏，左右负外边距居中（body 已 overflow-x: hidden） */
+@media (min-width: 1100px) {
+  .wide-col { width: var(--sc-col-wide); margin-inline: calc(50% - var(--sc-col-wide) / 2); }
+}
+.site-nav .sc-nav__link { position: relative; overflow: hidden; }
+
 .container { max-width: 720px; margin: 0 auto; padding: var(--nav-offset) 20px 120px; }
 .footer { text-align: center; padding: 0 20px 40px; }
 body { overflow-x: hidden; }
@@ -261,14 +279,33 @@ body { overflow-x: hidden; }
 }
 @keyframes row-sweep { 0%, 70% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
 
+/* 浅色主题的信息卡压在封面照片上：玻璃 .28 太透，人物与亮色单品会透出来和金箔总价、引题叠在一起。
+ * 只给卡片（.card）在玻璃下再垫一层底色，合计约 70% 不透明；导航、胶囊、列表行仍是规范里的轻玻璃。 */
+:root[data-theme="light"] .sc-glass.card { background: linear-gradient(var(--sc-glass-bg), var(--sc-glass-bg)), color-mix(in srgb, var(--sc-bg) 58%, transparent); }
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .sc-glass.card { background: linear-gradient(var(--sc-glass-bg), var(--sc-glass-bg)), color-mix(in srgb, var(--sc-bg) 58%, transparent); }
+}
+
 /* ---------- 按钮 ---------- */
 .sc-cta { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
-/* 禁用态：两种主题都要一眼看出不可用（浅色主题近黑底上调亮度看不出差别），统一降不透明度 */
-.sc-cta:disabled, .sc-cta[aria-disabled="true"] { opacity: .45; box-shadow: none; filter: saturate(.6); }
+/* 未就绪 / 禁用态：按钮保持完全不透明（它常压在滚动的列表上，半透明会让下面的文字透出来），
+ * 只用颜色表达：在按钮底色上叠一层页面底色（深色金色渐变底也适用），文字同步变淡。两种主题都一眼看出不可用。 */
+.sc-cta:disabled, .sc-cta[aria-disabled="true"] {
+  --cta-veil: color-mix(in srgb, var(--sc-bg) 34%, transparent);
+  background: linear-gradient(var(--cta-veil), var(--cta-veil)), var(--sc-cta-bg);
+  color: color-mix(in srgb, var(--sc-cta-fg) 58%, var(--sc-bg));
+  box-shadow: none;
+}
+.sc-cta--ghost:disabled, .sc-cta--ghost[aria-disabled="true"] { background: var(--sc-glass-bg); color: var(--sc-ink-3); }
+/* 吸底操作条：底部垫一层由透明到页面底色的渐隐，滚过它的列表行不会和按钮抢视线 */
+.cta-bar::before {
+  content: ""; position: absolute; z-index: -1; inset: -20px -20px 0; pointer-events: none;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--sc-bg) 72%, transparent) 46%, color-mix(in srgb, var(--sc-bg) 88%, transparent));
+}
 .sc-cta:disabled { cursor: not-allowed; }
 .sc-cta.compact { min-height: 40px; padding: 0 16px; font-size: 12px; letter-spacing: .16em; }
 .cta-bar {
-  position: sticky; bottom: 0; z-index: 5; display: flex; gap: 10px;
+  position: sticky; bottom: 0; z-index: 5; isolation: isolate; display: flex; gap: 10px;
   padding: 16px 0 calc(14px + env(safe-area-inset-bottom));
 }
 .cta-bar .sc-cta:first-child { flex: 1; }
@@ -300,7 +337,36 @@ select.swap { margin-top: 6px; max-width: 240px; padding: 5px 10px; font-size: 1
   background: color-mix(in srgb, var(--sc-bg) 30%, transparent); box-shadow: inset 0 0 0 .5px var(--sc-rule);
 }
 /* 返回链接：热区 44px 高、只占文字宽度（原来是 343×18 的整行细条） */
-.back-link { display: inline-flex; align-items: center; align-self: flex-start; min-height: 44px; padding: 0 12px 0 0; text-decoration: none; }
+/* 压在封面照片上：与衣橱页“全部衣橱”同一款玻璃胶囊，主墨色、12px，任何画面上都清楚 */
+.back-link {
+  position: relative; display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; min-height: 40px; padding: 0 16px 0 14px;
+  border-radius: var(--sc-radius-pill); font-size: 12px; letter-spacing: .16em; color: var(--sc-ink); text-decoration: none; text-shadow: none;
+  background: var(--sc-glass-bg); -webkit-backdrop-filter: blur(var(--sc-glass-blur)); backdrop-filter: blur(var(--sc-glass-blur));
+  box-shadow: inset 0 1px 0 var(--sc-glass-edge), inset 0 0 0 .5px var(--sc-glass-edge-2);
+  transition: transform var(--spring-dur) var(--spring);
+  -webkit-tap-highlight-color: transparent;
+}
+:root[data-theme="light"] .back-link { background: linear-gradient(var(--sc-glass-bg), var(--sc-glass-bg)), color-mix(in srgb, var(--sc-bg) 50%, transparent); }
+@media (prefers-color-scheme: light) { :root:not([data-theme]) .back-link { background: linear-gradient(var(--sc-glass-bg), var(--sc-glass-bg)), color-mix(in srgb, var(--sc-bg) 50%, transparent); } }
+.back-link:active { transform: scale(.94); }
+.back-link svg { transition: transform var(--spring-dur) var(--spring); }
+.back-link:hover svg { transform: translateX(-3px); }
+.back-link:focus-visible { outline: 1px solid var(--sc-champ); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .back-link, .back-link svg { transition: none; } .back-link:active { transform: none; } }
+
+/* ---------- 链接待跳转（弱网）：点下后约 120ms 仍未完成跳转，在链接底部出现一条香槟色细线来回扫动 ---------- */
+.link-pending {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; height: 2px; overflow: hidden; pointer-events: none;
+  opacity: 0; transition: opacity .2s ease;
+}
+.link-pending[data-on="true"] { opacity: 1; transition-delay: .12s; }
+.link-pending::after {
+  content: ""; position: absolute; inset: 0 auto 0 0; width: 40%;
+  background: linear-gradient(90deg, transparent, var(--sc-champ), transparent);
+  animation: wait-sweep 1.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) { .link-pending::after { animation: none; width: 100%; opacity: .7; } }
+[aria-busy="true"] { cursor: progress; }
 /* 触控热区 ≥44px：视觉尺寸不变，用透明伪元素把热区上下各扩 4px（36px → 44px） */
 .chip, .link-btn { position: relative; }
 .chip::after, .link-btn::after { content: ""; position: absolute; inset: -4px 0; }
@@ -328,6 +394,31 @@ details > summary::-webkit-details-marker { display: none; }
 .skeleton-block { background: color-mix(in srgb, var(--sc-ink) 10%, transparent); }
 .skeleton-line { display: block; height: 10px; border-radius: 5px; background: color-mix(in srgb, var(--sc-ink) 12%, transparent); }
 @keyframes wait-pulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+
+/* ---------- 路由加载骨架（components/Skeletons.tsx）：整体淡入，网络快时几乎看不到 ---------- */
+.page-skeleton { animation: sc-fade-in .3s ease-out .08s both; }
+.page-skeleton__scene {
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(90% 60% at 50% 30%, color-mix(in srgb, var(--sc-champ) 7%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--sc-bg-raised), var(--sc-bg));
+}
+.page-skeleton__pill { display: block; width: 116px; height: 40px; border-radius: var(--sc-radius-pill); }
+.page-skeleton__first {
+  min-height: calc(100svh - var(--nav-offset) - 8px);
+  display: flex; flex-direction: column; justify-content: flex-end; gap: 18px; padding-bottom: 48px;
+}
+.page-skeleton__copy { display: grid; justify-items: start; gap: 12px; }
+.page-skeleton__looks { display: grid; gap: 18px; padding-top: 56px; }
+.page-skeleton__grid { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 640px) { .page-skeleton__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; } }
+@media (min-width: 1100px) { .page-skeleton__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; } }
+.page-skeleton__look { overflow: hidden; }
+.page-skeleton__cover { display: block; aspect-ratio: 900 / 1117; }
+.page-skeleton__body { display: grid; gap: 10px; padding: 16px 18px 20px; }
+.page-skeleton__row { display: grid; grid-template-columns: 56px 1fr; align-items: center; gap: 12px; }
+.page-skeleton__row .skeleton-block { width: 56px; height: 56px; border-radius: var(--sc-radius-thumb); }
+@media (prefers-reduced-motion: reduce) { .page-skeleton { animation-delay: 0s; } }
 
 @media (prefers-reduced-motion: reduce) {
   .sc-glass--changed::after { animation: none; }

@@ -285,9 +285,18 @@ export default function Adapter({ outfit, catalog, aiEnabled }: { outfit: Outfit
               ))}
             </ul>
           ) : null}
-          <ItemList items={items} catalog={catalog} onSwap={swap} originalIds={originalIds} reveal={before} />
+          <ItemList
+            items={items}
+            catalog={catalog}
+            onSwap={swap}
+            originalIds={originalIds}
+            reveal={before}
+            ownCuratorId={outfit.curatorId}
+          />
           <p className="sc-meta" style={{ margin: 0 }}>
-            {result.mode === "ai" ? "由 AI 从这间衣橱现有的单品里挑选；" : "由规则从这间衣橱现有的单品里挑选，未使用 AI；"}
+            {result.mode === "ai"
+              ? "由 AI 挑选：优先用这间衣橱的单品，不够时也会用其他衣橱的；"
+              : "由规则挑选，未使用 AI：优先用这间衣橱的单品，不够时也会用其他衣橱的；"}
             金线标出的是换掉的单品；总价按各单品标价计算。
           </p>
         </section>

@@ -9,6 +9,7 @@ import { AnimatePresence, motion, useReducedMotion, type Transition } from "moti
 import { useEffect, useMemo, useState } from "react";
 import ItemThumb from "./ItemThumb";
 import type { Item } from "@/lib/catalog";
+import { interchangeable } from "@/lib/adapt/rules";
 import { springs } from "@/lib/motion";
 
 export type ListedItem = Item & { reason?: string | null };
@@ -28,9 +29,12 @@ export default function ItemList({
   onSwap,
   originalIds,
   reveal,
+  ownCuratorId,
 }: {
   items: ListedItem[];
   catalog?: Item[];
+  /** 这套搭配所属衣橱：替换下拉里本衣橱的单品排在前面，其他衣橱的单独分组 */
+  ownCuratorId?: string;
   onSwap?: (fromId: string, toId: string) => void;
   originalIds?: Set<string>;
   /** 改编前的单品：据此找出每个被换位置原来是哪一件，先显示它再换掉 */
@@ -98,7 +102,8 @@ export default function ItemList({
                 <Row
                   it={it}
                   changed={originalIds ? !originalIds.has(it.id) : false}
-                  alts={catalog?.filter((c) => c.category === it.category && !used.has(c.id)) ?? []}
+                  alts={catalog?.filter((c) => interchangeable(c, it) && !used.has(c.id)) ?? []}
+                  ownCuratorId={ownCuratorId}
                   onSwap={waiting ? undefined : onSwap}
                 />
               </motion.div>
@@ -115,12 +120,21 @@ function Row({
   changed,
   alts,
   onSwap,
+  ownCuratorId,
 }: {
   it: ListedItem;
   changed: boolean;
   alts: Item[];
   onSwap?: (fromId: string, toId: string) => void;
+  ownCuratorId?: string;
 }) {
+  const own = ownCuratorId ? alts.filter((a) => a.curatorId === ownCuratorId) : alts;
+  const others = ownCuratorId ? alts.filter((a) => a.curatorId !== ownCuratorId) : [];
+  const option = (a: Item) => (
+    <option key={a.id} value={a.id}>
+      {a.name.replace(/^占位：/, "")} ¥{a.price}
+    </option>
+  );
   return (
     <div className={`sc-glass sc-glass--row item-row${changed ? " sc-glass--changed" : ""}`}>
       <ItemThumb name={it.name} image={it.image} color={it.color} />
@@ -138,11 +152,8 @@ function Row({
         {onSwap && alts.length > 0 ? (
           <select className="swap" aria-label={`替换${it.name}`} value="" onChange={(e) => e.target.value && onSwap(it.id, e.target.value)}>
             <option value="">换一件{it.category}…</option>
-            {alts.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name.replace(/^占位：/, "")} ¥{a.price}
-              </option>
-            ))}
+            {others.length && own.length ? <optgroup label="这间衣橱">{own.map(option)}</optgroup> : own.map(option)}
+            {others.length ? <optgroup label="其他衣橱">{others.map(option)}</optgroup> : null}
           </select>
         ) : null}
       </div>

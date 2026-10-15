@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import LinkPending from "./LinkPending";
 import ThemeToggle, { type ThemePref } from "./ThemeToggle";
 
 // 顶部悬浮玻璃胶囊导航（视觉规范 6.1）。
@@ -22,7 +23,8 @@ const SCROLL_THRESHOLD = 8;
 
 function currentness(pathname: string, href: string): "page" | "true" | undefined {
   if (pathname === href) return "page";
-  if (href === "/" && pathname.startsWith("/outfit")) return "true";
+  // 衣橱页与搭配页都属于“衣橱”这一栏
+  if (href === "/" && (pathname.startsWith("/closet") || pathname.startsWith("/outfit"))) return "true";
   if (href !== "/" && pathname.startsWith(`${href}/`)) return "true";
   return undefined;
 }
@@ -143,6 +145,7 @@ export default function SiteNav({ initialTheme }: { initialTheme: ThemePref }) {
             {LINKS.map((l) => (
               <Link key={l.href} href={l.href} className="sc-nav__link" aria-current={currentness(pathname, l.href)}>
                 {l.label}
+                <LinkPending />
               </Link>
             ))}
             {isPending ? (
@@ -157,6 +160,7 @@ export default function SiteNav({ initialTheme }: { initialTheme: ThemePref }) {
                 title={user?.email}
               >
                 {accountLabel}
+                <LinkPending />
               </Link>
             )}
           </nav>

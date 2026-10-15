@@ -16,4 +16,6 @@ export function useMedia(query: string): boolean | null {
 }
 
 export const WIDE_QUERY = "(min-width: 900px)";
+/** 宽栏（--sc-col-wide）与三列搭配网格的断点，与 globals.css 一致 */
+export const COLS3_QUERY = "(min-width: 1100px)";
 export const REDUCED_QUERY = "(prefers-reduced-motion: reduce)";
