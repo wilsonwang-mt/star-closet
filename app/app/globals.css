@@ -308,6 +308,53 @@ details > summary::-webkit-details-marker { display: none; }
   .wait-step, .wait-bar i, .skeleton-row { animation: none; }
 }
 
+/* ---------- 触感：按下微缩、悬停抬升（视觉规范 §7.1）----------
+ * 只动 transform / opacity。按下 120ms 内压到 .97，松开按弹簧回弹；transition 可随时打断，从当前位置继续。
+ * 悬停抬升只在有精确指针的设备（桌面）上生效；阴影加深用伪元素的 opacity 做，不改 box-shadow。 */
+.sc-cta, .chip, .link-btn {
+  transition: transform var(--spring-dur) var(--spring), filter .2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.sc-cta:not(:disabled):active, .chip:active { transform: scale(.97); transition-duration: .12s, .2s; }
+.link-btn:active { transform: scale(.95); transition-duration: .12s, .2s; }
+@media (hover: hover) and (pointer: fine) {
+  .sc-cta:not(:disabled):hover { filter: brightness(1.06); }
+}
+
+/* ---------- 改编结果：每个位置一个单格 grid，旧单品与新单品叠在同一格里交接（components/ItemList.tsx）---------- */
+.item-slot { display: grid; }
+.item-slot > * { grid-area: 1 / 1; min-width: 0; }
+.item-slot__prev { z-index: 1; display: grid; pointer-events: none; }
+.item-slot__prev > .item-row { height: 100%; }
+/* 结果卡接替等待卡：原位淡入，不再整卡上浮（单品自己会动） */
+.adapt-result { animation: sc-fade-in .35s ease-out both; }
+.fade-in { animation: sc-fade-in .3s ease-out both; }
+
+/* ---------- 改编等待：光束扫过当前搭配 ---------- */
+.adapt-scan { position: relative; overflow: hidden; border-radius: var(--sc-radius-row); }
+.adapt-scan .item-row { opacity: .72; }
+.adapt-scan::after {
+  content: ""; position: absolute; inset: -20% 0; pointer-events: none; z-index: 2;
+  background: linear-gradient(100deg, transparent 0%, rgba(255, 236, 196, .0) 34%, rgba(255, 236, 196, .26) 48%, rgba(255, 246, 226, .42) 50%,
+    rgba(255, 236, 196, .26) 52%, rgba(255, 236, 196, 0) 66%, transparent 100%);
+  mix-blend-mode: screen;
+  transform: translateX(-100%); animation: adapt-beam 2.4s cubic-bezier(.45, .05, .25, 1) .2s infinite;
+}
+/* 浅色：米白底上 screen 混合看不见，改成香槟色光带 */
+:root[data-theme="light"] .adapt-scan::after { mix-blend-mode: normal; background: var(--adapt-beam-light); }
+@media (prefers-color-scheme: light) { :root:not([data-theme]) .adapt-scan::after { mix-blend-mode: normal; background: var(--adapt-beam-light); } }
+:root { --adapt-beam-light: linear-gradient(100deg, transparent 30%, rgba(201, 169, 110, .16) 44%, rgba(255, 248, 232, .85) 50%, rgba(201, 169, 110, .16) 56%, transparent 70%); }
+@keyframes adapt-beam { 0% { transform: translateX(-100%); } 70%, 100% { transform: translateX(100%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  /* 减弱动态：tokens.css 把 .sc-rise 关成直接出现；这里改成淡入（同选择器、更晚出现，覆盖它） */
+  .sc-rise { animation: sc-fade-in .3s ease-out both !important; }
+  .sc-cta, .chip, .link-btn { transition: filter .2s ease; }
+  .sc-cta:not(:disabled):active, .chip:active, .link-btn:active { transform: none; }
+  .adapt-scan::after { animation: none; opacity: 0; }
+}
+@keyframes sc-fade-in { from { opacity: 0; } }
+
 /* ---------- 首页 ⇄ 衣橱页：共享元素过渡（View Transitions，见 components/closet/transition.ts）----------
  * 伪元素只能写在全局样式里；首页与衣橱页的其余样式在各自组件目录的 CSS Modules。
  * 首页中央预览与衣橱页全屏场景共用名字 closet-hero；导航单独命名，过渡时原地不动。

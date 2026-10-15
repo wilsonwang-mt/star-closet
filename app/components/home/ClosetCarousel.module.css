@@ -82,6 +82,7 @@
   /* Safari：圆角裁切在 transform 子元素上需要单独的合成层 */
   -webkit-mask-image: -webkit-radial-gradient(white, black);
 }
+.videoWrap { position: absolute; inset: 0; }
 .media img, .video {
   position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;
   -webkit-user-drag: none;
@@ -193,7 +194,26 @@
 .rowTag { display: block; font-size: 11px; letter-spacing: .08em; color: var(--sc-ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rowMeta { font-size: 11px; letter-spacing: .1em; color: var(--sc-ink-3); white-space: nowrap; }
 
+
+/* ---------- 从衣橱页返回：卡片收回到位后，标题、信息、切换按钮依次浮起 ---------- */
+.arriveBack .head, .arriveBack .info, .arriveBack .controls {
+  animation: home-arrive .9s cubic-bezier(.2, .7, .2, 1) both;
+  animation-delay: calc(var(--vt-dur, .9s) * .62);
+}
+.arriveBack .info { animation-delay: calc(var(--vt-dur, .9s) * .62 + 70ms); }
+.arriveBack .controls { animation-delay: calc(var(--vt-dur, .9s) * .62 + 140ms); }
+@keyframes home-arrive { from { opacity: 0; transform: translateY(14px); } }
+
+/* ---------- 桌面悬停：索引行轻轻抬起 ---------- */
+@media (hover: hover) and (pointer: fine) {
+  .row:hover { transform: translateY(-2px); }
+  .row:active { transform: translateY(-1px) scale(.985); }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .arriveBack .head, .arriveBack .info, .arriveBack .controls { animation: home-fade .3s ease-out .1s both; }
+  .row:hover, .row:active { transform: none; }
   .isActive .media img { animation: none !important; }
   .enter svg, .arrow, .row { transition: opacity .2s ease; }
 }
+@keyframes home-fade { from { opacity: 0; } }

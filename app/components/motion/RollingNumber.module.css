@@ -1,0 +1,6 @@
+/* 里程表式数字：每一位一条竖排 0–9，只动 transform。行高用 em，跟随父级字号。 */
+.digits { display: inline-flex; vertical-align: bottom; font-variant-numeric: lining-nums tabular-nums; }
+.col { display: inline-block; height: 1.2em; line-height: 1.2em; overflow: hidden; }
+.strip { display: block; will-change: transform; }
+.strip > span { display: block; height: 1.2em; text-align: center; }
+.tabular { font-variant-numeric: lining-nums tabular-nums; }

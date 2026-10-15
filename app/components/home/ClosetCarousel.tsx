@@ -21,7 +21,8 @@ import {
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ClosetView } from "@/components/closet/data";
 import SceneVideo from "@/components/closet/SceneVideo";
-import { captureHandoff, navigateWithHero, peekHandoff, signalHeroReady } from "@/components/closet/transition";
+import { captureHandoff, navigateWithHero, peekArrival, peekHandoff, signalHeroReady } from "@/components/closet/transition";
+import { RollingDigits } from "@/components/motion/RollingNumber";
 import { REDUCED_QUERY, WIDE_QUERY, useMedia } from "@/components/closet/useMedia";
 import { clamp, reducedFade, springs } from "@/lib/motion";
 import styles from "./ClosetCarousel.module.css";
@@ -341,6 +342,8 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
     return h && c ? { ...h, id: c.id } : null;
   });
   const current = list[active];
+  // 从衣橱页返回：画面收回到卡片的途中，标题、信息与切换按钮先隐去，卡片到位后再依次浮起（CSS，见 .arriveBack）
+  const [arrivedBack] = useState(() => typeof window !== "undefined" && peekArrival() === "back");
   const enter = useCallback(() => {
     const c = list[activeRef.current];
     if (!c) return;
@@ -387,10 +390,12 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
         <div className="sc-grain" />
       </div>
 
-      <section className={styles.root} aria-labelledby="closets-title">
+      <section className={`${styles.root} ${arrivedBack ? styles.arriveBack : ""}`} aria-labelledby="closets-title">
         <header className={styles.head}>
           <div>
-            <span className="sc-kicker">N°{two(n ? active + 1 : 0)} — The Closets</span>
+            <span className="sc-kicker">
+              N°<RollingDigits value={n ? active + 1 : 0} /> — The Closets
+            </span>
             <h1 id="closets-title" className={styles.title}>
               想走进谁的衣橱？
             </h1>
@@ -541,7 +546,10 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
             </button>
             <div className={styles.counter} aria-live="off">
               <span className={styles.count}>
-                <b>{two(active + 1)}</b> / {two(n)}
+                <b>
+                  <RollingDigits value={active + 1} />
+                </b>{" "}
+                / {two(n)}
               </span>
               <span className={styles.progress} aria-hidden="true">
                 <motion.span className={styles.progressFill} style={{ scaleX: progress }} />
@@ -655,9 +663,14 @@ const Card = memo(function Card({
           <source media={WIDE_QUERY} srcSet={c.wide} />
           <img src={handoff?.frame ?? c.poster} alt="" draggable={false} loading={eager ? "eager" : "lazy"} decoding="async" />
         </picture>
-        {playVideo && c.video ? (
-          <SceneVideo className={styles.video} src={c.video} poster={handoff?.frame ?? c.poster} startAt={handoff?.startAt ?? 0} />
-        ) : null}
+        {/* 切换中央时视频交叉淡化：新中央的视频真正开始播放后才淡入（SceneVideo），离开的那一间淡出 0.45 秒后再卸载，不硬切回首帧 */}
+        <AnimatePresence>
+          {playVideo && c.video ? (
+            <motion.div key="video" className={styles.videoWrap} exit={{ opacity: 0, transition: { duration: 0.45, ease: "easeOut" } }}>
+              <SceneVideo className={styles.video} src={c.video} poster={handoff?.frame ?? c.poster} startAt={handoff?.startAt ?? 0} />
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
         <motion.span className={styles.shade} style={{ opacity: shade }} />
       </div>
     </motion.div>

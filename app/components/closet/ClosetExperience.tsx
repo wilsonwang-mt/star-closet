@@ -2,12 +2,14 @@
 /* eslint-disable @next/next/no-img-element -- 用 <picture> 按屏宽切换竖屏/横屏场景，并与共享元素过渡共用同一张图 */
 
 // /closet/[id] 衣橱页：全屏场景（视频）+ 衣橱信息，下方是这间衣橱的全部搭配。
-// 滚动叙事：场景固定在最底层，随滚动缓慢推近并压暗；搭配卡按顺序浮起；点卡片进入 /outfit/[id]。
+// 滚动叙事：场景固定在最底层，随滚动缓慢推近并压暗，第一屏文字随之淡出上移；搭配卡随滚动依次浮起；点卡片进入 /outfit/[id]。
+// 滚动驱动优先用 CSS scroll-driven animations（scroll() / view()，见 ClosetExperience.module.css，合成线程执行，滚动停下画面就停下）；
+// 不支持的浏览器（目前 Safari、Firefox）在挂载后改用 Motion 的 useScroll 驱动同样的 transform / opacity。服务端与首帧不带内联样式，两条路径不打架。
 // 经由首页「走进衣橱」进来时，场景已由共享元素过渡放大到位：跳过进场虚焦，文字等画面到位后再浮起。
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion, useScroll, useTransform } from "motion/react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { motion, useScroll, useTransform, type MotionValue } from "motion/react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import ItemThumb from "@/components/ItemThumb";
 import type { ClosetView } from "./data";
 import SceneVideo from "./SceneVideo";
@@ -47,7 +49,14 @@ export default function ClosetExperience({ closet, looks }: { closet: ClosetView
     signalHeroReady();
   }, []);
 
-  // 滚动驱动：第一屏内镜头缓推 8%，同时压暗，让下方搭配卡清楚
+  // CSS scroll-driven animations 是否可用：null = 未知（服务端与首帧），此时只靠 CSS（不支持的浏览器会忽略那些规则）
+  const [cssScroll, setCssScroll] = useState<boolean | null>(null);
+  useEffect(() => {
+    setCssScroll(typeof CSS !== "undefined" && CSS.supports("animation-timeline: scroll()"));
+  }, []);
+  const jsScroll = cssScroll === false;
+
+  // 回退路径：第一屏内镜头缓推 8%，同时压暗，让下方搭配卡清楚（与 CSS 关键帧同一组数值）
   const { scrollY } = useScroll();
   const vh = useRef(800);
   useLayoutEffect(() => {
@@ -58,6 +67,9 @@ export default function ClosetExperience({ closet, looks }: { closet: ClosetView
   }, []);
   const sceneScale = useTransform(scrollY, (y) => (reduced ? 1 : 1 + clamp(y / vh.current, 0, 1.4) * 0.08));
   const sceneDim = useTransform(scrollY, (y) => clamp((y - vh.current * 0.1) / (vh.current * 0.8), 0, 1) * 0.66);
+  const copyP = useTransform(scrollY, (y) => clamp((y - vh.current * 0.15) / (vh.current * 0.5), 0, 1));
+  const copyOpacity = useTransform(copyP, (p) => 1 - p);
+  const copyY = useTransform(copyP, (p) => (reduced ? 0 : p * -24));
 
   const viaHero = arrival === "enter";
   // 经由共享元素过渡进来：等画面放大到位（过渡结束）后文字再浮起；过渡期间场景盖在最上层
@@ -78,7 +90,7 @@ export default function ClosetExperience({ closet, looks }: { closet: ClosetView
     <>
       <div className={styles.scene} aria-hidden="true">
         <div ref={heroRef} className={styles.hero} data-vt-hero="">
-          <motion.div className={styles.media} style={{ scale: sceneScale }}>
+          <motion.div className={styles.media} style={jsScroll ? { scale: sceneScale } : undefined}>
             <div className={`${styles.layer} ${viaHero || reduced ? "" : styles.introScene}`}>
               <picture>
                 <source media={WIDE_QUERY} srcSet={closet.wide} />
@@ -95,7 +107,7 @@ export default function ClosetExperience({ closet, looks }: { closet: ClosetView
           <div className="sc-scene__fade-top" />
           <div className="sc-scene__fade-bottom" />
           <div className={styles.scrim} />
-          <motion.div className={styles.dim} style={{ opacity: sceneDim }} />
+          <motion.div className={styles.dim} style={jsScroll ? { opacity: sceneDim } : undefined} />
           <div className="sc-grain" />
         </div>
       </div>
@@ -109,7 +121,7 @@ export default function ClosetExperience({ closet, looks }: { closet: ClosetView
             全部衣橱
           </Link>
         </motion.div>
-        <div className={styles.copy}>
+        <motion.div className={styles.copy} style={jsScroll ? { opacity: copyOpacity, y: copyY } : undefined}>
           <motion.span className="sc-kicker" {...rise(1)}>
             The Closet · {closet.closetType} · {closet.gender}
           </motion.span>
@@ -143,7 +155,7 @@ export default function ClosetExperience({ closet, looks }: { closet: ClosetView
           <motion.span className={`sc-badge ${styles.badge}`} {...rise(7)}>
             {closet.personaNote || "虚构示例主理人 · AI 生成场景示意"}
           </motion.span>
-        </div>
+        </motion.div>
         <motion.a href="#looks" className={styles.cue} {...rise(8)}>
           <span>向下浏览 {looks.length} 套搭配</span>
           <i aria-hidden="true" />
@@ -151,13 +163,7 @@ export default function ClosetExperience({ closet, looks }: { closet: ClosetView
       </section>
 
       <section id="looks" className={styles.looks} aria-labelledby="looks-title">
-        <motion.header
-          className={styles.looksHead}
-          initial={reduced ? { opacity: 0 } : { opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "0px 0px -10% 0px" }}
-          transition={reduced ? reducedFade : springs.rise}
-        >
+        <ScrollRise as="header" className={styles.looksHead} js={jsScroll} reduced={reduced} offset={["start end", "end 0.8"]}>
           <span className="sc-kicker">The Looks</span>
           <h2 id="looks-title" className="section-title">
             这间衣橱的 {looks.length} 套搭配
@@ -165,17 +171,16 @@ export default function ClosetExperience({ closet, looks }: { closet: ClosetView
           <p className="sc-meta" style={{ margin: "6px 0 0" }}>
             点一套，查看单品、一句话改编，再去商家页面购买。
           </p>
-        </motion.header>
+        </ScrollRise>
         <div className={styles.grid}>
           {looks.map((o, i) => (
-            <motion.div
+            <ScrollRise
               key={o.id}
               id={`look-${o.id}`}
               className={styles.lookWrap}
-              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 48, scale: 0.97 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true, margin: "0px 0px -8% 0px" }}
-              transition={reduced ? reducedFade : { ...springs.rise, delay: (i % 2) * 0.08 }}
+              js={jsScroll}
+              reduced={reduced}
+              offset={i % 2 ? ["-0.12 1", "0.45 1"] : ["start end", "0.5 1"]}
             >
               <Link href={`/outfit/${o.id}`} className={`sc-glass ${styles.look}`}>
                 <div className={styles.cover}>
@@ -215,10 +220,75 @@ export default function ClosetExperience({ closet, looks }: { closet: ClosetView
                   </div>
                 </div>
               </Link>
-            </motion.div>
+            </ScrollRise>
           ))}
         </div>
       </section>
     </>
+  );
+}
+
+// 随滚动浮起：CSS 支持时只输出带类名的普通元素（动画在 CSS 里，animation-timeline: view()）；
+// 不支持时用 useScroll 跟踪元素进入视口的进度，驱动同样的位移、缩放与透明度。减弱动态时只改透明度。
+type Offset = NonNullable<Parameters<typeof useScroll>[0]>["offset"];
+function ScrollRise({
+  as = "div",
+  js,
+  reduced,
+  offset,
+  className,
+  id,
+  children,
+}: {
+  as?: "div" | "header";
+  js: boolean;
+  reduced: boolean;
+  offset: Offset;
+  className?: string;
+  id?: string;
+  children: React.ReactNode;
+}) {
+  const Tag = as;
+  if (!js) {
+    return (
+      <Tag id={id} className={className}>
+        {children}
+      </Tag>
+    );
+  }
+  return (
+    <ScrollRiseJs as={as} reduced={reduced} offset={offset} className={className} id={id}>
+      {children}
+    </ScrollRiseJs>
+  );
+}
+
+function ScrollRiseJs({
+  as,
+  reduced,
+  offset,
+  className,
+  id,
+  children,
+}: {
+  as: "div" | "header";
+  reduced: boolean;
+  offset: Offset;
+  className?: string;
+  id?: string;
+  children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset });
+  // 与 CSS 里 look-rise 的 cubic-bezier(.2,.7,.2,1) 近似的缓出
+  const eased: MotionValue<number> = useTransform(scrollYProgress, (p) => 1 - Math.pow(1 - clamp(p, 0, 1), 3));
+  const opacity = eased;
+  const y = useTransform(eased, (e) => (reduced ? 0 : (1 - e) * 56));
+  const scale = useTransform(eased, (e) => (reduced ? 1 : 0.96 + e * 0.04));
+  const Comp = as === "header" ? motion.header : motion.div;
+  return (
+    <Comp ref={ref as React.RefObject<HTMLDivElement>} id={id} className={className} style={{ opacity, y, scale }}>
+      {children}
+    </Comp>
   );
 }

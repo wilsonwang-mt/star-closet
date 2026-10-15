@@ -1,12 +1,16 @@
 "use client";
 
 import { forwardRef, useEffect, useState } from "react";
+import ItemThumb from "./ItemThumb";
 
-// AI 改编约需 10–13 秒的等待卡：轮换说明当前在做什么（不显示假进度百分比），
-// 附已等待秒数和三行占位，结果出来后由改编结果卡替换。
+// AI 改编约需 10–13 秒的等待卡：轮换说明当前在做什么（不显示假进度百分比），附已等待秒数。
+// 下方列出当前这一套（改编前的单品），一道香槟光束反复扫过它们（视觉规范 §7.1「等待时光束扫过当前搭配」）；
+// 结果出来后由改编结果卡替换，结果卡先以同样的单品开场，再把被换的那几件换掉。
 const STEPS = ["读懂你的要求", "在这间衣橱里挑选", "保留原搭配的风格", "核对类别与预算", "写下每件的理由"];
 
-const AdaptWaiting = forwardRef<HTMLElement, { aiEnabled: boolean }>(function AdaptWaiting({ aiEnabled }, ref) {
+type Current = { id: string; name: string; image: string | null; color: string; category: string; price: number };
+
+const AdaptWaiting = forwardRef<HTMLElement, { aiEnabled: boolean; items: Current[] }>(function AdaptWaiting({ aiEnabled, items }, ref) {
   const [step, setStep] = useState(0);
   const [seconds, setSeconds] = useState(0);
 
@@ -32,18 +36,17 @@ const AdaptWaiting = forwardRef<HTMLElement, { aiEnabled: boolean }>(function Ad
       <p className="serif-note wait-step" key={step}>
         {STEPS[step]}…
       </p>
-      <div className="wait-bar" aria-hidden="true">
-        <i />
-      </div>
-      <div className="rows" aria-hidden="true">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="sc-glass sc-glass--row item-row skeleton-row" style={{ animationDelay: `${i * 0.15}s` }}>
-            <div className="thumb skeleton-block" />
-            <div className="stack" style={{ gap: 6 }}>
-              <span className="skeleton-line" style={{ width: "62%" }} />
-              <span className="skeleton-line" style={{ width: "38%" }} />
+      <div className="rows adapt-scan" aria-hidden="true">
+        {items.map((it) => (
+          <div key={it.id} className="sc-glass sc-glass--row item-row">
+            <ItemThumb name={it.name} image={it.image} color={it.color} />
+            <div>
+              <div className="item-name">{it.name.replace(/^占位：/, "")}</div>
+              <div className="sc-meta">
+                {it.category} · {it.color}
+              </div>
             </div>
-            <span className="skeleton-line" style={{ width: 36 }} />
+            <div className="price">¥{it.price}</div>
           </div>
         ))}
       </div>

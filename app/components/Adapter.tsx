@@ -3,9 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import AdaptWaiting from "./AdaptWaiting";
-import ItemList, { type ListedItem } from "./ItemList";
+import ItemList, { REVEAL_DELAY, type ListedItem } from "./ItemList";
+import { CountTo } from "./motion/RollingNumber";
 import type { Item, Outfit } from "@/lib/catalog";
 import type { AdaptResult } from "@/lib/adapt/types";
+
+// 等待卡至少停留这么久：规则模式几乎瞬间返回，等待卡一闪而过会造成闪烁
+const MIN_WAIT_MS = 900;
 
 const EXAMPLES = ["预算 800 以内，户外婚礼，换成平底鞋", "冬天通勤穿，不要皮革", "周末逛街，舒服一点，600 以内"];
 
@@ -39,9 +43,14 @@ export default function Adapter({ outfit, catalog, aiEnabled }: { outfit: Outfit
   const [items, setItems] = useState<ListedItem[] | null>(null);
   const [listening, setListening] = useState(false);
   const [saved, setSaved] = useState<string | null>(null);
+  // 改编前的那一套：等待时光束扫过它；结果出现时先以它开场，再换掉被换的单品，总价从它的总价滚到新值
+  const [before, setBefore] = useState<ListedItem[]>(outfit.items);
   const recRef = useRef<SpeechRecognitionLike | null>(null);
 
   async function adapt(text: string) {
+    const current = items ?? outfit.items;
+    setBefore(current);
+    const started = Date.now();
     setLoading(true);
     setError(null);
     setSaved(null);
@@ -54,6 +63,8 @@ export default function Adapter({ outfit, catalog, aiEnabled }: { outfit: Outfit
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "改编失败");
+      const wait = MIN_WAIT_MS - (Date.now() - started);
+      if (wait > 0) await new Promise((r) => setTimeout(r, wait));
       setResult(data);
       setItems(data.items);
       setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
@@ -177,21 +188,37 @@ export default function Adapter({ outfit, catalog, aiEnabled }: { outfit: Outfit
       </section>
 
       {loading ? (
-        <AdaptWaiting aiEnabled={aiEnabled} ref={resultRef} />
+        <AdaptWaiting aiEnabled={aiEnabled} items={before} ref={resultRef} />
       ) : result && items ? (
-        <section className="sc-glass card stack sc-rise" ref={resultRef}>
+        <section className="sc-glass card stack adapt-result" ref={resultRef}>
           <div className="spread">
             <div>
               <span className="sc-kicker">Re-styled for you</span>
               <h2 className="section-title">为你改编的一套</h2>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div className="total sc-foil">¥{shownTotal}</div>
-              {result.budget != null ? <div className="sc-meta">预算 ¥{result.budget}</div> : null}
+              <CountTo
+                className="total sc-foil"
+                value={shownTotal}
+                from={total(before)}
+                delay={REVEAL_DELAY + 0.1}
+                format={(n) => `¥${Math.round(n)}`}
+              />
+              {result.budget != null ? (
+                <div className="sc-meta">
+                  预算 ¥{result.budget}
+                  {/* 超出预算写在预算旁边：手动替换越过预算时不往列表上方插入一行，列表不跳动 */}
+                  {overBudget ? (
+                    <span className="fade-in" style={{ color: "var(--sc-champ-text)" }}>
+                      {" "}
+                      · 超出 ¥{shownTotal - result.budget}
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           </div>
           <p className="serif-note" style={{ color: "var(--sc-ink)" }}>{result.summary}</p>
-          {overBudget ? <span className="sc-badge" style={{ justifySelf: "start" }}>超出预算 ¥{shownTotal - result.budget!}</span> : null}
           {result.notes.length ? (
             <ul className="small muted" style={{ margin: 0, paddingLeft: 18 }}>
               {result.notes.map((n) => (
@@ -199,7 +226,7 @@ export default function Adapter({ outfit, catalog, aiEnabled }: { outfit: Outfit
               ))}
             </ul>
           ) : null}
-          <ItemList items={items} catalog={catalog} onSwap={swap} originalIds={originalIds} />
+          <ItemList items={items} catalog={catalog} onSwap={swap} originalIds={originalIds} reveal={before} />
           <p className="sc-meta" style={{ margin: 0 }}>
             {result.mode === "ai" ? "由 AI 从这间衣橱现有的单品里挑选；" : "由规则从这间衣橱现有的单品里挑选，未使用 AI；"}
             金线标出的是换掉的单品；总价按各单品标价计算。

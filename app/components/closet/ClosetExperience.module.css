@@ -13,7 +13,8 @@
   .layer img { animation: closet-dolly 30s ease-in-out infinite alternate; }
 }
 @keyframes closet-dolly { from { transform: scale(1.02); } to { transform: scale(1.1) translate(-1%, -1.2%); } }
-.dim { position: absolute; inset: 0; background: var(--sc-bg); }
+/* 默认透明：滚动驱动（CSS 或 Motion 回退）才把它压暗；Safari 首帧检测完成前也不会整屏盖住场景 */
+.dim { position: absolute; inset: 0; background: var(--sc-bg); opacity: 0; }
 /* 文字所在的下半屏再压一层，保证在明亮画面上也清楚 */
 .scrim { position: absolute; inset: 0; pointer-events: none;
   background: linear-gradient(0deg, rgba(8, 8, 10, .72) 0%, rgba(8, 8, 10, .42) 38%, transparent 64%); }
@@ -99,7 +100,50 @@
 .thumbs { margin: 0 -2px; }
 .go { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; letter-spacing: .14em; color: var(--sc-champ-text); white-space: nowrap; }
 
+/* ---------- 滚动驱动（CSS scroll-driven animations）----------
+ * 进度来自页面滚动本身（合成线程），滚动停下画面就停下、反向滚动画面倒放。数值与组件里 useScroll 回退路径一致。
+ * 场景：0 → 1.4 屏镜头缓推到 1.112 倍；0.1 → 0.9 屏压暗到 .66。第一屏文字：0.15 → 0.65 屏淡出并上移 24px。
+ * 搭配卡：进入视口的前半程（entry 0% → 50%）浮起；两列时右列晚 12%，形成先后。缓出曲线让卡片先快后稳。 */
+@supports (animation-timeline: scroll()) {
+  .media { animation: closet-push linear both; animation-timeline: scroll(root block); animation-range: 0 140vh; }
+  .dim { animation: closet-dim linear both; animation-timeline: scroll(root block); animation-range: 10vh 90vh; }
+  .copy { animation: closet-copy-out linear both; animation-timeline: scroll(root block); animation-range: 15vh 65vh; }
+  .looksHead, .lookWrap {
+    animation: look-rise cubic-bezier(.2, .7, .2, 1) both; animation-timeline: view(block); animation-range: entry 0% entry 50%;
+  }
+  .looksHead { animation-range: entry 0% cover 30%; }
+  @media (min-width: 640px) {
+    .lookWrap:nth-child(2n) { animation-range: entry 12% entry 62%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .media { animation: none; }
+    .copy { animation-name: closet-fade-out; }
+    .looksHead, .lookWrap { animation-name: look-fade; }
+  }
+}
+@keyframes closet-push { from { transform: none; } to { transform: scale(1.112); } }
+@keyframes closet-dim { from { opacity: 0; } to { opacity: .66; } }
+@keyframes closet-copy-out { to { opacity: 0; transform: translateY(-24px); } }
+@keyframes closet-fade-out { to { opacity: 0; } }
+@keyframes look-rise { from { opacity: 0; transform: translateY(56px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes look-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* 桌面悬停：卡片轻轻抬起，阴影加深。卡片自身 overflow: hidden，阴影放在外层 .lookWrap 的伪元素上，只改它的 opacity */
+.lookWrap { position: relative; }
+@media (hover: hover) and (pointer: fine) {
+  .lookWrap::before {
+    content: ""; position: absolute; inset: 0; z-index: -1; border-radius: var(--sc-radius-card); pointer-events: none;
+    box-shadow: 0 34px 60px -24px rgba(0, 0, 0, .6), 0 12px 22px -12px rgba(0, 0, 0, .35);
+    opacity: 0; transition: opacity .45s ease;
+  }
+  .lookWrap:hover::before { opacity: 1; }
+  .look:hover { transform: translateY(-4px); }
+  .look:active { transform: translateY(-2px) scale(.985); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .introScene, .layer img, .cue i { animation: none !important; }
-  .cover img, .look, .back, .back svg { transition: none; }
+  .cover img, .back, .back svg { transition: none; }
+  .look { transition: opacity .2s ease; }
+  .look:hover, .look:active { transform: none; }
 }
