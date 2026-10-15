@@ -16,6 +16,7 @@ body{min-height:100vh;font-family:var(--sans);display:flex;flex-direction:column
 .phone.light{background:linear-gradient(145deg,#fbf3e3,#dcc59a 40%,#f4e6c8 60%,#c7a874)}
 .screen{position:relative;width:100%;height:100%;border-radius:44px;overflow:hidden;isolation:isolate;background:#000}
 .shot{position:absolute;inset:-6%;background-size:cover;background-position:center;animation:dolly 22s ease-in-out infinite alternate}
+video.shot{inset:0;width:100%;height:100%;object-fit:cover;animation:intro 3s cubic-bezier(.22,.61,.2,1) both}
 @keyframes dolly{0%{transform:scale(1.02) translate(0,0)}100%{transform:scale(1.14) translate(0,-2%)}}
 .intro{animation:intro 3s cubic-bezier(.22,.61,.2,1) both}
 @keyframes intro{from{filter:blur(6px) brightness(.5);transform:scale(1.08)}to{filter:none;transform:none}}
@@ -70,7 +71,7 @@ h2{font-family:var(--serif);font-weight:400;font-size:28px;letter-spacing:.12em}
 <div class="stage">
 
 <div class="phone" data-tilt><div class="screen">
-  <div class="shot intro" style="background-image:url(keyframes/night-portrait.jpg)"></div>
+  <video class="shot" src="video/night-closet-web.mp4" poster="keyframes/night-portrait.jpg" autoplay muted loop playsinline></video>
   <div class="beam"></div><div class="dust" data-dust></div>
   <div class="vignette"></div><div class="fade-top"></div><div class="fade-bot"></div>
   <div class="mast"><span class="brand">STAR CLOSET</span><span class="issue">N°01 — Night Edit</span></div>
@@ -87,7 +88,7 @@ h2{font-family:var(--serif);font-weight:400;font-size:28px;letter-spacing:.12em}
 </div></div>
 
 <div class="phone light" data-tilt><div class="screen">
-  <div class="shot intro" style="background-image:url(keyframes/day-portrait.jpg);animation-delay:0s"></div>
+  <video class="shot" src="video/day-closet-web.mp4" poster="keyframes/day-portrait.jpg" autoplay muted loop playsinline></video>
   <div class="vignette"></div><div class="fade-top"></div><div class="fade-bot"></div>
   <div class="mast"><span class="brand">STAR CLOSET</span><span class="issue">N°01 — Morning Edit</span></div>
   <div class="lg info">
@@ -102,7 +103,7 @@ h2{font-family:var(--serif);font-weight:400;font-size:28px;letter-spacing:.12em}
 </div></div>
 
 <div class="phone" data-tilt><div class="screen">
-  <div class="shot intro" style="background-image:url(keyframes/life-cafe.jpg);background-position:center 30%"></div>
+  <video class="shot" src="video/life-cafe-web.mp4" poster="keyframes/life-cafe.jpg" autoplay muted loop playsinline style="object-position:center 30%"></video>
   <div class="vignette"></div><div class="fade-top"></div><div class="fade-bot"></div>
   <div class="mast"><span class="brand">STAR CLOSET</span><span class="issue">N°03 — In Your Life</span></div>
   <div class="lg info">
@@ -116,13 +117,14 @@ h2{font-family:var(--serif);font-weight:400;font-size:28px;letter-spacing:.12em}
 </div></div>
 
 </div>
-<p class="legend">和 v4 的区别：场景不再用 CSS 拼，而是一张统一打光的电影画面；画面缓慢推镜（22 秒一个来回），进场从虚焦暗场推到清晰；夜间版叠加射灯光束和光束里的微尘；界面只保留刊头、一张玻璃信息卡和一个按钮，其余交给画面。第三屏是“生活场景”：模特身上的开衫、亚麻阔腿裤、玛丽珍鞋和托特包都来自我们生成的商品图。正式版的场景动态会换成 Higgsfield 生成的视频。</p>
+<p class="legend">和 v4 的区别：场景不再用 CSS 拼，而是一张统一打光的电影画面；画面缓慢推镜（22 秒一个来回），进场从虚焦暗场推到清晰；夜间版叠加射灯光束和光束里的微尘；界面只保留刊头、一张玻璃信息卡和一个按钮，其余交给画面。第三屏是“生活场景”：模特身上的开衫、亚麻阔腿裤、玛丽珍鞋和托特包都来自我们生成的商品图。场景动态为 Higgsfield（Wan 3.0）生成的 5 秒循环视频，海报帧为对应关键帧。</p>
 <script>
 document.querySelectorAll('[data-dust]').forEach(d=>{for(let i=0;i<26;i++){const s=document.createElement('i');const z=1.5+Math.random()*2.5;s.style.width=s.style.height=z+'px';s.style.left=(25+Math.random()*50)+'%';s.style.top=(25+Math.random()*70)+'%';s.style.animationDuration=(6+Math.random()*7)+'s';s.style.animationDelay=(-Math.random()*10)+'s';d.appendChild(s)}});
 document.querySelectorAll('[data-gift]').forEach(g=>{const scr=g.closest('.screen');const box=scr.querySelector('[data-hearts]');const t=scr.querySelector('[data-toast]');
  g.addEventListener('click',()=>{const icons=['♥','♥','✦','♥','❀'];for(let i=0;i<7;i++){setTimeout(()=>{const s=document.createElement('span');s.textContent=icons[i%icons.length];s.style.setProperty('--dx',(Math.random()*60-40)+'px');s.style.fontSize=(14+Math.random()*12)+'px';box.appendChild(s);setTimeout(()=>s.remove(),2700)},i*120)}
  if(t){t.style.opacity=1;clearTimeout(t._h);t._h=setTimeout(()=>t.style.opacity=0,2200)}})});
 setTimeout(()=>document.querySelector('[data-gift]').click(),3200);
+document.querySelectorAll('video').forEach(v=>{v.muted=true;v.play().catch(()=>{})});
 const ph=[...document.querySelectorAll('[data-tilt]')];
 window.addEventListener('mousemove',e=>{const x=e.clientX/innerWidth-.5,y=e.clientY/innerHeight-.5;ph.forEach(p=>p.style.transform=`rotateY(${x*6}deg) rotateX(${-y*5}deg)`)});
 </script>
