@@ -19,7 +19,12 @@ export default async function OutfitPage({ params }: { params: Promise<{ id: str
     <>
       <Scene dim />
       <section className="hero sc-rise" style={{ minHeight: "42dvh" }}>
-        <Link href="/" className="sc-meta" style={{ textDecoration: "none", marginBottom: "auto" }}>
+        {/* 回到这套搭配所在的衣橱，并定位到这张搭配卡 */}
+        <Link
+          href={`/closet/${outfit.curatorId}#look-${outfit.id}`}
+          className="sc-meta"
+          style={{ textDecoration: "none", marginBottom: "auto" }}
+        >
           ← 返回衣橱
         </Link>
         <div className="spread">

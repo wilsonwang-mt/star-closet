@@ -307,3 +307,47 @@ details > summary::-webkit-details-marker { display: none; }
   .sc-glass--changed::after { animation: none; }
   .wait-step, .wait-bar i, .skeleton-row { animation: none; }
 }
+
+/* ---------- 首页 ⇄ 衣橱页：共享元素过渡（View Transitions，见 components/closet/transition.ts）----------
+ * 伪元素只能写在全局样式里；首页与衣橱页的其余样式在各自组件目录的 CSS Modules。
+ * 首页中央预览与衣橱页全屏场景共用名字 closet-hero；导航单独命名，过渡时原地不动。
+ * 弹簧缓动与时长由 lib/motion.ts 的 springs.enter 采样成 linear()，跳转前写到 --vt-spring / --vt-dur。
+ * 减弱动态：不命名 closet-hero，只剩整页淡入淡出。 */
+:root { --vt-card-r: 26px; }
+@media (min-width: 900px) { :root { --vt-card-r: 30px; } }
+@media (prefers-reduced-motion: no-preference) {
+  [data-vt-hero] { view-transition-name: closet-hero; }
+}
+.site-nav { view-transition-name: site-nav; }
+::view-transition-group(closet-hero) {
+  animation-duration: var(--vt-dur, .9s);
+  animation-timing-function: var(--vt-spring, cubic-bezier(.2, .7, .2, 1));
+}
+::view-transition-image-pair(closet-hero) {
+  overflow: hidden;
+  animation-duration: var(--vt-dur, .9s);
+  animation-timing-function: var(--vt-spring, cubic-bezier(.2, .7, .2, 1));
+  animation-fill-mode: both;
+}
+html[data-vt="enter"]::view-transition-image-pair(closet-hero) { animation-name: vt-radius-out; }
+html[data-vt="back"]::view-transition-image-pair(closet-hero) { animation-name: vt-radius-in; }
+/* 新旧画面都铺满（cover）：尺寸与比例变化时不拉伸、不溢出。
+ * 竖卡（9:16）与全屏的裁切只在全屏尺寸时一致：进入时在后半程交叉淡化，返回时在前半程，避免两种裁切叠出重影。 */
+::view-transition-old(closet-hero),
+::view-transition-new(closet-hero) {
+  height: 100%; object-fit: cover;
+  animation-duration: .3s; animation-timing-function: ease; animation-fill-mode: both;
+}
+html[data-vt="enter"]::view-transition-old(closet-hero),
+html[data-vt="enter"]::view-transition-new(closet-hero) { animation-delay: calc(var(--vt-dur, .9s) * .55); }
+/* 旧页面文字先淡出；新页面在画面推进途中淡入（衣橱页文字自己等画面到位后再浮起） */
+html[data-vt]::view-transition-old(root) { animation: vt-fade-out .22s ease-out both; }
+html[data-vt]::view-transition-new(root) { animation: vt-fade-in .42s ease-out .1s both; }
+@keyframes vt-radius-out { from { border-radius: var(--vt-card-r); } to { border-radius: 0; } }
+@keyframes vt-radius-in { from { border-radius: 0; } to { border-radius: var(--vt-card-r); } }
+@keyframes vt-fade-out { to { opacity: 0; } }
+@keyframes vt-fade-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  html[data-vt]::view-transition-old(root) { animation: vt-fade-out .2s ease-out both; }
+  html[data-vt]::view-transition-new(root) { animation: vt-fade-in .2s ease-out both; }
+}
