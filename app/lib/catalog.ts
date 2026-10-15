@@ -16,7 +16,7 @@ export function sumPrice(items: Pick<Item, "price">[]) {
 }
 
 export async function getCurator(): Promise<Curator | undefined> {
-  const rows = await db.select().from(schema.curator).limit(1);
+  const rows = await db.select().from(schema.curator).orderBy(asc(schema.curator.id)).limit(1);
   return rows[0];
 }
 

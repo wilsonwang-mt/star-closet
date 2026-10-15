@@ -4,18 +4,19 @@
 
 ## 已有功能
 
-- 衣橱首页：第一位主理人的风格主题衣橱，7 套搭配、37 件单品（全部为占位数据，图片为 AI 生成示意图）。
+- 衣橱首页：目录 v0.2 共 10 间衣橱、60 套搭配、209 件单品（全部为虚构占位数据，图片为 AI 生成示意图）。首页目前只显示第一位主理人的头部信息，却列出全部 60 套；多衣橱入口与按衣橱过滤尚未实现。
 - 一句话改编：文字或语音（浏览器 Web Speech API）说出预算、场合或想换的单品，在目录内改编成一整套。
   - 配置了 `ANTHROPIC_API_KEY`：调用 Claude（`claude-opus-5-5`，effort `low`，结构化输出）。
   - 没有 key 或调用失败：规则模式，界面标注“非 AI · 规则模式”。
   - 服务端校验所有单品都在目录内并去重；总价和是否超预算由服务端计算，不采用模型给出的数字。
   - 改编结果可以逐件替换为同类单品。
-- 账号：邮箱 + 密码注册/登录/退出（better-auth）。不收集身体数据或照片。
+- 账号：邮箱 + 密码注册/登录/退出（better-auth）。退出登录在 `/profile` 底部。
+- 个人档案（`/profile`）：昵称、简介、城市、风格与颜色标签、尺码、预算；身高体重须单独勾选同意才保存，可一键清除。只有本人可读写，可见性固定为私密。
 - 个人试衣间：登录后保存原搭配或改编版本；勾选单品生成购物清单，外链到商家页面购买。
 
 - 视觉：按 [视觉规范 v5](../docs/design/visual-v04/视觉规范.md)。`app/tokens.css` 复制自 `docs/design/visual-v04/tokens.css`，改动先改源文件再同步；场景图在 `public/scenes/`。深色默认，可切换浅色或跟随系统（cookie `sc-theme`）。
 
-尚未接入：2D 试穿、可旋转 GLB、打赏、站内支付。场景视频（`public/scenes/*-web.mp4`）只加载并播放当前显示的那一段，减弱动态时只显示首帧。试衣间里的咖啡馆生活场景只是标注了“AI 生成场景示意 · 合身未验证”的示意图。
+尚未接入：2D 试穿、单品可旋转 GLB、打赏、站内支付。场景视频（`public/scenes/*-web.mp4`）只加载并播放当前显示的那一段，减弱动态时只显示首帧。试衣间里的咖啡馆生活场景只是标注了“AI 生成场景示意 · 合身未验证”的示意图。
 
 ## 3D 形象
 
@@ -30,7 +31,7 @@
   - 两种模式都显示“合身：未验证”。Meshy 备选适配器未实现。
 - 存储（`lib/storage/`）：设置 `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` 时用 Supabase Storage 私有桶 `avatar-private`（建桶见 `supabase/storage.sql`，需发起用户手动执行），否则写本地 `.data/uploads/<userId>/`。浏览器只能经 `GET /api/avatar/files/<key>` 读取本人文件，他人请求一律 404。
 - 删除：单张照片可删；“一键删除”清空该用户存储前缀下全部文件，照片软删除、作业标记 canceled，之后需重新同意。原始照片在形象生成 30 天后惰性清理。
-- 查看器：`components/AvatarViewer.tsx`（props `{ src, badges }`），可旋转版本由并行任务提供。
+- 查看器：`components/AvatarViewer.tsx`（R3F，可拖动旋转；props `{ src, badges, poster?, height?, label? }`，说明见 `components/AvatarViewer.README.md`）。
 
 API：`GET|DELETE /api/avatar`、`POST /api/avatar/consent`、`POST /api/avatar/photos`（multipart：slot、file）、`DELETE /api/avatar/photos/[id]`、`POST /api/avatar/jobs`、`GET|DELETE /api/avatar/jobs/[id]`、`GET /api/avatar/files/[...key]`。
 
