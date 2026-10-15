@@ -54,6 +54,7 @@ export default function Adapter({ outfit, catalog, aiEnabled }: { outfit: Outfit
       if (!res.ok) throw new Error(data.error ?? "改编失败");
       setResult(data);
       setItems(data.items);
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -121,32 +122,42 @@ export default function Adapter({ outfit, catalog, aiEnabled }: { outfit: Outfit
   const shownTotal = items ? total(items) : 0;
   const overBudget = result?.budget != null && shownTotal > result.budget;
 
+  const originalIds = new Set(outfit.items.map((i) => i.id));
+  const resultRef = useRef<HTMLElement | null>(null);
+
   return (
     <div className="stack">
-      <section className="card">
-        <div className="spread">
-          <h2>原搭配</h2>
-          <span className="price">¥{outfit.total}</span>
+      <section className="sc-glass card sc-rise">
+        <div className="spread" style={{ marginBottom: 12 }}>
+          <div>
+            <span className="sc-kicker">Original</span>
+            <h2 className="section-title">主理人原搭配</h2>
+          </div>
+          <span className="price" style={{ fontSize: 20 }}>¥{outfit.total}</span>
         </div>
         <ItemList items={outfit.items} />
-        <div className="row" style={{ marginTop: 10 }}>
-          <button className="btn ghost small" onClick={() => save("original", outfit.items)}>
+        <div className="row" style={{ marginTop: 12 }}>
+          <button className="link-btn" onClick={() => save("original", outfit.items)}>
             原样加入试衣间
           </button>
-          {saved === "original" ? <span className="small">已加入试衣间</span> : null}
+          {saved === "original" ? <span className="sc-badge">已加入试衣间</span> : null}
         </div>
       </section>
 
-      <section className="card stack">
+      <section className="sc-glass card stack sc-rise">
         <div className="spread">
-          <h2>一句话改编</h2>
-          {aiEnabled ? <span className="badge">AI 改编</span> : <span className="badge warn">非 AI · 规则模式</span>}
+          <div>
+            <span className="sc-kicker">Re-style</span>
+            <h2 className="section-title">一句话改编</h2>
+          </div>
+          <span className="sc-badge">{aiEnabled ? "AI 改编" : "非 AI · 规则模式"}</span>
         </div>
         <textarea
           value={request}
           onChange={(e) => setRequest(e.target.value)}
           placeholder="例如：预算 800 以内，户外婚礼，换成平底鞋"
           maxLength={300}
+          aria-label="改编要求"
         />
         <div className="chips">
           {EXAMPLES.map((ex) => (
@@ -156,10 +167,7 @@ export default function Adapter({ outfit, catalog, aiEnabled }: { outfit: Outfit
           ))}
         </div>
         <div className="row">
-          <button className="btn" disabled={loading || !request.trim()} onClick={() => adapt(request)}>
-            {loading ? "正在改编…" : "改编这一套"}
-          </button>
-          <button className="btn ghost" onClick={toggleVoice} aria-pressed={listening}>
+          <button className="sc-cta sc-cta--ghost compact" onClick={toggleVoice} aria-pressed={listening}>
             {listening ? "停止语音" : "语音输入"}
           </button>
         </div>
@@ -167,16 +175,19 @@ export default function Adapter({ outfit, catalog, aiEnabled }: { outfit: Outfit
       </section>
 
       {result && items ? (
-        <section className="card stack">
+        <section className="sc-glass card stack sc-rise" ref={resultRef}>
           <div className="spread">
-            <h2>为你改编的一套</h2>
-            <span className="price">
-              ¥{shownTotal}
-              {result.budget != null ? <span className="small muted"> / 预算 ¥{result.budget}</span> : null}
-            </span>
+            <div>
+              <span className="sc-kicker">Re-styled for you</span>
+              <h2 className="section-title">为你改编的一套</h2>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div className="total sc-foil">¥{shownTotal}</div>
+              {result.budget != null ? <div className="sc-meta">预算 ¥{result.budget}</div> : null}
+            </div>
           </div>
-          <p style={{ margin: 0 }}>{result.summary}</p>
-          {overBudget ? <p className="badge warn">超出预算 ¥{shownTotal - result.budget!}</p> : null}
+          <p className="serif-note" style={{ color: "var(--sc-ink)" }}>{result.summary}</p>
+          {overBudget ? <span className="sc-badge" style={{ justifySelf: "start" }}>超出预算 ¥{shownTotal - result.budget!}</span> : null}
           {result.notes.length ? (
             <ul className="small muted" style={{ margin: 0, paddingLeft: 18 }}>
               {result.notes.map((n) => (
@@ -184,19 +195,30 @@ export default function Adapter({ outfit, catalog, aiEnabled }: { outfit: Outfit
               ))}
             </ul>
           ) : null}
-          <ItemList items={items} catalog={catalog} onSwap={swap} />
-          <div className="row">
-            <button className="btn" onClick={() => save(result.mode, items)}>
-              加入试衣间
-            </button>
-            {saved && saved !== "original" ? <span className="small">已加入试衣间</span> : null}
-          </div>
-          <p className="small muted" style={{ margin: 0 }}>
+          <ItemList items={items} catalog={catalog} onSwap={swap} originalIds={originalIds} />
+          <p className="sc-meta" style={{ margin: 0 }}>
             {result.mode === "ai" ? "由 AI 在主理人目录内挑选；" : "由规则在目录内挑选，未使用 AI；"}
-            总价由系统按目录价格计算。
+            金线标出的是换掉的单品；总价由系统按目录价格计算。
           </p>
         </section>
       ) : null}
+
+      <div className="cta-bar">
+        {result && items ? (
+          <>
+            <button className="sc-cta" onClick={() => save(result.mode, items)} disabled={saved === result.mode}>
+              {saved === result.mode ? "已加入试衣间" : "加入试衣间"}
+            </button>
+            <button className="sc-cta sc-cta--ghost" onClick={() => adapt(request)} disabled={loading || !request.trim()}>
+              {loading ? "改编中" : "重新改编"}
+            </button>
+          </>
+        ) : (
+          <button className="sc-cta" disabled={loading || !request.trim()} onClick={() => adapt(request)}>
+            {loading ? "正在改编…" : "改编这一套"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

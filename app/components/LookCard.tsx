@@ -5,12 +5,13 @@ import { useState } from "react";
 import ItemThumb from "./ItemThumb";
 import type { Look } from "@/lib/looks";
 
-const MODE_LABEL: Record<string, string> = { original: "主理人原搭配", ai: "AI 改编", offline: "规则改编（非 AI）" };
+const MODE_LABEL: Record<string, string> = { original: "主理人原搭配", ai: "AI 改编", offline: "规则改编 · 非 AI" };
 
 export default function LookCard({ look }: { look: Look }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(() => new Set(look.items.map((i) => i.id)));
   const [deleting, setDeleting] = useState(false);
+  const [open, setOpen] = useState(false);
   const chosen = look.items.filter((i) => selected.has(i.id));
   const chosenTotal = chosen.reduce((s, i) => s + i.price, 0);
 
@@ -28,24 +29,24 @@ export default function LookCard({ look }: { look: Look }) {
   }
 
   return (
-    <section className="card stack">
+    <section className="sc-glass card stack sc-rise">
       <div className="spread">
         <div>
-          <h2 style={{ marginBottom: 2 }}>{look.title}</h2>
-          <span className="tag">{MODE_LABEL[look.mode] ?? look.mode}</span>
+          <span className="sc-kicker">{MODE_LABEL[look.mode] ?? look.mode}</span>
+          <h2 className="section-title">{look.title}</h2>
         </div>
         <button className="link-btn" onClick={remove} disabled={deleting}>
-          移出试衣间
+          移出
         </button>
       </div>
-      {look.request ? <p className="small muted" style={{ margin: 0 }}>你的要求：{look.request}</p> : null}
-      <div>
+      {look.request ? <p className="serif-note">“{look.request}”</p> : null}
+      <div className="rows">
         {look.items.map((it) => (
-          <label key={it.id} className="item-row" style={{ color: "inherit", cursor: "pointer" }}>
+          <label key={it.id} className="sc-glass sc-glass--row item-row" style={{ color: "inherit", cursor: "pointer", fontSize: "inherit", letterSpacing: 0 }}>
             <ItemThumb name={it.name} image={it.image} color={it.color} />
             <span>
-              <span className="item-name" style={{ display: "block" }}>{it.name}</span>
-              <span className="small muted">
+              <span className="item-name" style={{ display: "block" }}>{it.name.replace(/^占位：/, "")}</span>
+              <span className="sc-meta">
                 {it.category} · {it.color}
               </span>
             </span>
@@ -57,15 +58,17 @@ export default function LookCard({ look }: { look: Look }) {
         ))}
       </div>
       <div className="spread">
-        <span className="small muted">已选 {chosen.length} / {look.items.length} 件</span>
-        <span className="price">合计 ¥{chosenTotal}</span>
+        <span className="sc-meta">已选 {chosen.length} / {look.items.length} 件</span>
+        <span className="total sc-foil">¥{chosenTotal}</span>
       </div>
       {chosen.length ? (
-        <details>
-          <summary className="btn" style={{ listStyle: "none" }}>
-            {chosen.length === look.items.length ? "整套购买" : `购买所选 ${chosen.length} 件`}
-          </summary>
-          <ol className="small" style={{ paddingLeft: 18 }}>
+        <button className="sc-cta" onClick={() => setOpen(!open)} aria-expanded={open}>
+          {chosen.length === look.items.length ? "整套购买" : `购买所选 ${chosen.length} 件`}
+        </button>
+      ) : null}
+      {open && chosen.length ? (
+        <div className="stack" style={{ gap: 8 }}>
+          <ol className="small" style={{ paddingLeft: 18, margin: 0, display: "grid", gap: 6 }}>
             {chosen.map((it) => (
               <li key={it.id}>
                 <a href={it.buyUrl} target="_blank" rel="noopener noreferrer">
@@ -74,8 +77,8 @@ export default function LookCard({ look }: { look: Look }) {
               </li>
             ))}
           </ol>
-          <p className="small muted">外链到商家页面购买，价格与库存以商家页面为准。</p>
-        </details>
+          <p className="sc-meta" style={{ margin: 0 }}>外链到商家页面购买，价格与库存以商家页面为准。</p>
+        </div>
       ) : null}
     </section>
   );

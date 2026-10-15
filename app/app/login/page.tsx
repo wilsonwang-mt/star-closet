@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
+import Scene from "@/components/Scene";
 import { authClient } from "@/lib/auth-client";
 
 function LoginForm() {
@@ -33,8 +34,11 @@ function LoginForm() {
   }
 
   return (
-    <form className="card stack" onSubmit={submit} style={{ maxWidth: 420, margin: "0 auto" }}>
-      <h1>{mode === "signin" ? "登录" : "注册"}</h1>
+    <form className="sc-glass card stack sc-rise" onSubmit={submit} style={{ maxWidth: 420, margin: "18dvh auto 0" }}>
+      <div>
+        <span className="sc-kicker">{mode === "signin" ? "Welcome back" : "Join the closet"}</span>
+        <h1 className="sc-display" style={{ margin: "6px 0 0" }}>{mode === "signin" ? "登录" : "注册"}</h1>
+      </div>
       {mode === "signup" ? (
         <label>
           昵称
@@ -57,7 +61,7 @@ function LoginForm() {
         />
       </label>
       {error ? <p className="error">{error}</p> : null}
-      <button className="btn" disabled={loading}>
+      <button className="sc-cta" disabled={loading}>
         {loading ? "请稍候…" : mode === "signin" ? "登录" : "注册并登录"}
       </button>
       <button type="button" className="link-btn" onClick={() => setMode(mode === "signin" ? "signup" : "signin")}>
@@ -69,8 +73,11 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense>
-      <LoginForm />
-    </Suspense>
+    <>
+      <Scene dim />
+      <Suspense>
+        <LoginForm />
+      </Suspense>
+    </>
   );
 }
