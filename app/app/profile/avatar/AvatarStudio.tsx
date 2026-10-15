@@ -94,7 +94,8 @@ function PhotoTile({
   busy: boolean;
   /** 本格上传或删除的错误，就近显示 */
   error?: string;
-  required: boolean;
+  /** 必填 / 二选一 / 可选 */
+  required: "必填" | "二选一" | "可选";
   onPick?: (f: File) => void;
   onDelete?: () => void;
 }) {
@@ -139,7 +140,7 @@ function PhotoTile({
       ) : null}
       <div className={s.caption}>
         <span>
-          {label} {required ? <span className={s.req}>必填</span> : <span className={s.req}>可选</span>}
+          {label} <span className={s.req}>{required}</span>
         </span>
         {photo && onDelete ? (
           <button type="button" className={s.small} onClick={onDelete} disabled={busy} aria-label={`删除${label}照片`}>
@@ -322,7 +323,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
               : "本站服务器。照片只保存在本站私有存储，不发送给任何第三方 AI 服务；生成结果是通用示意人台，不是你本人。"}
           </li>
           <li>
-            <strong>保存期</strong>：原始照片在 3D 形象生成成功 {state.retentionDays} 天后删除（每张照片下方会显示日期）。删除由清理任务执行，运营方需每天定时运行一次；没有配置定时任务时，到期照片在你下次打开本页时删除。3D 形象保留到你删除为止。
+            <strong>保存期</strong>：原始照片在 3D 形象生成成功 {state.retentionDays} 天后删除，日期显示在照片下方。由每天的清理任务执行（需运营方配置定时任务）；未配置时，在你下次打开本页时删除。3D 形象保留到你删除为止。
           </li>
           <li>
             <strong>可删除</strong>：可随时删除单个形象，或一键删除全部照片与形象，本站存储里的文件同时清除
@@ -420,7 +421,9 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
                 photo={p}
                 disabled={!consented}
                 busy={busy === m.slot || (!!p && busy === p.id)}
-                required={m.slot === "front" || (m.slot === "side" && sideRequired)}
+                required={
+                  m.slot === "front" || (m.slot === "side" && sideRequired) ? "必填" : m.slot === "back" && sideRequired ? "可选" : "二选一"
+                }
                 error={noteAt(m.slot)?.text}
                 onPick={(f) => upload(m.slot, f)}
                 onDelete={p ? () => removePhoto(p.id, m.slot) : undefined}
@@ -439,7 +442,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
                   tip=""
                   photo={p}
                   disabled
-                  required={false}
+                  required="可选"
                   busy={busy === p.id}
                   error={noteAt(p.id)?.text}
                   onDelete={() => removePhoto(p.id, p.id)}
