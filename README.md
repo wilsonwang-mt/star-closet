@@ -39,6 +39,7 @@ git pull --ff-only origin main
 | 真实感与试穿 | [AI试穿与个人形象](docs/AI试穿与个人形象.md)、[服饰详情与3D体验](docs/服饰详情与3D体验.md)、[设计探索](docs/design/设计探索.md) |
 | 实现与比赛 | [实现映射](docs/实现架构与功能映射.md)、[技术决策](docs/技术决策.md)、[冲刺与团队](docs/两天冲刺与团队.md)、[任务清单](docs/任务清单.md) |
 | 事实与协作 | [交付记录](docs/交付记录.md)、[独立评审](docs/评审记录.md)、[协作流程](docs/协作流程.md)、[AGENTS](AGENTS.md) |
+| Claude Mac App接手 | [Code本地项目启动资料与首条指令](docs/ClaudeCode项目启动.md)、[Claude项目入口](CLAUDE.md) |
 
 ## 线上与静态材料
 
