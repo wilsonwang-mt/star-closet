@@ -1,5 +1,8 @@
 // 离线规则模式：没有 API key 或 AI 调用失败时使用。界面会明确标注“非 AI”。
+// 只在候选池（同衣橱 + 同性别/中性，见 rules.ts）里、且只在相关类目里替换；替换一律同类一换一，
+// 所以叠穿搭配的两件上装会保留为两件。
 import { CATEGORY_ORDER, sumPrice, type Item, type Outfit } from "../catalog";
+import { fitsSize, parseSizes, relevantCategories, sizeText, type SizeWish } from "./rules";
 import type { AdaptDraft } from "./types";
 
 type Constraints = {
@@ -7,6 +10,7 @@ type Constraints = {
   flat: boolean;
   wantTags: string[];
   exclude: string[];
+  sizes: SizeWish;
 };
 
 const OCCASION_TAGS: [RegExp, string][] = [
@@ -31,12 +35,13 @@ export function parseConstraints(text: string): Constraints {
   const exclude = [...text.matchAll(/(?:不要|排除|不穿|别要)([一-龥]{1,4}?)(?:的|，|,|。|$|\s)/g)]
     .map((x) => x[1])
     .filter((w) => w !== "高跟");
-  return { budget, flat, wantTags, exclude };
+  return { budget, flat, wantTags, exclude, sizes: parseSizes(text) };
 }
 
 function violates(it: Item, c: Constraints): string | null {
   if (c.flat && it.category === "鞋" && !it.tags.includes("平底")) return "不是平底";
   for (const w of c.exclude) if (it.name.includes(w) || it.tags.includes(w)) return `含“${w}”`;
+  if (!fitsSize(it, c.sizes)) return "没有你要的尺码";
   return null;
 }
 
@@ -44,14 +49,18 @@ function score(it: Item, c: Constraints) {
   return c.wantTags.filter((t) => it.tags.includes(t)).length;
 }
 
-function bestAlternative(cat: string, all: Item[], used: Set<string>, c: Constraints, maxPrice = Infinity) {
+function bestAlternative(cat: string, all: Item[], used: Set<string>, c: Constraints, curatorId: string) {
+  const own = (i: Item) => (i.curatorId === curatorId ? 1 : 0);
   return all
-    .filter((i) => i.category === cat && !used.has(i.id) && !violates(i, c) && i.price <= maxPrice)
-    .sort((a, b) => score(b, c) - score(a, c) || a.price - b.price)[0];
+    .filter((i) => i.category === cat && !used.has(i.id) && !violates(i, c))
+    .sort((a, b) => score(b, c) - score(a, c) || own(b) - own(a) || a.price - b.price)[0];
 }
 
-export function adaptOffline(outfit: Outfit, request: string, all: Item[]): AdaptDraft {
+/** pool 必须是 buildCandidatePool(outfit, …) 的结果。 */
+export function adaptOffline(outfit: Outfit, request: string, pool: Item[]): AdaptDraft {
   const c = parseConstraints(request);
+  const cats = new Set<string>(relevantCategories(outfit, request));
+  const all = pool.filter((i) => cats.has(i.category));
   const notes: string[] = [];
   const reasons = new Map<string, string>();
   let picks: Item[] = [...outfit.items];
@@ -62,7 +71,7 @@ export function adaptOffline(outfit: Outfit, request: string, all: Item[]): Adap
     const why = violates(it, c);
     if (!why) return [it];
     const used = new Set(picks.map((p) => p.id));
-    const alt = bestAlternative(it.category, all, used, c);
+    const alt = bestAlternative(it.category, all, used, c, outfit.curatorId);
     if (!alt) {
       notes.push(`目录里没有满足要求的${it.category}，已去掉「${it.name.replace(/^占位：/, "")}」`);
       return [];
@@ -118,6 +127,7 @@ export function adaptOffline(outfit: Outfit, request: string, all: Item[]): Adap
     c.flat ? "平底鞋" : null,
     c.wantTags.length ? `场合偏向${c.wantTags.join("、")}` : null,
     c.exclude.length ? `排除${c.exclude.join("、")}` : null,
+    sizeText(c.sizes) ? `尺码${sizeText(c.sizes)}` : null,
   ].filter(Boolean);
   return {
     mode: "offline",

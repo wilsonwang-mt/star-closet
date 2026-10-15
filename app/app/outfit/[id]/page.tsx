@@ -4,13 +4,16 @@ import Adapter from "@/components/Adapter";
 import Scene from "@/components/Scene";
 import { getAllItems, getOutfit, getOutfits } from "@/lib/catalog";
 import { hasAiKey } from "@/lib/adapt/ai";
+import { buildCandidatePool } from "@/lib/adapt/rules";
 
 export const dynamic = "force-dynamic";
 
 export default async function OutfitPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [outfit, catalog, all] = await Promise.all([getOutfit(id), getAllItems(), getOutfits()]);
+  const [outfit, allItems, all] = await Promise.all([getOutfit(id), getAllItems(), getOutfits()]);
   if (!outfit) notFound();
+  // 逐件替换只从候选池里选（同衣橱 + 同性别/中性），与改编规则一致。
+  const catalog = buildCandidatePool(outfit, allItems);
   const idx = all.findIndex((o) => o.id === outfit.id);
   return (
     <>

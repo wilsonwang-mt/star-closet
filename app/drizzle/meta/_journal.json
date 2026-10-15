@@ -15,6 +15,13 @@
       "when": 1792089470888,
       "tag": "0001_curly_champions",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792093821950,
+      "tag": "0002_flaky_bug",
+      "breakpoints": true
     }
   ]
 }

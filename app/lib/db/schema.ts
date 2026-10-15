@@ -64,40 +64,82 @@ export const verification = pgTable("verification", {
 
 // ---- 衣橱目录 ----
 
+// v0.2 字段见 docs/supply/目录结构与搜索维度.md。新增列都可空或带默认值，兼容已写入 v0.1 数据的库。
+// gender：女装 | 男装 | 中性；closet_type：风格主题 | 穿搭博主 | 个人主理人 | 品牌主题（明星 预留）。
+
 export const curator = pgTable("curator", {
   id: text("id").primaryKey(),
   displayName: text("display_name").notNull(),
   closetType: text("closet_type").notNull(),
   closetName: text("closet_name").notNull(),
   intro: text("intro").notNull(),
+  gender: text("gender").notNull().default("女装"),
+  tagline: text("tagline"),
+  styleTags: text("style_tags").array().notNull().default([]),
+  palette: text("palette").array().notNull().default([]),
+  avatar: text("avatar"), // 1:1 头像（品牌为标识图）
+  cover: text("cover"), // 竖屏 9:16 衣橱场景图
+  coverWide: text("cover_wide"), // 横屏 16:9，桌面用
+  video: text("video"), // 竖屏 540×960 6 秒静音视频
+  videoPoster: text("video_poster"), // 视频首帧 JPG
+  personaNote: text("persona_note"), // 诚实标注：虚构示例 / AI 生成
 });
 
-export const item = pgTable("item", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  category: text("category").notNull(),
-  color: text("color").notNull(),
-  price: integer("price").notNull(),
-  currency: text("currency").notNull(),
-  priceCheckedAt: text("price_checked_at"),
-  buyUrl: text("buy_url").notNull(),
-  image: text("image"),
-  imageRights: text("image_rights"),
-  imageRightsNote: text("image_rights_note"),
-  sizeNote: text("size_note"),
-  tags: text("tags").array().notNull().default([]),
-});
+export const item = pgTable(
+  "item",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    category: text("category").notNull(), // 改编用 6 类：上装 下装 外套 鞋 包 配饰
+    color: text("color").notNull(),
+    price: integer("price").notNull(),
+    currency: text("currency").notNull(),
+    priceCheckedAt: text("price_checked_at"),
+    buyUrl: text("buy_url").notNull(),
+    image: text("image"),
+    imageRights: text("image_rights"),
+    imageRightsNote: text("image_rights_note"),
+    sizeNote: text("size_note"),
+    tags: text("tags").array().notNull().default([]), // 改编规则用的归一化标签
+    curatorId: text("curator_id").references(() => curator.id), // 所属衣橱
+    gender: text("gender").notNull().default("女装"),
+    displayCategory: text("display_category"), // 展示 8 类（多出 连衣裙、半身裙）
+    subcategory: text("subcategory"),
+    colorFamily: text("color_family"),
+    material: text("material"),
+    season: text("season"), // 秋冬 | 春夏 | 春秋 | 四季
+    fit: text("fit"),
+    heel: text("heel"), // 平底 | 低跟 | 中跟 | 高跟 | 厚底；非鞋为空
+    sizes: text("sizes").array().notNull().default([]), // 如 ["S","M","L","XL"]、["39",…,"45"]、["均码"]
+    styleTags: text("style_tags").array().notNull().default([]),
+    occasionTags: text("occasion_tags").array().notNull().default([]),
+    searchKeyword: text("search_keyword"),
+    buyLabel: text("buy_label"),
+    priceNote: text("price_note"),
+  },
+  (t) => [index("item_curator_idx").on(t.curatorId), index("item_gender_idx").on(t.gender)],
+);
 
-export const outfit = pgTable("outfit", {
-  id: text("id").primaryKey(),
-  curatorId: text("curator_id")
-    .notNull()
-    .references(() => curator.id),
-  name: text("name").notNull(),
-  styleNote: text("style_note").notNull(),
-  occasionTags: text("occasion_tags").array().notNull().default([]),
-  sortOrder: integer("sort_order").notNull().default(0),
-});
+export const outfit = pgTable(
+  "outfit",
+  {
+    id: text("id").primaryKey(),
+    curatorId: text("curator_id")
+      .notNull()
+      .references(() => curator.id),
+    name: text("name").notNull(),
+    styleNote: text("style_note").notNull(),
+    occasionTags: text("occasion_tags").array().notNull().default([]),
+    sortOrder: integer("sort_order").notNull().default(0),
+    gender: text("gender").notNull().default("女装"),
+    styleTags: text("style_tags").array().notNull().default([]),
+    season: text("season"),
+    budgetTier: text("budget_tier"), // 平价（<1200）| 适中（1200–1999）| 进阶（≥2000）
+    cover: text("cover"), // 搭配封面（AI 生成街拍示意）
+    coverNote: text("cover_note"), // 如“AI 生成场景示意 · 合身未验证”
+  },
+  (t) => [index("outfit_curator_idx").on(t.curatorId)],
+);
 
 export const outfitItem = pgTable(
   "outfit_item",
@@ -189,6 +231,8 @@ export const avatarPhoto = pgTable(
     qualityFlags: jsonb("quality_flags").$type<Record<string, unknown>>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    // 原始照片的清理期限：形象生成成功时写入（成功时间 + 30 天），到期后由清理流程删除。
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
   },
   (t) => [index("avatar_photo_user_idx").on(t.userId)],
 );
@@ -211,6 +255,9 @@ export const avatarJob = pgTable(
     resultPreviewKey: text("result_preview_key"),
     fidelityNote: text("fidelity_note"),
     error: text("error"),
+    // 外部生成服务的任务编号与状态查询地址（持久化，替代进程内存；服务重启后可继续轮询）。
+    providerTaskId: text("provider_task_id"),
+    providerStatusUrl: text("provider_status_url"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
