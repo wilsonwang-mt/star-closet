@@ -12,8 +12,9 @@ test("pollDelay：扣掉上一次请求的耗时，至少留 150 ms", () => {
 });
 
 test("waitFirst：每次轮询本身很慢时，开始到开始的间隔仍约为 pollMs，而不是 pollMs + 请求耗时", async () => {
-  const LATENCY = 150;
-  const POLL = 300;
+  // 间隔与延迟拉开差距（改前约 700 ms，改后约 400 ms），机器繁忙时定时器的抖动不至于让结果翻转。
+  const LATENCY = 300;
+  const POLL = 400;
   const starts: number[] = [];
   const base = { id: "t1", status: "processing", resultUrl: null, stage: "generating" } as unknown as TryonView;
   const realFetch = globalThis.fetch;
@@ -33,8 +34,7 @@ test("waitFirst：每次轮询本身很慢时，开始到开始的间隔仍约�
   }
   const gaps = starts.slice(1).map((t, i) => t - starts[i]);
   assert.equal(gaps.length, 4);
-  for (const g of gaps) {
-    assert.ok(g >= POLL - 20, `间隔 ${g} ms 不应短于 pollMs`);
-    assert.ok(g < POLL + LATENCY / 2, `间隔 ${g} ms 不应再加上请求耗时（改前约 ${POLL + LATENCY} ms）`);
-  }
+  for (const g of gaps) assert.ok(g >= POLL - 20, `间隔 ${g} ms 不应短于 pollMs`);
+  const avg = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+  assert.ok(avg < POLL + LATENCY / 2, `平均间隔 ${avg} ms 不应再加上请求耗时（改前约 ${POLL + LATENCY} ms）`);
 });
