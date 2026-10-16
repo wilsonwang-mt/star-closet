@@ -2,11 +2,11 @@
 
 2026-10-17 比赛路演用的交互式 HTML Slides，15 页。替代 `docs/presentation/` 里的 v0.3 方案稿作为路演 deck；v0.3 保留为方案资料。
 
-- 线上地址：<https://seen-pitch.vercel.app>（Vercel 项目 `seen-pitch`，静态单文件，无需登录）
+- 线上地址：<https://seen-pitch.vercel.app>（Vercel 项目 `seen-pitch`，静态单文件，无需登录）。重新发布：在一个只放 `index.html` 的空目录里运行 `vercel link --project seen-pitch --yes`，再 `vercel deploy --prod --yes`。
 - `index.html`：构建产物，单文件，图片、标识与 Live 视频都已内联，可直接用浏览器打开。
 - `deck.html`：源文件，素材用占位符引用仓库里的文件。
 - `build.py`：把占位符内联生成 `index.html`（需要 Pillow）。改完 `deck.html` 后在仓库根目录运行 `python3 docs/pitch/build.py`。
-- `assets/`：从本机演示站（未登录状态，手机宽度 390）截取的产品截图，以及 `qa/screenshots/` 里试穿结果的裁切。
+- `assets/`：从本机演示站（未登录状态，手机宽度 390）截取的产品截图，以及 `qa/screenshots/` 里试穿结果的裁切。对话截图面板标题处应用仍残留旧名“Ask Star Closet”，截图里已改为“Ask Seen”（应用本身待改）。
 
 ## 操作
 
