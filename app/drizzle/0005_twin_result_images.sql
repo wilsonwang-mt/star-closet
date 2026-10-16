@@ -1,0 +1,1 @@
+ALTER TABLE "avatar_job" ADD COLUMN "result_images" jsonb;
