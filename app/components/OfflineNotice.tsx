@@ -9,7 +9,7 @@ import s from "./OfflineNotice.module.css";
 
 // 站内离线提示（工作站 T5 报告 E1）。不用 Service Worker：
 // - 监听 online / offline，断网时底部浮起一枚玻璃胶囊“网络已断开，恢复后自动继续”。
-// - 断网时点站内链接：在 window 捕获阶段拦下（早于 Next 的 Link 处理），不让 Next 取页面数据失败后整页跳到浏览器离线页；
+// - 断网时点站内链接：在 window 捕获阶段标记 preventDefault（早于 Next 的 Link 处理），不让 Next 取页面数据失败后整页跳到浏览器离线页；
 //   记下最后一次想去的地址，恢复网络后自动前往，胶囊短暂显示“已恢复连接”后收起。
 // - 只动 transform / opacity；减弱动态时只淡入淡出。
 
@@ -60,8 +60,8 @@ export default function OfflineNotice() {
       if (navigator.onLine) return;
       const href = internalHref(e);
       if (!href) return;
+      // 只 preventDefault：Next 的 Link 见到 defaultPrevented 就不跳转，链接上其他处理器（如收起菜单）照常执行
       e.preventDefault();
-      e.stopPropagation();
       pending.current = href;
       setPhase("offline");
       setNudge((n) => n + 1);

@@ -97,7 +97,8 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
   const [phase, setPhase] = useState<Phase>("prep");
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<TryonView | null>(null);
-  const notWorn = view ? notWornLabels(items, view.appliedItemIds) : [];
+  // 没有逐件记录（appliedItemIds 为空）的旧结果不列，免得把已上身的也算成“未上身”
+  const notWorn = view?.appliedItemIds.length ? notWornLabels(items, view.appliedItemIds) : [];
   const [seconds, setSeconds] = useState(0);
   const [zoom, setZoom] = useState(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
