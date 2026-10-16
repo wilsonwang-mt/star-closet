@@ -22,9 +22,14 @@ export class MetapersonError extends Error {
   }
 }
 
+// D63 已放弃 MetaPerson：即使 AVATAR3D_PROVIDER=metaperson（例如从旧 .env.local 导入的部署环境），
+// 也只有显式设置 AVATAR3D_ALLOW_METAPERSON=1 时才启用，否则走数字分身（twinEnabled）。
 export function metapersonEnabled(): boolean {
   return (
-    process.env.AVATAR3D_PROVIDER === "metaperson" && !!process.env.AVATARSDK_CLIENT_ID && !!process.env.AVATARSDK_CLIENT_SECRET
+    process.env.AVATAR3D_PROVIDER === "metaperson" &&
+    process.env.AVATAR3D_ALLOW_METAPERSON === "1" &&
+    !!process.env.AVATARSDK_CLIENT_ID &&
+    !!process.env.AVATARSDK_CLIENT_SECRET
   );
 }
 

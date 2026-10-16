@@ -14,6 +14,7 @@ delete process.env.SUPABASE_URL;
 delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 delete process.env.FAL_KEY;
 process.env.AVATAR3D_PROVIDER = "metaperson";
+process.env.AVATAR3D_ALLOW_METAPERSON = "1";
 process.env.AVATARSDK_CLIENT_ID = "test-client-id";
 process.env.AVATARSDK_CLIENT_SECRET = "test-client-secret";
 delete process.env.AVATARSDK_EXPORT_HOSTS;
