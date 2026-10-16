@@ -47,7 +47,8 @@ export function parseMpMessage(origin: string, data: unknown): MpEvent | null {
       return { eventName: d.eventName, avatarCode: typeof d.avatarCode === "string" ? d.avatarCode : undefined };
     case "action_availability_changed":
       return typeof d.actionName === "string"
-        ? { eventName: d.eventName, actionName: d.actionName, isAvailable: d.isAvailable === true }
+        ? // 桌面版实测发的是数字 1/0，不是布尔值
+          { eventName: d.eventName, actionName: d.actionName, isAvailable: d.isAvailable === true || d.isAvailable === 1 }
         : null;
     case "model_exported":
       return typeof d.url === "string" && typeof d.avatarCode === "string"

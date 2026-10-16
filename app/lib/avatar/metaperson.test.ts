@@ -96,6 +96,11 @@ test("parseMpMessage：只接受白名单来源且 source 正确的消息", () =
     isAvailable: true,
   });
   assert.deepEqual(avail, { eventName: "action_availability_changed", actionName: "avatar_export", isAvailable: true });
+  // 桌面版创建器 1.42.0 实测发数字 1/0
+  const numeric = (v: number) =>
+    parseMpMessage(ok, { source: "metaperson_creator", eventName: "action_availability_changed", actionName: "avatar_export", isAvailable: v });
+  assert.deepEqual(numeric(1), { eventName: "action_availability_changed", actionName: "avatar_export", isAvailable: true });
+  assert.deepEqual(numeric(0), { eventName: "action_availability_changed", actionName: "avatar_export", isAvailable: false });
 });
 
 test("setupMessages / creatorUrl：只发 accessToken，手机版不发界面参数", () => {
