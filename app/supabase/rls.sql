@@ -55,13 +55,17 @@ drop policy if exists catalog_public_read on public.item;
 create policy catalog_public_read on public.item for select to anon, authenticated using (true);
 
 -- 4. 账号（"user" / session / account / verification）、试衣间（look / look_item）、
---    个人档案与 3D 形象（profile / avatar_photo / avatar_job）：
+--    个人档案与 3D 形象（profile / avatar_photo / avatar_job）、2D 试穿（tryon / tryon_consent）：
 --    已开启 RLS、无任何策略、无授权，Data API 无法访问；只能经服务端读写。
 --    profile 含可选身体数据，avatar_* 指向用户照片与生成结果，属于敏感个人数据，下面再显式收紧一次。
 alter table public.profile enable row level security;
 alter table public.avatar_photo enable row level security;
 alter table public.avatar_job enable row level security;
 revoke all on table public.profile, public.avatar_photo, public.avatar_job from anon, authenticated;
+-- 2D 试穿（tryon 指向用户照片生成的试穿图，tryon_consent 记录第三方处理同意）：同样不对 Data API 开放。
+alter table public.tryon enable row level security;
+alter table public.tryon_consent enable row level security;
+revoke all on table public.tryon, public.tryon_consent from anon, authenticated;
 
 -- 5. 建项目时勾选“Enable automatic RLS”会生成 public.rls_auto_enable()（SECURITY DEFINER 的事件触发器函数）。
 --    它只该由建表事件触发，收回 Data API 角色的调用权限；不影响自动开启 RLS。

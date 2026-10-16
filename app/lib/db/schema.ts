@@ -263,3 +263,37 @@ export const avatarJob = pgTable(
   },
   (t) => [index("avatar_job_user_idx").on(t.userId)],
 );
+
+// ---- 2D 试穿（FASHN on fal.ai）----
+// 把一整套衣服依次换到用户自己的正面全身照上。结果图存私有存储 `<userId>/avatars/tryon-<id>.png`
+// （沿用现有 key 规则与鉴权文件路由，一键删除 3D 形象时随用户前缀一并清理）。
+
+export const tryon = pgTable(
+  "tryon",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    sourceLookId: text("source_look_id"), // 试衣间里的一套（可空；删掉那套不影响试穿结果）
+    sourceOutfitId: text("source_outfit_id"), // 原搭配编号（可空）
+    // 发起试穿时的整套快照：[{ id, name, category, displayCategory, image, color, price }]
+    outfitSnapshot: jsonb("outfit_snapshot").$type<Record<string, unknown>[]>().notNull().default([]),
+    itemIds: jsonb("item_ids").$type<string[]>().notNull().default([]), // 实际试穿的单品（按叠加顺序）
+    appliedCategories: jsonb("applied_categories").$type<string[]>().notNull().default([]), // 如 ["上装","下装","外套"]
+    status: text("status").notNull().default("processing"), // "processing" | "succeeded" | "failed"
+    resultKey: text("result_key"),
+    error: text("error"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("tryon_user_idx").on(t.userId)],
+);
+
+// 试穿的第三方处理同意（D47）：首次试穿前单独勾选“同意把我的正面照发送给 FASHN（fal.ai）生成试穿图”。
+export const tryonConsent = pgTable("tryon_consent", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  consentVersion: text("consent_version").notNull(), // 如 "tryon-consent-v1:fashn_fal"
+  consentAt: timestamp("consent_at", { withTimezone: true }).notNull().defaultNow(),
+});
