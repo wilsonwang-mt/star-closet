@@ -4,9 +4,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { BAG_EVENT } from "@/lib/bag/client";
 import LinkPending from "./LinkPending";
 import OfflineNotice from "./OfflineNotice";
 import ThemeToggle, { type ThemePref } from "./ThemeToggle";
+import nav from "./SiteNav.module.css";
 
 // 顶部悬浮玻璃胶囊导航（视觉规范 6.1）。
 // - 手机（< 640px）：右侧只留主题切换与圆形菜单按钮，链接收进玻璃下拉面板。
@@ -37,6 +39,37 @@ export default function SiteNav({ initialTheme }: { initialTheme: ThemePref }) {
   const user = session?.user ?? null;
 
   const [hidden, setHidden] = useState(false);
+  // 购物袋角标（D67）：登录后取一次件数，换页时刷新；加入 / 修改购物袋后由 sc:bag 事件直接更新。
+  const [bagCount, setBagCount] = useState(0);
+  const [bump, setBump] = useState(0);
+  const userId = user?.id ?? null;
+  useEffect(() => {
+    if (!userId) {
+      setBagCount(0);
+      return;
+    }
+    let live = true;
+    fetch("/api/bag/count", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { count?: number } | null) => {
+        if (live && d && typeof d.count === "number") setBagCount(d.count);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [userId, pathname]);
+  useEffect(() => {
+    const on = (e: Event) => {
+      const n = (e as CustomEvent<{ count?: number }>).detail?.count;
+      if (typeof n === "number") {
+        setBagCount(n);
+        setBump((b) => b + 1);
+      }
+    };
+    window.addEventListener(BAG_EVENT, on);
+    return () => window.removeEventListener(BAG_EVENT, on);
+  }, []);
   const [open, setOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -169,6 +202,22 @@ export default function SiteNav({ initialTheme }: { initialTheme: ThemePref }) {
               </Link>
             )}
           </nav>
+          <Link
+            href="/bag"
+            className={`sc-nav__icon-btn ${nav.bag}`}
+            aria-label={bagCount ? `购物袋，${bagCount} 件` : "购物袋"}
+            aria-current={currentness(pathname, "/bag")}
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+              <path d="M3.6 6.2h10.8l-.8 9H4.4l-.8-9Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+              <path d="M6.4 6.2V5a2.6 2.6 0 0 1 5.2 0v1.2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+            </svg>
+            {bagCount > 0 ? (
+              <span key={bump} className={nav.badge} aria-hidden="true">
+                {bagCount > 99 ? "99+" : bagCount}
+              </span>
+            ) : null}
+          </Link>
           <ThemeToggle initial={initialTheme} />
           <button
             ref={buttonRef}

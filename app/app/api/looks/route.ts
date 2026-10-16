@@ -8,7 +8,7 @@ const Body = z.object({
   sourceOutfitId: z.string().nullable(),
   request: z.string().max(300).nullable(),
   summary: z.string().max(500).nullable(),
-  mode: z.enum(["original", "ai", "offline"]),
+  mode: z.enum(["original", "ai", "offline", "pick"]),
   items: z
     .array(z.object({ itemId: z.string(), reason: z.string().max(200).nullable() }))
     .min(1)

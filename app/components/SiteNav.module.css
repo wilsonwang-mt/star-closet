@@ -1,0 +1,14 @@
+/* 导航栏购物袋（D67）：图标沿用 .sc-nav__icon-btn；角标每次数量变化时轻轻弹一下（只动 transform / opacity）。 */
+.bag { text-decoration: none; }
+.bag[aria-current="page"] { color: var(--sc-ink); }
+.badge {
+  position: absolute; top: 6px; right: 4px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px;
+  display: grid; place-items: center; font-size: 10px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums;
+  background: var(--sc-cta-bg); color: var(--sc-cta-fg); box-shadow: 0 2px 6px rgba(0, 0, 0, .25);
+  animation: badge-pop .5s cubic-bezier(.34, 1.56, .64, 1) both;
+}
+@keyframes badge-pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .badge { animation: badge-fade .2s ease-out both; }
+  @keyframes badge-fade { from { opacity: 0; } to { opacity: 1; } }
+}

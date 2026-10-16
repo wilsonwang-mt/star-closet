@@ -166,7 +166,7 @@ export const look = pgTable("look", {
   title: text("title").notNull(),
   request: text("request"),
   summary: text("summary"),
-  mode: text("mode").notNull(), // "original" | "ai" | "offline"
+  mode: text("mode").notNull(), // "original" | "ai" | "offline" | "pick"（单件或多选加入，D67）
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -340,4 +340,20 @@ export const usageCounter = pgTable(
     count: integer("count").notNull().default(0),
   },
   (t) => [primaryKey({ columns: [t.userId, t.day, t.kind] })],
+);
+
+// ---- 购物袋（D67：站内下单的前一步；结算与付款这次不做）----
+// 每个用户每件单品每个尺码一行；尺码未选时为空字符串（主键列不能为空）。数量 1–9。
+export const bagItem = pgTable(
+  "bag_item",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    itemId: text("item_id").notNull(),
+    size: text("size").notNull().default(""),
+    qty: integer("qty").notNull().default(1),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.itemId, t.size] })],
 );
