@@ -3,10 +3,10 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { after, before, beforeEach, test } from "node:test";
-import { pngWithMetadata } from "@/lib/avatar/testing";
+import { jpegWithExif, pngWithMetadata } from "@/lib/avatar/testing";
 import { planTryon, stepFor, wearableInOrder, wearOn } from "./plan";
 
-// 临时目录里的 PGlite 与本地存储；fetch 全部被替换，不访问任何外部服务。测试图由代码生成。
+// 临时目录里的 PGlite 与本地存储；fetch 全部被替换（模拟 fal 队列：提交 → 状态 → 结果），不访问任何外部服务。测试图由代码生成。
 const dir = mkdtempSync(path.join(tmpdir(), "sc-tryon-"));
 process.env.PGLITE_DIR = path.join(dir, "pglite");
 process.env.UPLOADS_DIR = path.join(dir, "uploads");
@@ -25,7 +25,19 @@ let m: Mods;
 const realFetch = globalThis.fetch;
 type Call = { url: string; init?: RequestInit };
 let calls: Call[] = [];
-const RESULT_PNG = pngWithMetadata(96, 144, [120, 90, 60]);
+/** 快速出图（performance / balanced）与细化（quality）的结果：两张尺寸不同的合成 JPEG，便于区分。 */
+const FAST_JPG = jpegWithExif(96, 144, 1);
+const HQ_JPG = jpegWithExif(864, 1296, 1);
+
+const QUEUE = "https://queue.fal.run/fal-ai/fashn/tryon/v1.6";
+type FalReq = { id: string; body: Record<string, unknown>; statuses: string[] };
+let falReqs: FalReq[] = [];
+/** 接下来每次提交依次使用的状态序列（最后一个一直保持）；不设时直接 COMPLETED。 */
+let plans: string[][] = [];
+/** 这些 mode 的结果接口返回 422（FASHN 生成失败）。 */
+let failModes = new Set<string>();
+
+const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json" } });
 
 before(async () => {
   const db = await import("@/lib/db");
@@ -48,14 +60,17 @@ before(async () => {
     { ...base, id: "A1", name: "丝巾", category: "配饰", displayCategory: "配饰", image: "/catalog/items/I001.webp" },
     { ...base, id: "K1", name: "半身裙", category: "下装", displayCategory: "半身裙", image: "/catalog/items/I002.webp" },
   ]);
-  // 试衣间里的一套（u1）：上装、下装、外套 + 鞋、包、配饰；u2 也有一套
+  // 试衣间里的一套（u1）：上装、下装、外套 + 鞋、包、配饰；u1 另一套也有 T1；u2 也有一套
   await db.db.insert(schema.look).values([
     { id: "L1", userId: "u1", title: "通勤", mode: "original" },
     { id: "L2", userId: "u2", title: "周末", mode: "original" },
+    { id: "L3", userId: "u1", title: "周末", mode: "original" },
   ]);
   await db.db.insert(schema.lookItem).values([
     ...["T1", "B1", "O1", "S1", "G1", "A1"].map((itemId, position) => ({ lookId: "L1", itemId, position })),
     { lookId: "L2", itemId: "T1", position: 0 },
+    { lookId: "L3", itemId: "T1", position: 0 },
+    { lookId: "L3", itemId: "B1", position: 1 },
   ]);
   // 正面照：代码生成的纯色 PNG。
   const key = m.storage.photoKey("u1", "front1", "png");
@@ -65,20 +80,37 @@ before(async () => {
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     calls.push({ url, init });
-    if (url === "https://fal.run/fal-ai/fashn/tryon/v1.6") {
-      const n = calls.filter((c) => c.url.startsWith("https://fal.run/")).length;
-      return new Response(JSON.stringify({ images: [{ url: `https://v3.fal.media/files/r${n}.png`, width: 864, height: 1296 }] }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
+    if (url === QUEUE && init?.method === "POST") {
+      const id = `r${falReqs.length + 1}`;
+      const body = JSON.parse(String(init.body));
+      falReqs.push({ id, body, statuses: [...(plans.shift() ?? ["COMPLETED"])] });
+      const at = `https://queue.fal.run/fal-ai/fashn/requests/${id}`;
+      return json({ request_id: id, status_url: `${at}/status`, response_url: at, cancel_url: `${at}/cancel` });
     }
-    if (url.startsWith("https://v3.fal.media/")) return new Response(Buffer.from(RESULT_PNG), { status: 200 });
+    const hit = url.match(/^https:\/\/queue\.fal\.run\/fal-ai\/fashn\/requests\/(r\d+)(\/status|\/cancel)?$/);
+    if (hit) {
+      const req = falReqs.find((r) => r.id === hit[1]);
+      if (!req) return json({ detail: "not found" }, 404);
+      if (hit[2] === "/cancel") return json({});
+      if (hit[2] === "/status") {
+        const st = req.statuses.length > 1 ? req.statuses.shift()! : req.statuses[0];
+        return json({ status: st, ...(st === "IN_QUEUE" ? { queue_position: 2 } : {}) });
+      }
+      if (failModes.has(String(req.body.mode))) return json({ detail: "pose not detected" }, 422);
+      const bytes = req.body.mode === "quality" ? HQ_JPG : FAST_JPG;
+      const out = req.body.sync_mode ? `data:image/jpeg;base64,${Buffer.from(bytes).toString("base64")}` : `https://cdn.fashn.ai/out/${req.id}.jpg`;
+      return json({ images: [{ url: out, content_type: "image/jpeg" }] });
+    }
+    if (url.startsWith("https://cdn.fashn.ai/")) return new Response(Buffer.from(FAST_JPG), { status: 200 });
     throw new Error("unexpected network call in tests");
   }) as typeof fetch;
 });
 
 beforeEach(() => {
   calls = [];
+  falReqs = [];
+  plans = [];
+  failModes = new Set();
   delete process.env.FAL_KEY;
   delete process.env.TRYON_PROVIDER;
 });
@@ -89,6 +121,23 @@ after(() => {
 });
 
 const it = (id: string, category: string, displayCategory = category) => ({ id, category, displayCategory, image: `/catalog/items/${id}.webp` });
+const status = (n: number) => (e: Error & { status?: number }) => e.status === n;
+const submits = () => falReqs.map((r) => r.body);
+const uploaded = (key: string) => existsSync(path.join(process.env.UPLOADS_DIR!, key));
+const dataUri = (b: Uint8Array) => `data:image/jpeg;base64,${Buffer.from(b).toString("base64")}`;
+
+/** 反复轮询直到满足条件（模拟前端轮询）。 */
+async function pollUntil(userId: string, id: string, done: (v: Awaited<ReturnType<typeof m.svc.pollTryon>>) => boolean, max = 10) {
+  for (let i = 0; i < max; i++) {
+    const v = await m.svc.pollTryon(userId, id);
+    if (done(v)) return v;
+  }
+  throw new Error("poll did not settle");
+}
+
+async function clearTryons() {
+  await m.db.db.delete(m.db.schema.tryon);
+}
 
 test("叠加顺序：上装内搭 → 下装 → 外套；鞋包配饰不参与", () => {
   const steps = planTryon([it("o", "外套"), it("s", "鞋"), it("b", "下装", "半身裙"), it("bag", "包"), it("t", "上装"), it("a", "配饰")]);
@@ -113,56 +162,6 @@ test("叠加顺序：连衣裙用 one-pieces，外套最后；连衣裙之外的
   );
   assert.deepEqual(planTryon([it("s", "鞋"), it("a", "配饰")]), []);
   assert.deepEqual(planTryon([{ id: "x", category: "上装", image: null }]), [], "没有单品图的不试穿");
-});
-
-test("没有 FAL_KEY：不开放、不发任何请求", async () => {
-  const ctx = await m.svc.getTryonContext("u1");
-  assert.equal(ctx.enabled, false);
-  await assert.rejects(m.svc.createTryon("u1", { itemIds: ["T1", "B1"], consent: true }), (e: Error & { status?: number }) => e.status === 503);
-  process.env.FAL_KEY = "test-key";
-  process.env.TRYON_PROVIDER = "other";
-  assert.equal((await m.svc.getTryonContext("u1")).enabled, false, "TRYON_PROVIDER 不是 fashn_fal 时不启用");
-  assert.equal(calls.length, 0);
-});
-
-test("未同意时不发请求", async () => {
-  process.env.FAL_KEY = "test-key";
-  await assert.rejects(m.svc.createTryon("u1", { itemIds: ["T1"] }), (e: Error & { status?: number }) => e.status === 403);
-  assert.equal(calls.length, 0);
-});
-
-test("整套试穿：依次调用、上一步结果作为下一步 model_image，结果存本人私有存储；他人读取与删除为 404", async () => {
-  process.env.FAL_KEY = "test-key";
-  const view = await m.svc.createTryon("u1", { outfitId: "X", itemIds: ["O1", "S1", "B1", "T1"], consent: true });
-  assert.equal(view.status, "succeeded");
-  assert.deepEqual(view.applied, ["上装", "下装", "外套"]);
-  assert.deepEqual(view.appliedItemIds, ["T1", "B1", "O1"]);
-
-  const fal = calls.filter((c) => c.url.startsWith("https://fal.run/"));
-  assert.equal(fal.length, 3);
-  const bodies = fal.map((c) => JSON.parse(String(c.init?.body)));
-  assert.deepEqual(bodies.map((b) => b.category), ["tops", "bottoms", "tops"]);
-  assert.ok(bodies[0].model_image.startsWith("data:image/png;base64,"), "第一步用本人正面照");
-  assert.equal(bodies[1].model_image, "https://v3.fal.media/files/r1.png");
-  assert.equal(bodies[2].model_image, "https://v3.fal.media/files/r2.png");
-  assert.ok(bodies.every((b) => b.mode === "balanced" && b.garment_photo_type === "flat-lay" && b.output_format === "png"));
-  assert.ok(bodies.every((b) => b.garment_image.startsWith("data:image/webp;base64,")));
-  assert.equal((fal[0].init?.headers as Record<string, string>).Authorization, "Key test-key");
-  assert.equal(calls.at(-1)?.url, "https://v3.fal.media/files/r3.png", "最后取回结果图");
-
-  assert.ok(view.resultUrl?.startsWith("/api/avatar/files/u1/avatars/tryon-"));
-  const key = `u1/avatars/tryon-${view.id}.png`;
-  assert.ok(existsSync(path.join(process.env.UPLOADS_DIR!, key)));
-
-  // 他人：读取与删除都当作不存在
-  assert.equal(await m.svc.getTryon("u2", view.id), null);
-  assert.equal(await m.svc.deleteTryon("u2", view.id), false);
-  assert.ok(existsSync(path.join(process.env.UPLOADS_DIR!, key)));
-
-  assert.equal((await m.svc.getTryon("u1", view.id))?.id, view.id);
-  assert.equal(await m.svc.deleteTryon("u1", view.id), true);
-  assert.ok(!existsSync(path.join(process.env.UPLOADS_DIR!, key)));
-  assert.equal(await m.svc.getTryon("u1", view.id), null);
 });
 
 test("单件品类：上装 / 下装（含半身裙）/ 外套 / 连衣裙可试穿，鞋包配饰与无图单品不可", () => {
@@ -191,65 +190,209 @@ test("逐件叠加：新一件盖掉同区域已穿的单品，外套保留内�
   assert.deepEqual(wearOn([top, bottom], top).map((w) => w.itemId), ["b", "t"], "同一件重穿只保留一次");
 });
 
-const falCalls = () => calls.filter((c) => c.url.startsWith("https://fal.run/"));
-const falBodies = () => falCalls().map((c) => JSON.parse(String(c.init?.body)));
-const status = (n: number) => (e: Error & { status?: number }) => e.status === n;
-
-test("逐件试穿：只调用一次 FASHN 且 mode=quality；默认穿在正面照上，带 baseTryonId 时在那张结果上继续穿", async () => {
+test("没有 FAL_KEY：不开放、不发任何请求", async () => {
+  const ctx = await m.svc.getTryonContext("u1");
+  assert.equal(ctx.enabled, false);
+  await assert.rejects(m.svc.createTryon("u1", { itemIds: ["T1", "B1"], consent: true }), status(503));
   process.env.FAL_KEY = "test-key";
-  const v1 = await m.svc.createTryon("u1", { lookId: "L1", itemIds: ["T1"], consent: true });
-  assert.equal(v1.status, "succeeded");
-  assert.equal(falCalls().length, 1, "单件只调用一次");
-  let [body] = falBodies();
-  assert.equal(body.mode, "quality");
-  assert.equal(body.category, "tops");
-  assert.equal(body.garment_photo_type, "flat-lay");
-  assert.ok(body.model_image.startsWith("data:image/png;base64,"), "底图是本人正面照");
-  assert.equal(Buffer.from(body.model_image.split(",")[1], "base64").length, pngWithMetadata(64, 96).length);
-  assert.equal(v1.kind, "item");
-  assert.equal(v1.mode, "quality");
-  assert.equal(v1.wornItemId, "T1");
-  assert.equal(v1.baseTryonId, null);
-  assert.deepEqual(v1.appliedItemIds, ["T1"]);
-  assert.deepEqual(v1.applied, ["上装"]);
-  assert.equal(v1.sourceLookId, "L1");
+  process.env.TRYON_PROVIDER = "other";
+  assert.equal((await m.svc.getTryonContext("u1")).enabled, false, "TRYON_PROVIDER 不是 fashn_fal 时不启用");
+  assert.equal(calls.length, 0);
+});
+
+test("未同意时不发请求（含预热）", async () => {
+  process.env.FAL_KEY = "test-key";
+  await assert.rejects(m.svc.createTryon("u1", { itemIds: ["T1"] }), status(403));
+  await assert.rejects(m.svc.createTryon("u1", { lookId: "L1", itemIds: ["T1"], prewarm: true }), status(403));
+  assert.equal(calls.length, 0);
+});
+
+test("逐件两段式：先提交 performance 立即返回，quality 随后提交；轮询依次报排队 → 出图并细化中 → 换成清晰的一张", async () => {
+  process.env.FAL_KEY = "test-key";
+  plans = [["IN_QUEUE", "COMPLETED"], ["IN_PROGRESS", "IN_PROGRESS", "COMPLETED"]];
+  const v0 = await m.svc.createTryon("u1", { lookId: "L1", itemIds: ["T1"], consent: true });
+  assert.equal(v0.status, "processing");
+  assert.equal(v0.stage, "queued");
+  assert.equal(v0.resultUrl, null);
   assert.deepEqual(
-    v1.items.map((i) => i.id),
+    submits().map((b) => b.mode),
+    ["performance", "quality"],
+    "两段：先 performance，再 quality",
+  );
+  for (const b of submits()) {
+    assert.equal(b.category, "tops");
+    assert.equal(b.garment_photo_type, "flat-lay");
+    assert.equal(b.output_format, "jpeg");
+    assert.equal(b.sync_mode, true, "结果以 data URI 返回，fal 不留 CDN 副本");
+    assert.ok(String(b.model_image).startsWith("data:image/png;base64,"), "底图是本人正面照");
+    assert.ok(String(b.garment_image).startsWith("data:image/webp;base64,"));
+  }
+  const submit = calls.find((c) => c.url === QUEUE)!;
+  const headers = submit.init?.headers as Record<string, string>;
+  assert.equal(headers.Authorization, "Key test-key");
+  assert.equal(headers["X-Fal-Store-IO"], "0");
+
+  const v1 = await m.svc.pollTryon("u1", v0.id);
+  assert.equal(v1?.stage, "queued");
+  assert.equal(v1?.queuePosition, 2);
+
+  const v2 = await m.svc.pollTryon("u1", v0.id);
+  assert.equal(v2?.status, "succeeded");
+  assert.equal(v2?.stage, "refining");
+  assert.equal(v2?.refining, true);
+  assert.equal(v2?.mode, "performance");
+  assert.equal(v2?.resultUrl, dataUri(FAST_JPG), "刚出的一张随响应返回");
+  assert.ok(uploaded(`u1/avatars/tryon-${v0.id}.jpg`), "快速结果写入本人私有存储");
+
+  // 细化中的记录也出现在穿搭进度里（前端接着等）
+  const listed = (await m.svc.listLookTryons("u1", ["L1"])).L1;
+  assert.deepEqual(listed.map((f) => [f.id, f.refining]), [[v0.id, true]]);
+  assert.ok(listed[0].resultUrl?.startsWith("/api/avatar/files/u1/avatars/tryon-"));
+
+  const v3 = await m.svc.pollTryon("u1", v0.id);
+  assert.equal(v3?.stage, "done");
+  assert.equal(v3?.refining, false);
+  assert.equal(v3?.mode, "quality");
+  assert.equal(v3?.resultUrl, dataUri(HQ_JPG));
+  assert.ok(uploaded(`u1/avatars/tryon-${v0.id}-hq.jpg`));
+
+  const settled = await m.svc.getTryon("u1", v0.id);
+  assert.equal(settled?.mode, "quality");
+  assert.ok(settled?.resultUrl?.endsWith(`tryon-${v0.id}-hq.jpg`), "之后读取的是清晰的一张");
+  assert.equal(settled?.kind, "item");
+  assert.equal(settled?.wornItemId, "T1");
+  assert.deepEqual(settled?.appliedItemIds, ["T1"]);
+  assert.deepEqual(
+    settled?.items.map((i) => i.id),
     ["T1", "B1", "O1", "S1", "G1", "A1"],
-    "快照是整套单品，不含逐件记录",
+    "快照是整套单品，不含生成记录",
   );
 
+  // 他人：读取与删除都当作不存在
+  assert.equal(await m.svc.getTryon("u2", v0.id), null);
+  assert.equal(await m.svc.deleteTryon("u2", v0.id), false);
+
+  assert.equal(await m.svc.deleteTryon("u1", v0.id), true);
+  assert.ok(!uploaded(`u1/avatars/tryon-${v0.id}.jpg`) && !uploaded(`u1/avatars/tryon-${v0.id}-hq.jpg`), "两张都删除");
+});
+
+test("缓存：同一底图 + 同一单品重复试穿直接返回，不再调用 FASHN；另一套里复制已完成的结果", async () => {
+  process.env.FAL_KEY = "test-key";
+  const v = await m.svc.createTryon("u1", { lookId: "L1", itemIds: ["T1"] });
+  await pollUntil("u1", v.id, (x) => x?.stage === "done");
   calls = [];
+  falReqs = [];
+
+  const again = await m.svc.createTryon("u1", { lookId: "L1", itemIds: ["T1"] });
+  assert.equal(again.id, v.id, "同一套：返回同一条");
+  assert.equal(again.stage, "done");
+  assert.equal(calls.length, 0);
+
+  const other = await m.svc.createTryon("u1", { lookId: "L3", itemIds: ["T1"] });
+  assert.notEqual(other.id, v.id);
+  assert.equal(other.status, "succeeded");
+  assert.equal(other.mode, "quality");
+  assert.equal(other.sourceLookId, "L3");
+  assert.equal(calls.length, 0, "另一套：复制结果图，不调用 FASHN");
+  assert.ok(uploaded(`u1/avatars/tryon-${other.id}-hq.jpg`) || uploaded(`u1/avatars/tryon-${other.id}.jpg`));
+  await clearTryons();
+});
+
+test("预热：只提交 performance，用户点试穿前不进穿搭进度；点试穿时命中并补提交 quality", async () => {
+  process.env.FAL_KEY = "test-key";
+  const p = await m.svc.createTryon("u1", { lookId: "L1", itemIds: ["B1"], prewarm: true });
+  assert.deepEqual(submits().map((b) => b.mode), ["performance"], "预热只跑一段");
+  const fast = await m.svc.pollTryon("u1", p.id);
+  assert.equal(fast?.stage, "done", "没有细化");
+  assert.equal(fast?.refining, false);
+  assert.equal((await m.svc.listLookTryons("u1", ["L1"])).L1, undefined, "预热结果不出现在穿搭进度里");
+
+  // 重复预热不再提交
+  const p2 = await m.svc.createTryon("u1", { lookId: "L1", itemIds: ["B1"], prewarm: true });
+  assert.equal(p2.id, p.id);
+  assert.equal(falReqs.length, 1);
+
+  const claimed = await m.svc.createTryon("u1", { lookId: "L1", itemIds: ["B1"] });
+  assert.equal(claimed.id, p.id, "命中预热的那条");
+  assert.equal(claimed.status, "succeeded");
+  assert.equal(claimed.refining, true);
+  assert.deepEqual(submits().map((b) => b.mode), ["performance", "quality"], "认领后补提交 quality");
+  assert.deepEqual((await m.svc.listLookTryons("u1", ["L1"])).L1.map((f) => f.id), [p.id]);
+
+  const hq = await m.svc.pollTryon("u1", p.id);
+  assert.equal(hq?.mode, "quality");
+
+  // 再点一次不重复提交
+  await m.svc.createTryon("u1", { lookId: "L1", itemIds: ["B1"] });
+  assert.equal(falReqs.length, 2);
+  await assert.rejects(m.svc.createTryon("u1", { lookId: "L1", itemIds: ["O1"], baseTryonId: p.id, prewarm: true }), status(400), "预热只用于正面照");
+  await clearTryons();
+});
+
+test("在上一张（细化中）继续穿：底图用当前最好的一张", async () => {
+  process.env.FAL_KEY = "test-key";
+  plans = [["COMPLETED"], ["IN_PROGRESS"]];
+  const v1 = await m.svc.createTryon("u1", { lookId: "L1", itemIds: ["T1"] });
+  const shown = await m.svc.pollTryon("u1", v1.id);
+  assert.equal(shown?.stage, "refining");
+  falReqs = [];
   const v2 = await m.svc.createTryon("u1", { lookId: "L1", itemIds: ["O1"], baseTryonId: v1.id });
-  assert.equal(falCalls().length, 1);
-  [body] = falBodies();
-  assert.equal(body.mode, "quality");
-  assert.equal(body.category, "tops");
-  assert.equal(body.model_image, `data:image/png;base64,${Buffer.from(RESULT_PNG).toString("base64")}`, "底图是上一张试穿结果");
-  assert.equal(v2.wornItemId, "O1");
+  assert.equal(submits()[0].model_image, dataUri(FAST_JPG), "细化还没好：用快速出的那张");
   assert.equal(v2.baseTryonId, v1.id);
   assert.deepEqual(v2.appliedItemIds, ["T1", "O1"]);
   assert.deepEqual(v2.applied, ["上装", "外套"]);
+  await clearTryons();
+});
 
-  const again = await m.svc.getTryon("u1", v2.id);
-  assert.equal(again?.kind, "item");
-  assert.equal(again?.baseTryonId, v1.id);
-  assert.equal(again?.wornItemId, "O1");
+test("失败与降级：细化失败保留快速的一张；快速失败等细化；两段都失败才算失败", async () => {
+  process.env.FAL_KEY = "test-key";
+  failModes = new Set(["quality"]);
+  const a = await m.svc.createTryon("u1", { lookId: "L1", itemIds: ["T1"] });
+  await m.svc.pollTryon("u1", a.id);
+  const kept = await m.svc.pollTryon("u1", a.id);
+  assert.equal(kept?.status, "succeeded");
+  assert.equal(kept?.refining, false);
+  assert.equal(kept?.mode, "performance");
+  await clearTryons();
 
-  const frames = await m.svc.listLookTryons("u1", ["L1", "L2"]);
-  assert.deepEqual(frames.L1.map((f) => f.id), [v1.id, v2.id], "穿搭进度按先后排列");
-  assert.equal(frames.L2, undefined);
-  assert.deepEqual(await m.svc.listLookTryons("u2", ["L1"]), {}, "他人看不到");
+  failModes = new Set(["performance"]);
+  const b = await m.svc.createTryon("u1", { lookId: "L1", itemIds: ["T1"] });
+  const fine = await pollUntil("u1", b.id, (x) => x?.status !== "processing");
+  assert.equal(fine?.status, "succeeded");
+  assert.equal(fine?.mode, "quality", "快速失败时直接等到清晰的一张");
+  await clearTryons();
 
-  await m.svc.deleteTryon("u1", v1.id);
-  await m.svc.deleteTryon("u1", v2.id);
+  failModes = new Set(["performance", "quality"]);
+  const c = await m.svc.createTryon("u1", { lookId: "L1", itemIds: ["T1"] });
+  const failed = await pollUntil("u1", c.id, (x) => x?.status !== "processing");
+  assert.equal(failed?.status, "failed");
+  assert.equal(failed?.stage, "failed");
+  assert.equal(failed?.error, "这张照片无法试穿，请换一张光线充足的正面全身照");
+  assert.equal((await m.svc.createTryon("u1", { lookId: "L1", itemIds: ["T1"] })).status, "processing", "失败的不进缓存，可以重试");
+  await clearTryons();
+});
+
+test("改造前遗留的处理中记录：轮询时判为失败", async () => {
+  process.env.FAL_KEY = "test-key";
+  const { db, schema } = m.db;
+  await db.insert(schema.tryon).values({
+    id: "old1",
+    userId: "u1",
+    status: "processing",
+    sourceLookId: "L1",
+    outfitSnapshot: [{ kind: "step", wornItemId: "T1", baseTryonId: null, mode: "quality" }],
+  });
+  const v = await m.svc.pollTryon("u1", "old1");
+  assert.equal(v?.status, "failed");
+  assert.equal(calls.length, 0);
+  await clearTryons();
 });
 
 test("逐件试穿：baseTryonId 属于他人、失败、处理中或不存在时 404，不调用 FASHN", async () => {
   process.env.FAL_KEY = "test-key";
   const { db, schema } = m.db;
-  const otherKey = "u2/avatars/tryon-other.png";
-  await m.storage.getStorage().put(otherKey, RESULT_PNG, "image/png");
+  const otherKey = "u2/avatars/tryon-other.jpg";
+  await m.storage.getStorage().put(otherKey, FAST_JPG, "image/jpeg");
   await db.insert(schema.tryon).values([
     { id: "other", userId: "u2", status: "succeeded", resultKey: otherKey, itemIds: ["T1"], appliedCategories: ["上装"] },
     { id: "failed1", userId: "u1", status: "failed", error: "试穿失败，请稍后再试" },
@@ -267,11 +410,11 @@ test("逐件试穿：baseTryonId 属于他人、失败、处理中或不存在�
   assert.equal((await db.select().from(schema.tryon)).length, 3, "没有新增记录");
 
   // 结果图已被清掉的本人记录：同样 404，并清理掉这条记录
-  await db.insert(schema.tryon).values({ id: "gone1", userId: "u1", status: "succeeded", resultKey: "u1/avatars/tryon-gone1.png" });
+  await db.insert(schema.tryon).values({ id: "gone1", userId: "u1", status: "succeeded", resultKey: "u1/avatars/tryon-gone1.jpg" });
   await assert.rejects(m.svc.createTryon("u1", { lookId: "L1", itemIds: ["B1"], baseTryonId: "gone1" }), status(404));
   assert.equal(await m.svc.getTryon("u1", "gone1"), null);
   assert.equal(calls.length, 0);
-  await db.delete(schema.tryon);
+  await clearTryons();
   await m.storage.getStorage().remove([otherKey]);
 });
 
@@ -288,17 +431,46 @@ test("逐件试穿：鞋、包、配饰不能单件试穿；不在这套里的�
   assert.equal((await m.db.db.select().from(m.db.schema.tryon)).length, 0);
 });
 
-test("整套请求保持兼容：{ lookId } 仍依次叠加、mode=balanced", async () => {
+test("整套（旧调用方式）：走队列逐步推进，上一步结果地址作为下一步 model_image，最后一步取回结果存本人私有存储", async () => {
   process.env.FAL_KEY = "test-key";
-  const view = await m.svc.createTryon("u1", { lookId: "L1" });
-  assert.equal(view.kind, "outfit");
-  assert.equal(view.wornItemId, null);
-  assert.equal(view.baseTryonId, null);
-  assert.deepEqual(view.appliedItemIds, ["T1", "B1", "O1"]);
-  assert.equal(falCalls().length, 3);
-  assert.ok(falBodies().every((b) => b.mode === "balanced"));
-  assert.equal(view.items.length, 6);
-  await m.svc.deleteTryon("u1", view.id);
+  plans = [["IN_PROGRESS", "COMPLETED"], ["COMPLETED"], ["COMPLETED"]];
+  const v0 = await m.svc.createTryon("u1", { outfitId: "X", itemIds: ["O1", "S1", "B1", "T1"], consent: true });
+  assert.equal(v0.kind, "outfit");
+  assert.equal(v0.status, "processing");
+  assert.deepEqual(v0.progress, { step: 1, total: 3 });
+  assert.deepEqual(v0.appliedItemIds, ["T1", "B1", "O1"]);
+  assert.equal(falReqs.length, 1, "只先提交第一步");
+
+  assert.equal((await m.svc.pollTryon("u1", v0.id))?.stage, "generating");
+  const s2 = await m.svc.pollTryon("u1", v0.id);
+  assert.deepEqual(s2?.progress, { step: 2, total: 3 });
+  const s3 = await m.svc.pollTryon("u1", v0.id);
+  assert.deepEqual(s3?.progress, { step: 3, total: 3 });
+  const done = await m.svc.pollTryon("u1", v0.id);
+  assert.equal(done?.status, "succeeded");
+  assert.equal(done?.resultUrl, dataUri(FAST_JPG));
+
+  const bodies = submits();
+  assert.deepEqual(bodies.map((b) => b.category), ["tops", "bottoms", "tops"]);
+  assert.ok(bodies.every((b) => b.mode === "balanced" && b.output_format === "jpeg"));
+  assert.deepEqual(bodies.map((b) => b.sync_mode), [false, false, true], "中间步骤把结果地址交给下一步，最后一步以 data URI 返回");
+  assert.ok(String(bodies[0].model_image).startsWith("data:image/png;base64,"), "第一步用本人正面照");
+  assert.equal(bodies[1].model_image, "https://cdn.fashn.ai/out/r1.jpg");
+  assert.equal(bodies[2].model_image, "https://cdn.fashn.ai/out/r2.jpg");
+  assert.ok(uploaded(`u1/avatars/tryon-${v0.id}.jpg`));
+
+  const again = await m.svc.getTryon("u1", v0.id);
+  assert.equal(again?.status, "succeeded");
+  assert.ok(again?.resultUrl?.startsWith("/api/avatar/files/u1/avatars/tryon-"));
+  assert.equal(await m.svc.getTryon("u2", v0.id), null);
+  assert.equal(await m.svc.deleteTryon("u1", v0.id), true);
+  assert.ok(!uploaded(`u1/avatars/tryon-${v0.id}.jpg`));
+
+  // { lookId } 仍是整套
+  const look = await m.svc.createTryon("u1", { lookId: "L1" });
+  assert.equal(look.kind, "outfit");
+  assert.equal(look.items.length, 6);
+  await clearTryons();
 });
 
 test("已过 30 天期限、尚未被清理的正面照不再用于试穿", async () => {
@@ -315,6 +487,7 @@ test("已过 30 天期限、尚未被清理的正面照不再用于试穿", asyn
 test("一键删除清空用户前缀后，旧的试穿记录读取为 404 并被清理", async () => {
   process.env.FAL_KEY = "test-key";
   const view = await m.svc.createTryon("u1", { itemIds: ["T1"] });
+  await pollUntil("u1", view.id, (x) => x?.stage === "done");
   await m.storage.getStorage().removeUserPrefix("u1");
   assert.equal(await m.svc.getTryon("u1", view.id), null);
   assert.equal((await m.db.db.select().from(m.db.schema.tryon)).length, 0);
@@ -325,7 +498,7 @@ test("3D 形象一键删除同时删除试穿记录、结果图与试穿同意",
   // 上一项测试清空了用户前缀：重新放回正面照文件（代码生成的纯色 PNG）
   await m.storage.getStorage().put(m.storage.photoKey("u1", "front1", "png"), pngWithMetadata(64, 96), "image/png");
   const view = await m.svc.createTryon("u1", { itemIds: ["T1"], consent: true });
-  assert.ok(view.resultUrl);
+  assert.ok((await pollUntil("u1", view.id, (x) => x?.stage === "done"))?.resultUrl);
   const avatar = await import("@/lib/avatar/service");
   await avatar.deleteAll("u1");
   assert.equal((await m.db.db.select().from(m.db.schema.tryon)).length, 0);
@@ -333,7 +506,7 @@ test("3D 形象一键删除同时删除试穿记录、结果图与试穿同意",
   assert.equal(await m.svc.getTryon("u1", view.id), null);
 });
 
-test("试穿卡上传的正面照写入 30 天 expires_at（D47），并替换旧的一张", async () => {
+test("试穿卡上传的正面照写入 30 天 expires_at（D47），替换旧的一张，并清掉旧照片上没用上的预热结果", async () => {
   process.env.FAL_KEY = "test-key";
   const { db, schema } = m.db;
   const { and, eq, isNull } = await import("drizzle-orm");
@@ -346,6 +519,11 @@ test("试穿卡上传的正面照写入 30 天 expires_at（D47），并替换�
   const exp = rows[0].expiresAt?.getTime() ?? 0;
   const day = 86400_000;
   assert.ok(exp >= t0 + 30 * day - 1000 && exp <= Date.now() + 30 * day + 1000, "expires_at = 上传时间 + 30 天");
+  assert.equal(calls.length, 0);
+
+  const warm = await m.svc.createTryon("u3", { outfitId: "X", itemIds: ["T1"], prewarm: true, consent: true });
+  await m.svc.pollTryon("u3", warm.id);
+  assert.ok(uploaded(`u3/avatars/tryon-${warm.id}.jpg`));
 
   await m.svc.uploadFrontPhoto("u3", photo());
   const live = await db
@@ -354,5 +532,6 @@ test("试穿卡上传的正面照写入 30 天 expires_at（D47），并替换�
     .where(and(eq(schema.avatarPhoto.userId, "u3"), isNull(schema.avatarPhoto.deletedAt)));
   assert.equal(live.length, 1, "每个位置只保留一张");
   assert.ok(live[0].expiresAt, "新照片同样带期限");
-  assert.equal(calls.length, 0);
+  assert.equal(await m.svc.getTryon("u3", warm.id), null, "没用上的预热结果随换照片删除");
+  assert.ok(!uploaded(`u3/avatars/tryon-${warm.id}.jpg`));
 });

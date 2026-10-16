@@ -96,6 +96,18 @@
 .waitTime { margin: 4px 0 0; font-family: var(--sc-font-didone); font-style: italic; font-size: 14px; letter-spacing: .1em; font-variant-numeric: tabular-nums lining-nums; opacity: .85; }
 .waitNote { margin: 0; font-size: 11px; letter-spacing: .12em; opacity: .8; }
 
+/* 两段式：先出的一张在细化中（D62） */
+.refineChip {
+  position: absolute; right: 10px; bottom: 10px; z-index: 3; display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; letter-spacing: .12em; color: #f4f2ed;
+  padding: 3px 10px 3px 8px; border-radius: var(--sc-radius-pill); background: rgba(11, 13, 16, .42);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); pointer-events: none;
+}
+.frameRefine {
+  position: absolute; left: 5px; bottom: 5px; z-index: 2; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--sc-champ); box-shadow: 0 0 0 2px rgba(11, 13, 16, .35); animation: tryon-pulse 1.6s ease-in-out infinite;
+}
+
 /* 侧栏 */
 .side { display: grid; gap: 18px; min-width: 0; align-content: start; }
 .block { display: grid; gap: 10px; min-width: 0; }
@@ -167,7 +179,7 @@
 .pieceDone { display: grid; place-items: center; width: 26px; height: 26px; margin-right: 6px; border-radius: 50%; color: #1a150d; background: linear-gradient(180deg, #ecd3a0, #c9a96e); }
 
 @media (prefers-reduced-motion: reduce) {
-  .pulse { animation: none; opacity: .9; }
+  .pulse, .frameRefine { animation: none; opacity: .9; }
   .rowAction, .peek, .frameBtn, .pieceBtn { transition: background-color .2s ease, opacity .2s ease; }
   .rowAction:not(:disabled):active, .peek:active, .frameBtn:not(:disabled):active, .pieceBtn:not(:disabled):active { transform: none; }
   .waitBlur { transform: none; }

@@ -18,7 +18,7 @@ export default function LookCard({ look, tryon, tryons }: { look: Look; tryon?: 
   const [deleting, setDeleting] = useState(false);
   const [open, setOpen] = useState(false);
   // 逐件试穿：可上身的单品（上装、下装、外套、连衣裙）每件一个“试穿这件”，一件一件穿到本人照片上。
-  const t = useLookTryon({ lookId: look.id, ctx: tryon, initial: tryons });
+  const t = useLookTryon({ lookId: look.id, ctx: tryon, initial: tryons, items: look.items });
   const chosen = look.items.filter((i) => selected.has(i.id));
   const chosenTotal = chosen.reduce((s, i) => s + i.price, 0);
 

@@ -80,30 +80,34 @@ API：`GET /api/avatar/metaperson/token`、`POST /api/avatar/metaperson/import`�
 
 ## 2D 试穿
 
-用户自己的形象穿着选中的衣服，一件一件来（试衣间主路径）；搭配页改编结果卡仍保留整套“穿在我身上”。服务：fal.ai 上的 FASHN v1.6（`https://fal.run/fal-ai/fashn/tryon/v1.6`，同步调用）。**未实测**（没有 key，只有 mock fetch 的单元测试与浏览器内拦截请求的界面检查）。
+用户自己的形象穿着选中的衣服，一件一件来（试衣间主路径）；搭配页改编结果卡仍保留整套“穿在我身上”。服务：fal.ai 上的 FASHN v1.6，走队列接口（`https://queue.fal.run/fal-ai/fashn/tryon/v1.6` 提交，之后用提交响应里的 `status_url` / `response_url` 查询；D62）。2026-10-17 已用本机 `FAL_KEY` 与 AI 生成的虚构模特图实测，耗时见[交付记录](../docs/交付记录.md)。
 
 - 启用：设置 `FAL_KEY`（`TRYON_PROVIDER` 可留空，设置时必须为 `fashn_fal`）。没有 key 时不显示入口，也不发任何外部请求。
 - 试衣间（逐件，`components/tryon/LookTryOn.tsx` + `useLookTryon.ts`）：每张 LookCard 里可上身的单品（上装、下装含半身裙、外套、连衣裙）在名称下方有「试穿这件」；鞋、包、配饰不出现这个按钮。点一下打开面板并只穿这一件：
   - 底图：正在看的那张。默认是这一套里最新的一张试穿结果（一件一件把整套穿起来）；还没有结果时是本人正面照。面板里「从我的照片重新开始」切回正面照。
   - 穿搭进度：正面照 → 第 1 件 → 第 2 件……（“第 N 件”= 那张图上穿着的件数），点任一张回看（左右方向键也可以），下一件就穿在正在看的那张上；「删除这张」调用 `DELETE /api/tryon/[id]`。
-  - 生成中：底图压暗虚化、香槟光束扫过，写“正在为你穿上 〈单品名〉”和已用时间（50 秒后补一句“比平时稍久，仍在进行”）；可以关掉面板，卡片对应行显示“正在穿上 · N 秒”，穿好后出现在这一套里。
+  - 生成中：底图压暗虚化、香槟光束扫过，写“正在为你穿上 〈单品名〉”和真实阶段 + 已用时间（“正在提交 / 排队中（· 前面 N 位）/ 生成中 · N 秒”，30 秒后补一句“比平时稍久，仍在进行”）；可以关掉面板，卡片对应行显示“正在穿上 · N 秒”，穿好后出现在这一套里。
+  - 两段式（D62）：先出 `performance` 的一张立刻展示，舞台右下角标“正在细化”、穿搭进度缩略图左下角一个呼吸点；`quality` 好了以后同一张在原位置交叉淡入成清晰的（`useLookTryon` 后台每 1.5 秒轮询一次，关掉面板也继续）。细化中可以接着穿下一件（底图用当前最好的那张）。细化失败时保留快速出的那张，不提示。
+  - 预热：本次在面板里上传正面照、且已同意（已同意过或刚勾选）后，立刻用 `prewarm: true` 跑要穿的那一件（点了「试穿这件」的那件，否则按建议顺序的第一件），只跑 `performance`；结果留在浏览器里不进穿搭进度，点「穿上」时命中缓存直接显示，再补提交 `quality`。每张新照片只预热一次。
   - 结果：新图在同一位置从上一张交叉淡入（只动 opacity / transform）；结果图上穿着的单品在卡片和面板的缩略图上标“已穿上”。减弱动态时只淡入淡出。
   - 首次试穿仍要勾选试穿同意；没有正面照时在面板里上传。卡片上有结果或正在穿时，多一行“On You · 穿搭进度”入口。
   - 首屏历史：`/fitting-room` 用 `listLookTryons()` 一次查出本人在这些搭配上的成功结果（按搭配分组、按先后，每套最多 24 张），不逐个检查结果文件。
-- 搭配页（整套，`components/tryon/TryOn.tsx`）：改编结果卡上的「穿在我身上」，面板流程不变：准备 → 生成 → 结果（与原搭配并排，点击放大），可删除这张。
+- 搭配页（整套，`components/tryon/TryOn.tsx`）：改编结果卡上的「穿在我身上」，面板流程：准备 → 生成（显示“第 N/M 件 · 排队中 / 生成中”）→ 结果（与原搭配并排，点击放大），可删除这张。也走队列：提交第一步就返回，前端轮询，服务端每次轮询推进一步。
 - 品类映射（`lib/tryon/plan.ts`，前后端共用）：`stepFor()`——连衣裙（display_category）→ `one-pieces`，上装 → `tops`，下装 → `bottoms`，外套 → `tops`；鞋、包、配饰与没有单品图的返回 null。逐件叠加时 `wearOn()` 算出新图上穿着的单品：连衣裙盖掉全身（含外套），上装盖掉原上装、连衣裙与外套，下装盖掉原下装与连衣裙，外套只盖掉原外套（内搭保留）。整套 `planTryon()`：有连衣裙 → 连衣裙 → 外套；否则 上装内搭 → 下装 → 外套，各取第一件。
-- 生成参数：逐件 `mode=quality`（针织纹理与领口更清楚，单件约 30–45 秒）；整套一次请求最多调用 3 次，quality 会超过 120 秒上限，保持 `mode=balanced`。都带 `garment_photo_type=flat-lay`、`output_format=png`，请求头 `X-Fal-Store-IO: 0`（对同步端点是否生效未核实）。服务端整体超时 120 秒，失败返回中文错误。
+- 生成参数：逐件两段，先 `mode=performance`（提交后立即返回），`quality` 在响应之后用 `after()` 提交；整套每步 `mode=balanced`。都带 `garment_photo_type=flat-lay`、`output_format=jpeg`（约 260KB，PNG 约 1.5MB），请求头 `X-Fal-Store-IO: 0`。逐件与整套最后一步 `sync_mode=true`（结果以 data URI 放在响应里，fal 不留 CDN 副本）；整套中间步骤 `sync_mode=false`，把结果地址直接交给下一步。key 只发给 `https://queue.fal.run/` 开头的地址。超时：快速一段与整套每一步从提交起 90 秒，细化 150 秒（超时保留快速的一张），失败返回中文错误。
+- 轮询 `GET /api/tryon/[id]`：还在生成或细化时，服务端查一次 fal 状态（细化优先：quality 好了就直接用它）；刚完成时把结果图以 data URI 放在响应里，写入私有存储与更新记录放到响应之后（`after()`）。网络抖动与 5xx 当作“还在等”，4xx 才算这一段失败；两段都失败整条才失败。
+- 缓存（`cacheKey` = 底图（正面照 id 或底图试穿 id）+ 单品）：同一套里重复试穿直接返回已有的那条（包括还在生成的，不重复提交）；另一套里已完成的复制结果图生成新记录，不调用 FASHN。失败的不进缓存。
 - API `POST /api/tryon`（首次带 `consent: true`）：
-  - 逐件：`{ lookId 或 outfitId, itemIds: [一件], baseTryonId? }`。判别规则：带 `baseTryonId`，或 `itemIds` 去重后恰好一件。旧调用方式发送的 `itemIds` 是整套全部单品，只有一件时两种理解的结果相同。带 `lookId` 时这件必须属于本人这套搭配，否则 404；鞋、包、配饰 422；`baseTryonId` 配多件 400。`baseTryonId` 必须是本人一张 `succeeded` 的结果，否则一律 404“没有找到这张试穿图”（不区分不存在、不属于、失败、处理中；结果文件已被清掉时同样 404 并删除该记录），底图读该结果文件（Supabase 15 分钟签名 URL，本地 data URI），这时不要求正面照；不带时用正面照（没有则 409）。校验都在写记录、调用 FASHN 之前。
+  - 逐件：`{ lookId 或 outfitId, itemIds: [一件], baseTryonId?, prewarm? }`。判别规则：带 `baseTryonId` 或 `prewarm`，或 `itemIds` 去重后恰好一件。`prewarm` 只用于正面照（带 `baseTryonId` 时 400），同样要求已同意。旧调用方式发送的 `itemIds` 是整套全部单品，只有一件时两种理解的结果相同。带 `lookId` 时这件必须属于本人这套搭配，否则 404；鞋、包、配饰 422；`baseTryonId` 配多件 400。`baseTryonId` 必须是本人一张 `succeeded` 的结果，否则一律 404“没有找到这张试穿图”（不区分不存在、不属于、失败、处理中；结果文件已被清掉时同样 404 并删除该记录），底图读该结果文件（Supabase 15 分钟签名 URL，本地 data URI），这时不要求正面照；不带时用正面照（没有则 409）。校验都在写记录、调用 FASHN 之前。
   - 整套（旧调用方式，兼容）：`{ lookId }` 或 `{ outfitId, itemIds: [多件] }`。
-  - 返回 `TryonView`：在原有字段（`id`、`status`、`resultUrl`、`applied`、`appliedItemIds`、`items`、`sourceLookId`、`sourceOutfitId`、`error`、`createdAt`）上新增 `kind`（`item` / `outfit`）、`mode`（`quality` / `balanced`）、`wornItemId`（这次穿上的单品，整套为 null）、`baseTryonId`（在哪张结果上穿，null 为正面照）。逐件时 `appliedItemIds` / `applied` 是结果图上累计穿着的单品（按 `wearOn()` 去掉被盖掉的）。
+  - 返回 `TryonView`：在原有字段（`id`、`status`、`resultUrl`、`applied`、`appliedItemIds`、`items`、`sourceLookId`、`sourceOutfitId`、`error`、`createdAt`）上新增 `kind`（`item` / `outfit`）、`mode`（这张图的模式：逐件细化前 `performance`、细化后 `quality`，改造前的旧记录为 `quality`；整套 `balanced`）、`stage`（`queued` / `generating` / `refining` / `done` / `failed`）、`queuePosition`、`refining`、`progress`（整套第几步 / 共几步）、`wornItemId`（这次穿上的单品，整套为 null）、`baseTryonId`（在哪张结果上穿，null 为正面照）。`resultUrl` 是当前最好的一张：存储里的鉴权地址，或刚生成时随响应返回的 data URI。逐件时 `appliedItemIds` / `applied` 是结果图上累计穿着的单品（按 `wearOn()` 去掉被盖掉的）。
   - 其余：`GET|DELETE /api/tryon/[id]`（非本人 404）、`POST /api/tryon/photo`（multipart：file）。
-- 存储（未改表）：逐件的 `wornItemId / baseTryonId / mode` 记在 `tryon.outfit_snapshot`（jsonb 数组）末尾追加的一条 `{ kind: "step", ... }`，读出时与单品快照分开；没有这条的旧行即整套。`item_ids` / `applied_categories` 存结果图上穿着的单品。
-- 照片：复用 3D 形象流程的正面全身照（`avatar_photo.slot = front`；MetaPerson 模式下 3D 流程不收照片，只能在试穿面板里上传）；也可在试穿面板里直接上传（浏览器压缩为 JPEG，服务端去元数据后存私有存储，并替换为新的正面照）。试穿面板上传的照片写 `expires_at = 上传时间 + 30 天`（D47，与 3D 形象原始照片同一清理流程：`npm run avatar:purge` / 打开 `/profile/avatar` 时惰性清理）；已过期限但尚未被清理的正面照不再用于试穿。发给 FASHN 时，Supabase 存储用 15 分钟签名 URL，本地存储用 data URI；单品图读 `public/` 转 data URI。
+- 存储（未改表）：逐件的 `wornItemId / baseTryonId / basePhotoId / cacheKey / prewarm`、两段生成的队列地址与状态（`fast` / `fine`）和两张结果的 key，记在 `tryon.outfit_snapshot`（jsonb 数组）末尾追加的一条 `{ kind: "step", ... }`；整套的步骤与当前队列请求记在 `{ kind: "chain", ... }`。读出时与单品快照分开；没有这条的旧行即改造前的整套。并发的轮询用 `jsonb_set` 各改各的字段，推进整套下一步与认领预热用条件更新做乐观锁，避免重复提交。`item_ids` / `applied_categories` 存结果图上穿着的单品。
+- 照片：复用 3D 形象流程的正面全身照（`avatar_photo.slot = front`；MetaPerson 模式下 3D 流程不收照片，只能在试穿面板里上传）；也可在试穿面板里直接上传（浏览器压缩到最长边 1296px 的 JPEG——FASHN 输出 864×1296，再大没有收益——服务端去元数据后存私有存储，并替换为新的正面照；换照片时同时删掉旧照片上没用上的预热结果）。服务端没有图片库，3D 形象流程上传的更大的正面照按原样发送。试穿面板上传的照片写 `expires_at = 上传时间 + 30 天`（D47，与 3D 形象原始照片同一清理流程：`npm run avatar:purge` / 打开 `/profile/avatar` 时惰性清理）；已过期限但尚未被清理的正面照不再用于试穿。发给 FASHN 时，Supabase 存储用 15 分钟签名 URL，本地存储用 data URI；单品图读 `public/` 转 data URI。
 - 同意（D47）：首次试穿前单独勾选“同意把我的正面照发送给 FASHN（fal.ai）生成试穿图”，记录在 `tryon_consent`（`tryon-consent-v1:fashn_fal`）。
-- 结果：服务端取回结果图存 `<userId>/avatars/tryon-<id>.png`（沿用现有 key 规则，未改 `lib/storage`），经 `GET /api/avatar/files/<key>` 读取，他人 404。3D 形象的“一键删除”同时调用 `deleteAllTryons()`：删除该用户全部 `tryon` 记录、结果图与 `tryon_consent`（之后再试穿需重新同意），再清空用户存储前缀；单独清空存储前缀时，残留的 `tryon` 记录在下次读取或被用作底图时发现文件不存在即删除。
+- 结果：快速一段存 `<userId>/avatars/tryon-<id>.jpg`，细化后另存 `tryon-<id>-hq.jpg` 并把 `result_key` 指过去（两张都随记录删除；快速那张保留到删除，避免正在读它的请求读空；整套为 `tryon-<id>.jpg`；改造前的旧结果为 `.png`），经 `GET /api/avatar/files/<key>` 读取，他人 404。删除时尽力取消还在跑的 fal 请求。3D 形象的“一键删除”同时调用 `deleteAllTryons()`：删除该用户全部 `tryon` 记录、结果图与 `tryon_consent`（之后再试穿需重新同意），再清空用户存储前缀；单独清空存储前缀时，残留的 `tryon` 记录在下次读取或被用作底图时发现文件不存在即删除。
 - 表：`tryon`（id、user_id、source_look_id、source_outfit_id、outfit_snapshot、item_ids、applied_categories、status、result_key、error、created_at）、`tryon_consent`（user_id、consent_version、consent_at），迁移 `drizzle/0003_tryon.sql`；Supabase 上执行 `npm run db:setup` 后再执行一次 `supabase/rls.sql`。
-- 测试：`lib/tryon/tryon.test.ts`（品类映射与逐件叠加规则；逐件只调用一次 FASHN 且 `mode=quality`、默认穿在正面照上、带 `baseTryonId` 时底图是那张结果；`baseTryonId` 属于他人 / 失败 / 处理中 / 不存在 / 文件已删一律 404 且不调用 FASHN；鞋包配饰 422、不在这套里 404；整套 `{ lookId }` 仍为 balanced 依次叠加；过期正面照不再使用；试穿面板上传的正面照写入 30 天 `expires_at`；以及原有的无 key 与未同意不发请求、链式 `model_image`、他人 404、清空存储后记录清理、3D 形象一键删除同时删除试穿记录与同意）。所有对 fal 的 fetch 都被替换。
+- 测试：`lib/tryon/tryon.test.ts`，fetch 模拟 fal 队列（提交 → 状态 → 结果）：品类映射与逐件叠加规则；两段式依次报排队 → 出图并细化中 → 换成清晰的一张，两张都存、都删；缓存命中不发请求、另一套复制结果；预热只跑 performance、不进穿搭进度、认领时补提交 quality 且不重复；细化中继续穿时底图用快速的一张；细化失败保留快速、快速失败等细化、两段都失败才失败；改造前遗留的处理中记录判为失败；`baseTryonId` 属于他人 / 失败 / 处理中 / 不存在 / 文件已删一律 404 且不调用 FASHN；鞋包配饰 422、不在这套里 404；整套逐步推进、中间步骤把结果地址交给下一步；过期正面照不再使用；试穿面板上传的正面照写入 30 天 `expires_at` 并清掉没用上的预热结果；无 key 与未同意（含预热）不发请求；清空存储后记录清理；3D 形象一键删除同时删除试穿记录与同意。
 
 ## 界面提示（D48）
 
