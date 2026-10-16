@@ -1,15 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Bodoni_Moda, Noto_Serif_SC } from "next/font/google";
 import { cookies } from "next/headers";
 import { preload } from "react-dom";
 import SiteNav from "@/components/SiteNav";
 import type { ThemePref } from "@/components/ThemeToggle";
 import "./fonts.css";
+import "./fonts-serif.css"; // 标题字体自托管（Vercel 构建机上 next/font/google 解析失败，2026-10-17）
 import "./tokens.css";
 import "./globals.css";
 
-const didone = Bodoni_Moda({ subsets: ["latin"], style: ["normal", "italic"], weight: ["400"], variable: "--font-didone" });
-const serif = Noto_Serif_SC({ weight: ["300", "400"], variable: "--font-serif", preload: false });
 
 export const metadata: Metadata = {
   title: "Star Closet",
@@ -36,7 +34,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html
       lang="zh-CN"
       data-theme={pref === "system" ? undefined : pref}
-      className={`${didone.variable} ${serif.variable}`}
     >
       <body>
         <SiteNav initialTheme={pref} />
