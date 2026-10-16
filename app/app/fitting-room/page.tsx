@@ -52,7 +52,7 @@ export default async function FittingRoom() {
         <h1 className="sc-display" style={{ margin: "6px 0 8px" }}>个人试衣间</h1>
         <p className="serif-note">
           {looks.length
-            ? `${looks.length} 套搭配。${tryon.enabled ? "一件一件穿到你身上，" : ""}勾选想买的单品，生成购物清单。`
+            ? `${looks.length} 套搭配。${tryon.enabled ? "整套或一件一件穿到你身上，" : ""}勾选想要的单品，加入购物袋。`
             : "还是空的，去衣橱里挑一套吧。"}
         </p>
       </section>

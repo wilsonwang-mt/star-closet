@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import AddToBag from "@/components/item/AddToBag";
 import LookGallery from "@/components/item/LookGallery";
+import { QuickTryButton, QuickTryonProvider } from "@/components/tryon/QuickTryOn";
 import LinkPending from "@/components/LinkPending";
 import Scene from "@/components/Scene";
 import { getCurrentUser } from "@/lib/auth";
@@ -25,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return d ? { title: clean(d.item.name) } : {};
 }
 
-// 商品详情页（T3）：首屏商品大图与信息、购买按钮；“上身效果”画廊（本人 / 演示模特）；这件出现在哪些搭配里。
+// 商品详情页（T3）：首屏商品大图与信息、一键试穿（D67 首屏可见）与加入购物袋；“上身效果”画廊（本人 / 演示模特）；这件出现在哪些搭配里。
 export default async function ItemPage({ params }: Props) {
   const { id } = await params;
   const [detail, user] = await Promise.all([getItemDetail(id), getCurrentUser()]);
@@ -67,7 +69,7 @@ export default async function ItemPage({ params }: Props) {
   ];
 
   return (
-    <>
+    <QuickTryonProvider ctx={tryonCtx}>
       <Scene dim cover={curator?.cover ?? null} />
       <div className={s.page}>
         {curator ? (
@@ -119,9 +121,10 @@ export default async function ItemPage({ params }: Props) {
               ) : null}
             </dl>
             {item.sizeNote ? <p className="sc-meta">{item.sizeNote}</p> : null}
-            <a className={`sc-cta ${s.buy}`} href={item.buyUrl} target="_blank" rel="noopener noreferrer">
-              {item.buyLabel ?? "去商家页面购买"}
-            </a>
+            <div className={s.buy}>
+              <QuickTryButton item={item} size="lg" className={s.try} />
+              <AddToBag itemId={item.id} sizes={item.sizes ?? []} />
+            </div>
           </div>
         </section>
 
@@ -168,6 +171,6 @@ export default async function ItemPage({ params }: Props) {
           </section>
         ) : null}
       </div>
-    </>
+    </QuickTryonProvider>
   );
 }

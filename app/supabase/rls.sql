@@ -72,6 +72,9 @@ revoke all on table public.scene_render from anon, authenticated;
 -- 每用户每日调用计数（usage_counter，迁移 0006，D64 防滥用与花费上限）：只由服务端读写，不对 Data API 开放。
 alter table public.usage_counter enable row level security;
 revoke all on table public.usage_counter from anon, authenticated;
+-- 购物袋（bag_item，迁移 0007，D67）：本人加入购物袋的单品与尺码，只由服务端按当前登录用户读写，不对 Data API 开放。
+alter table public.bag_item enable row level security;
+revoke all on table public.bag_item from anon, authenticated;
 
 -- 5. 建项目时勾选“Enable automatic RLS”会生成 public.rls_auto_enable()（SECURITY DEFINER 的事件触发器函数）。
 --    它只该由建表事件触发，收回 Data API 角色的调用权限；不影响自动开启 RLS。

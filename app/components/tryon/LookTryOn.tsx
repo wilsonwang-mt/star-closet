@@ -117,6 +117,25 @@ export function TryOnRowAction({ t, item }: { t: LookTryon; item: TryOnItem }) {
   );
 }
 
+/** 试衣间卡片上的“整套试穿”（D67）：醒目的金色主按钮；把这一套可上身的单品依次穿到形象上。 */
+export function WearAllButton({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
+  const n = wearableInOrder(items).length;
+  if (!t.enabled || n === 0) return null;
+  const running = !!t.chain;
+  return (
+    <button
+      type="button"
+      className={`sc-cta ${s.wearAll}`}
+      disabled={!!t.pending}
+      onClick={running ? t.openPanel : () => void t.wearAll()}
+      aria-haspopup="dialog"
+    >
+      <HangerIcon size={16} />
+      {running ? `正在穿上 ${t.chain!.step}/${t.chain!.total}` : n > 1 ? `整套试穿（${n} 件）` : "试穿这一套"}
+    </button>
+  );
+}
+
 /** 卡片上的“穿搭进度”入口：有试穿结果或正在穿时出现，点开面板。 */
 export function TryOnPeek({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
   const elapsed = useElapsed(t.pending?.startedAt ?? null);
@@ -133,7 +152,11 @@ export function TryOnPeek({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
       <span className={s.peekText}>
         <span className="sc-kicker">On You</span>
         <span className={s.peekTitle}>
-          {pendingItem ? `正在为你穿上 ${cleanName(pendingItem.name)}` : wornCount ? `已穿上 ${wornCount} 件` : "从你的照片开始"}
+          {pendingItem
+            ? t.chain
+              ? `正在穿上 ${t.chain.step}/${t.chain.total}：${cleanName(pendingItem.name)}`
+              : `正在为你穿上 ${cleanName(pendingItem.name)}`
+            : wornCount ? `已穿上 ${wornCount} 件` : "从你的照片开始"}
         </span>
         <span className="sc-meta">
           {t.pending
@@ -368,7 +391,8 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
                         <img className={s.waitGarment} src={pendingItem.image} alt="" />
                       ) : null}
                       <p className={s.waitKicker} role="status">
-                        正在为你穿上 <span className={s.waitName}>{pendingItem ? cleanName(pendingItem.name) : ""}</span>
+                        {t.chain ? `正在穿上 ${t.chain.step}/${t.chain.total}：` : "正在为你穿上 "}
+                        <span className={s.waitName}>{pendingItem ? cleanName(pendingItem.name) : ""}</span>
                       </p>
                       <p className={s.waitTime} aria-live="polite">
                         {t.pending ? stageLabel(t.pending.stage, t.pending.queuePosition) : ""} · {fmtElapsed(elapsed)}
@@ -396,7 +420,9 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
             {/* 固定两行（说明 + 操作），切换选中或开始生成时高度不变，面板不跳动 */}
             <div className={s.stageBar}>
               <span className="sc-meta">
-                {t.pending
+                {t.chain
+                  ? `整套试穿 · 第 ${t.chain.step} 件，共 ${t.chain.total} 件`
+                  : t.pending
                   ? "可以先关掉，穿好后会出现在这一套里"
                   : t.selected
                     ? "下一件穿在这一张上"
@@ -550,7 +576,11 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
               </p>
             ) : null}
             <div className={`${base.actions} ${queuedItem ? s.actionsBar : ""}`}>
-              {queuedItem ? (
+              {t.chainReady && !t.pending ? (
+                <button type="button" className="sc-cta" disabled={!ready} onClick={() => void t.wearAll()}>
+                  整套试穿（{t.chainReady.length} 件）
+                </button>
+              ) : queuedItem ? (
                 <button type="button" className="sc-cta" disabled={!ready} onClick={t.startQueued}>
                   {t.error ? "再试一次" : `穿上 ${cleanName(queuedItem.name)}`}
                 </button>

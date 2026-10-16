@@ -108,12 +108,14 @@
   text-decoration: none;
   border-bottom: 0.5px solid currentColor;
 }
+/* 一键试穿（金色主按钮，首屏可见）+ 尺码与加入购物袋（D67，替代外链购买） */
 .buy {
   margin-top: auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
+  display: grid;
+  gap: 12px;
+}
+.try {
+  width: 100%;
 }
 
 .block {

@@ -184,3 +184,6 @@
   .rowAction:not(:disabled):active, .peek:active, .frameBtn:not(:disabled):active, .pieceBtn:not(:disabled):active { transform: none; }
   .waitBlur { transform: none; }
 }
+
+/* 试衣间整套试穿（D67）：主按钮尺寸，移动端易点 */
+.wearAll { width: 100%; min-height: 52px; gap: 10px; font-size: 14px; letter-spacing: .12em; }
