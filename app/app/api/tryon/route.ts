@@ -1,14 +1,16 @@
+import { after } from "next/server";
 import { readBodyLimited } from "@/lib/avatar/http";
 import { json, withTryonUser } from "@/lib/tryon/http";
 import { createTryon, TryonError, type TryonInput } from "@/lib/tryon/service";
 
-// 发起试穿，服务端整体 175 秒超时。请求体（首次试穿带 consent: true 记录同意）：
-// - 逐件（试衣间主路径）：{ lookId 或 outfitId, itemIds: [一件], baseTryonId? }——只穿这一件，调用一次试穿模型（默认 nano-banana，失败回退 Kolors）。
-//   baseTryonId 必须是本人一张成功的试穿结果，否则 404（不区分不存在与不属于）；不传则穿在本人形象上（数字分身正面照优先，否则正面照）。
-// - 整套（旧调用方式，保留兼容）：{ lookId } 或 { outfitId, itemIds: [多件] }——上装 → 下装 → 外套（或 连衣裙 → 外套）依次叠加。
-// 返回 TryonView：kind（item / outfit）、wornItemId（这次穿上的单品）、baseTryonId（在哪张结果上穿，null 为正面照）、
-// appliedItemIds / applied（结果图上穿着的单品）等。
-export const maxDuration = 180;
+// 发起试穿：只提交到 fal 队列就返回（D62），前端再轮询 GET /api/tryon/<id>。请求体（首次试穿带 consent: true 记录同意）：
+// - 逐件（试衣间主路径）：{ lookId 或 outfitId, itemIds: [一件], baseTryonId? }——先提交 performance 立刻出图，
+//   quality 在响应之后提交（after），好了以后替换。同一底图 + 同一单品命中缓存时直接返回已有的那条。
+//   baseTryonId 必须是本人一张成功的试穿结果，否则 404（不区分不存在与不属于）；不传则穿在本人正面照上。
+// - 预热：{ lookId, itemIds: [一件], prewarm: true }——上传正面照后提前跑这一件的 performance，用户点“试穿”时命中缓存。
+// - 整套（旧调用方式，保留兼容）：{ lookId } 或 { outfitId, itemIds: [多件] }——上装 → 下装 → 外套（或 连衣裙 → 外套）依次叠加，mode=balanced。
+// 返回 TryonView：stage（queued / generating / refining / done / failed）、refining、kind、wornItemId、baseTryonId、appliedItemIds 等。
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   return withTryonUser(async (userId) => {
@@ -25,8 +27,9 @@ export async function POST(req: Request) {
       outfitId: typeof body.outfitId === "string" ? body.outfitId : null,
       itemIds: Array.isArray(body.itemIds) ? body.itemIds.filter((x): x is string => typeof x === "string") : [],
       baseTryonId: typeof body.baseTryonId === "string" && body.baseTryonId ? body.baseTryonId : null,
+      prewarm: body.prewarm === true,
       consent: body.consent === true,
     };
-    return json(await createTryon(userId, input), 201);
+    return json(await createTryon(userId, input, (task) => after(task)), 201);
   });
 }

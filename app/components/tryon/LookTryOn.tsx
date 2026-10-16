@@ -9,7 +9,7 @@ import { reducedFade, springs } from "@/lib/motion";
 import { wearableInOrder } from "@/lib/tryon/plan";
 import type { TryonView } from "@/lib/tryon/service";
 import type { TryOnItem } from "./TryOn";
-import { cleanName, CloseIcon, HangerIcon } from "./shared";
+import { cleanName, CloseIcon, HangerIcon, stageLabel } from "./shared";
 import type { LookTryon } from "./useLookTryon";
 import base from "./TryOn.module.css";
 import s from "./LookTryOn.module.css";
@@ -18,8 +18,9 @@ import s from "./LookTryOn.module.css";
 // 都没有时引导去 /profile/avatar 建立形象（仍保留直接上传正面照作兜底）。
 // - 卡片上每件可上身的单品（上装、下装、外套、连衣裙）有“试穿这件”；鞋、包、配饰不出现这个按钮。
 // - 面板：舞台（正在看的那张）+ 穿搭进度（正面照 → 第 1 件 → 第 2 件……，点哪张看哪张，下一件就穿在那张上）+ 这一套的单品。
-// - 生成中：底图压暗虚化，光束扫过，写明正在穿上哪一件与已用时间；可以关掉面板，穿好后出现在这一套里。
+// - 生成中：底图压暗虚化，光束扫过，写明正在穿上哪一件、真实阶段（排队中 / 生成中）与已用时间；可以关掉面板，穿好后出现在这一套里。
 // - 结果：新图在同一位置从上一张交叉淡入（只动 opacity / transform），穿上的单品标“已穿上”；减弱动态时只淡入淡出。
+// - 两段式（D62）：先出的一张标“正在细化”，清晰的一张好了以后在同一位置交叉淡入替换；细化中也可以接着穿下一件。
 
 const EASE_CINE = [0.22, 0.61, 0.2, 1] as const;
 
@@ -134,7 +135,13 @@ export function TryOnPeek({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
         <span className={s.peekTitle}>
           {pendingItem ? `正在为你穿上 ${cleanName(pendingItem.name)}` : wornCount ? `已穿上 ${wornCount} 件` : "从你的照片开始"}
         </span>
-        <span className="sc-meta">{pendingItem ? `已用 ${fmtElapsed(elapsed)}` : `穿搭进度 · ${t.frames.length} 张`}</span>
+        <span className="sc-meta">
+          {t.pending
+            ? `${stageLabel(t.pending.stage, t.pending.queuePosition)} · 已用 ${fmtElapsed(elapsed)}`
+            : t.selected?.refining
+              ? "正在细化"
+              : `穿搭进度 · ${t.frames.length} 张`}
+        </span>
       </span>
       <Chevron />
     </button>
@@ -162,7 +169,9 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
   const baseFrame = t.pending?.baseId ? t.frames.find((f) => f.id === t.pending!.baseId) : null;
   const waitUrl = t.pending ? (baseFrame?.resultUrl ?? t.photoUrl) : null;
   const shownUrl = t.selected?.resultUrl ?? t.photoUrl;
-  const shownKey = t.selected ? t.selected.id : `photo:${t.photoUrl ?? ""}`;
+  // 细化后 mode 从 performance 变成 quality：key 跟着变，同一张原地交叉淡入成清晰的。
+  const shownKey = t.selected ? `${t.selected.id}:${t.selected.mode}` : `photo:${t.photoUrl ?? ""}`;
+  const refiningShown = !!t.selected?.refining && !t.pending;
   const ready = t.hasBase && (t.consented || t.agree) && !t.uploading;
   const baseAlt = t.isTwin ? "你的数字分身" : "你的正面全身照";
   const wornName = (f: TryonView) => {
@@ -323,6 +332,22 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
                 <button type="button" className={s.zoomHit} onClick={() => setZoom(true)} aria-label="放大查看" />
               ) : null}
               {shownUrl && !t.selected && !t.pending ? <span className={base.stageLabel}>You</span> : null}
+              <AnimatePresence>
+                {refiningShown ? (
+                  <motion.span
+                    key="refine"
+                    className={s.refineChip}
+                    role="status"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0, transition: { duration: 0.4, delay: 0.3 } }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <span className={s.pulse} aria-hidden="true" />
+                    正在细化
+                  </motion.span>
+                ) : null}
+              </AnimatePresence>
 
               <AnimatePresence>
                 {t.pending ? (
@@ -345,11 +370,11 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
                       <p className={s.waitKicker} role="status">
                         正在为你穿上 <span className={s.waitName}>{pendingItem ? cleanName(pendingItem.name) : ""}</span>
                       </p>
-                      <p className={s.waitTime} aria-hidden="true">
-                        {fmtElapsed(elapsed)}
+                      <p className={s.waitTime} aria-live="polite">
+                        {t.pending ? stageLabel(t.pending.stage, t.pending.queuePosition) : ""} · {fmtElapsed(elapsed)}
                       </p>
                       <AnimatePresence>
-                        {elapsed >= 50 ? (
+                        {elapsed >= 30 ? (
                           <motion.p
                             key="slow"
                             className={s.waitNote}
@@ -445,6 +470,7 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
                           <span className={s.frameImg}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img className={s.frameShot} src={f.resultUrl!} alt="" onError={() => t.drop(f.id)} />
+                            {f.refining ? <span className={s.frameRefine} aria-hidden="true" /> : null}
                             {worn?.image ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img className={s.frameGarment} src={worn.image} alt="" />

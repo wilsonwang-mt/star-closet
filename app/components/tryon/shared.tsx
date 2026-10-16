@@ -1,10 +1,13 @@
 "use client";
 
-// 试穿组件共用的小工具：照片压缩、错误读取、图片预解码、名称清理与衣架图标。
+import type { TryonStage, TryonView } from "@/lib/tryon/service";
 
-const MAX_EDGE = 1600;
+// 试穿组件共用的小工具：照片压缩、轮询、错误读取、图片预解码、名称清理与衣架图标。
 
-/** 在本机压缩到最长边 1600px 并重新编码为 JPEG（顺带去掉 EXIF），服务端还会再剥离一次。 */
+// FASHN 输出 864×1296，底图再大没有收益，只多传字节（D62）。这张照片同时是 3D 形象流程的正面照。
+const MAX_EDGE = 1296;
+
+/** 在本机压缩到最长边 1296px 并重新编码为 JPEG（顺带去掉 EXIF），服务端还会再剥离一次。 */
 export async function compress(file: File): Promise<Blob> {
   const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
   const scale = Math.min(1, MAX_EDGE / Math.max(bmp.width, bmp.height));
@@ -18,6 +21,48 @@ export async function compress(file: File): Promise<Blob> {
   const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.9));
   if (!blob) throw new Error("encode failed");
   return blob;
+}
+
+export const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+export type Polled = { kind: "ok"; view: TryonView } | { kind: "gone" } | { kind: "error" };
+
+/** 轮询一次试穿进度：404 视为已不存在；网络错误与其他状态交给调用方重试。 */
+export async function fetchView(id: string): Promise<Polled> {
+  const res = await fetch(`/api/tryon/${encodeURIComponent(id)}`, { cache: "no-store" }).catch(() => null);
+  if (res?.status === 404) return { kind: "gone" };
+  if (!res?.ok) return { kind: "error" };
+  const view = (await res.json().catch(() => null)) as TryonView | null;
+  return view ? { kind: "ok", view } : { kind: "error" };
+}
+
+/** 等到出第一张图（或失败）；每次拿到新进度时回调 onStage。 */
+export async function waitFirst(view: TryonView, opts: { alive: () => boolean; onStage?: (v: TryonView) => void; pollMs?: number }) {
+  let v = view;
+  let misses = 0;
+  let first = true;
+  while (opts.alive() && v.status === "processing" && !v.resultUrl) {
+    await sleep(first ? 400 : (opts.pollMs ?? 800));
+    first = false;
+    const r = await fetchView(v.id);
+    if (r.kind === "gone") return { ...v, status: "failed", stage: "failed" as const, error: "没有找到这次试穿，请再试一次" };
+    if (r.kind === "error") {
+      if (++misses >= 8) return { ...v, status: "failed", stage: "failed" as const, error: "网络异常，请稍后再试" };
+      continue;
+    }
+    misses = 0;
+    v = r.view;
+    opts.onStage?.(v);
+  }
+  return v;
+}
+
+/** 等待中的阶段文案。sending：请求还没回来。 */
+export function stageLabel(stage: TryonStage | "sending", queuePosition?: number | null) {
+  if (stage === "sending") return "正在提交";
+  if (stage === "queued") return queuePosition ? `排队中 · 前面 ${queuePosition} 位` : "排队中";
+  if (stage === "refining") return "正在细化";
+  return "生成中";
 }
 
 export async function readError(res: Response | null, fallback: string) {
