@@ -30,38 +30,21 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 
   .content { position: absolute; inset: 0; display: flex; flex-direction: column; padding: var(--pad); }
-  .meta { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--latin); letter-spacing: .32em; font-size: var(--meta); color: var(--ink-2); }
-  .meta b { font-weight: 400; color: var(--champ); }
+  .h1 { margin-top: var(--gap-top); font-weight: 700; font-size: var(--h1); line-height: 1.3; letter-spacing: .04em; text-shadow: 0 4px 40px rgba(0,0,0,.6); }
+  .h1 .num { font-family: var(--latin); font-weight: 400; font-size: 1.15em; color: var(--champ); padding: 0 .04em; }
+  .footer { margin-top: auto; }
+  .slogan { font-size: var(--slogan); font-weight: 400; color: var(--ink); letter-spacing: .14em; line-height: 1.4; }
+  .event { margin-top: 1.1em; font-size: var(--foot-s); color: var(--champ); letter-spacing: .22em; white-space: nowrap; }
+  .event .latin { font-family: var(--latin); letter-spacing: .16em; }
+  .event .dot { color: var(--ink-3); padding: 0 .5em; }
 
-  .headline { margin-top: var(--gap-top); }
-  .h1 { font-weight: 700; font-size: var(--h1); line-height: 1.28; letter-spacing: .02em; }
-  .h1 .num { font-family: var(--latin); font-weight: 400; font-size: 1.18em; color: var(--champ); padding: 0 .06em; }
-  .quote { margin-top: .9em; font-weight: 300; font-size: var(--h2); line-height: 1.5; color: var(--ink); opacity: .92; }
-  .ask { margin-top: 1.3em; font-weight: 300; font-size: var(--ask); line-height: 1.6; color: var(--ink-2); }
-  .stat { margin-top: 1.1em; display: none; }
-  .stat .big { font-family: var(--latin); font-size: var(--stat); line-height: 1; color: var(--champ); }
-  .stat .src { margin-top: .6em; font-size: var(--src); color: var(--ink-3); letter-spacing: .04em; }
-
-  .footer { margin-top: auto; border-top: 1px solid var(--rule); padding-top: var(--foot-pad); display: grid; grid-template-columns: 1fr auto; gap: var(--foot-gap); align-items: end; }
-  .q { font-size: var(--foot-q); color: var(--ink-2); font-weight: 300; letter-spacing: .08em; }
-  .slogan { margin-top: .45em; font-size: var(--slogan); font-weight: 700; color: var(--ink); letter-spacing: .04em; line-height: 1.3; }
-  .slogan::before { content: "—— "; color: var(--champ); font-weight: 300; }
-  .event { text-align: right; font-size: var(--foot-s); line-height: 1.75; color: var(--ink-2); letter-spacing: .06em; white-space: nowrap; }
-  .event .date { font-family: var(--latin); font-size: 1.5em; color: var(--champ); letter-spacing: .08em; line-height: 1.3; }
-  .event .nova { color: var(--ink); }
-  .event .nova span { font-family: var(--latin); letter-spacing: .14em; }
-
-  /* 3:4 竖版 */
-  body.portrait { --w: 1080px; --h: 1440px; --pad: 72px 76px 68px; --meta: 18px; --gap-top: 64px;
-    --h1: 82px; --h2: 50px; --ask: 31px; --stat: 120px; --src: 18px;
-    --foot-pad: 30px; --foot-gap: 24px; --foot-q: 24px; --slogan: 44px; --foot-s: 20px; }
+  /* 3:4 竖版：居中，标题落在顶灯下 */
+  body.portrait { --w: 1080px; --h: 1440px; --pad: 0 72px 88px; --gap-top: 250px; --h1: 104px; --slogan: 44px; --foot-s: 19px; }
+  body.portrait .content { align-items: center; text-align: center; }
   /* 16:9 横版：文字放左侧 */
-  body.wide { --w: 1920px; --h: 1080px; --pad: 76px 96px 72px; --meta: 18px; --gap-top: 92px;
-    --h1: 84px; --h2: 50px; --ask: 30px; --stat: 120px; --src: 18px;
-    --foot-pad: 30px; --foot-gap: 40px; --foot-q: 24px; --slogan: 46px; --foot-s: 20px; }
-  body.wide .fade-top { inset: 0 auto 0 0; width: 70%; height: 100%; background: linear-gradient(90deg, rgba(11,13,16,.97) 0%, rgba(11,13,16,.85) 50%, transparent 100%); }
+  body.wide { --w: 1920px; --h: 1080px; --pad: 0 120px 96px; --gap-top: 230px; --h1: 108px; --slogan: 46px; --foot-s: 20px; }
+  body.wide .fade-top { inset: 0 auto 0 0; width: 70%; height: 100%; background: linear-gradient(90deg, rgba(11,13,16,.9) 0%, rgba(11,13,16,.6) 50%, transparent 100%); }
   body.wide .fade-bottom { height: 34%; }
-  body.wide .headline { max-width: 1060px; }
 </style>
 </head>
 <body>
@@ -72,23 +55,10 @@
   <div class="fade-bottom"></div>
   <div class="grain"></div>
   <div class="content">
-    <div class="meta"><span>NOVA&nbsp;·&nbsp;<b id="idx"></b>&nbsp;/&nbsp;03</span><span>10.17&nbsp;09:30</span></div>
-    <div class="headline">
-      <div class="h1" id="h1"></div>
-      <div class="quote" id="quote"></div>
-      <div class="stat" id="stat"><div class="big" id="statBig"></div><div class="src" id="statSrc"></div></div>
-      <div class="ask" id="ask"></div>
-    </div>
+    <div class="h1" id="h1"></div>
     <div class="footer">
-      <div>
-        <div class="q">解决方案是什么？</div>
-        <div class="slogan" id="slogan"></div>
-      </div>
-      <div class="event">
-        <div class="date">2026.10.17&nbsp;·&nbsp;09:30</div>
-        <div>imToken&nbsp;杭州</div>
-        <div class="nova"><span>Nova</span>&nbsp;新品发布会</div>
-      </div>
+      <div class="slogan" id="slogan"></div>
+      <div class="event"><span class="latin">2026.10.17&nbsp;09:30</span><span class="dot">·</span>imToken 杭州<span class="dot">·</span><span class="latin">Nova</span> 新品发布会</div>
     </div>
   </div>
 </div>
@@ -96,9 +66,7 @@
   const POSTERS = {
     1: {
       img: { portrait: "img/p1-portrait.jpg", wide: "img/p1-wide.jpg" },
-      h1: '第 <span class="num">7</span> 家店，<br>第 <span class="num">3</span> 个小时。',
-      quote: "“这款，没有你的码了。”",
-      ask: "你有多少个周末，花在了“再逛逛看”？",
+      h1: '第 <span class="num">7</span> 家店，<br>没有你的码。',
       slogan: "这一次，让衣橱走向你。",
     },
   };
@@ -107,18 +75,10 @@
   const f = q.get("f") || "portrait";
   const p = POSTERS[n];
   document.body.className = f;
-  document.getElementById("idx").textContent = n.padStart(2, "0");
   document.getElementById("media").style.backgroundImage = `url(${p.img[f]})`;
   if (p.mediaPos) document.getElementById("media").style.backgroundPosition = p.mediaPos[f] || "center";
   document.getElementById("h1").innerHTML = p.h1;
-  document.getElementById("quote").textContent = p.quote;
-  document.getElementById("ask").textContent = p.ask;
   document.getElementById("slogan").textContent = p.slogan;
-  if (p.stat) {
-    document.getElementById("stat").style.display = "block";
-    document.getElementById("statBig").innerHTML = p.stat.big;
-    document.getElementById("statSrc").textContent = p.stat.src;
-  }
 </script>
 </body>
 </html>
