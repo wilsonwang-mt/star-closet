@@ -1,0 +1,56 @@
+<!doctype html><meta charset="utf-8"><title>Decart 实时换装实测</title>
+<style>body{margin:0;background:#0b0d10;color:#f4f2ed;font:14px -apple-system,PingFang SC,sans-serif}
+.row{display:flex;gap:12px;padding:12px}.col{flex:1}.col video{width:100%;aspect-ratio:3/4;background:#222;border-radius:12px;object-fit:cover}
+h3{margin:4px 0;font-weight:400;color:#c9a96e}#log{padding:0 12px;white-space:pre-wrap;font:12px ui-monospace,monospace;color:#b9b2a6}img.ref{height:120px;border-radius:8px;background:#fff}</style>
+<div class="row"><div class="col"><h3>输入：模拟摄像头（虚构模特视频）</h3><video id="src" muted playsinline loop></video></div>
+<div class="col"><h3>输出：Decart 实时换装</h3><video id="out" muted playsinline autoplay></video></div>
+<div style="width:140px"><h3>参考商品</h3><img id="ref" class="ref"></div></div><div id="log"></div>
+<script src="msgpack.js"></script>
+<script>
+const q = new URLSearchParams(location.search);
+const SRC = q.get("src") || "src.mp4", REF = q.get("ref") || "ref-I001.jpg", MAX = Number(q.get("sec") || 40), PROMPT = q.get("prompt");
+const L = (m) => { const t = ((performance.now() - T0) / 1000).toFixed(2); log.textContent += `[${t}s] ${m}\n`; window.__log = log.textContent; };
+const T0 = performance.now(); window.__stats = { firstFrameSec: null, frames: 0, fps: null, state: "init", errors: [] };
+ref.src = REF;
+(async () => {
+  const src = document.getElementById("src"); src.src = SRC; await src.play();
+  const stream = src.captureStream(); await new Promise(r => setTimeout(r, 300));
+  const b64 = await fetch(REF).then(r => r.blob()).then(b => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result.split(",")[1]); fr.readAsDataURL(b); }));
+  const token = await (await fetch("/token", { method: "POST" })).text();
+  L("token ok, length " + token.length);
+  const ws = new WebSocket("wss://fal.run/decart/lucy2-vton/realtime?fal_jwt_token=" + encodeURIComponent(token));
+  ws.binaryType = "arraybuffer";
+  let pc = null; const send = (m) => ws.readyState === 1 && ws.send(q.get("enc") === "json" ? JSON.stringify(m) : MessagePack.encode(m));
+  const stopAll = (why) => { L("stop: " + why); __stats.state = "stopped:" + why; try { pc && pc.close(); } catch {} try { ws.close(); } catch {} };
+  setTimeout(() => stopAll("max " + MAX + "s"), MAX * 1000);
+  let pendingIce = [], answered = false, offered = false;
+  const makeOffer = async () => {
+    if (offered) return; offered = true;
+    const off = await pc.createOffer(); await pc.setLocalDescription(off); send({ type: "offer", sdp: off.sdp }); L("offer sent");
+  };
+  const setupPc = (servers) => {
+    pc = new RTCPeerConnection({ iceServers: servers && servers.length ? servers : [{ urls: "stun:stun.l.google.com:19302" }] });
+    stream.getVideoTracks().forEach(t => pc.addTrack(t, stream));
+    pc.ontrack = (e) => { L("remote track"); out.srcObject = e.streams[0]; };
+    pc.onicecandidate = (e) => send({ type: "ice-candidate", candidate: e.candidate });
+    pc.onconnectionstatechange = () => { L("pc " + pc.connectionState); __stats.state = "pc-" + pc.connectionState; };
+  };
+  ws.onopen = () => { L("ws open"); __stats.state = "ws-open"; setupPc(null); makeOffer(); };
+  ws.onmessage = async (e) => {
+    let m; try { m = typeof e.data === "string" ? JSON.parse(e.data) : MessagePack.decode(new Uint8Array(e.data)); } catch (err) { L("undecodable msg " + err.message); return; }
+    if (m.type !== "ice-candidate") L("msg " + JSON.stringify(m).slice(0, 160));
+    if (m.type === "error" || m.type === "x-fal-error") __stats.errors.push(m.error + ":" + (m.reason || ""));
+    if (m.type === "iceservers" && pc && m.iceservers) { try { pc.setConfiguration({ iceServers: m.iceservers }); } catch {} }
+    if (m.type === "set_image_ack") L("set_image_ack success=" + m.success + " " + (m.error || ""));
+    if (m.type === "prompt_ack") L("prompt_ack success=" + m.success);
+    if (m.type === "answer") { await pc.setRemoteDescription({ type: "answer", sdp: m.sdp }); answered = true; pendingIce.forEach(c => send({ type: "ice-candidate", candidate: c })); L("answer applied, flushed " + pendingIce.length + " ice"); pendingIce = [];
+      send({ type: "set_image", image_data: b64, ...(PROMPT ? { prompt: PROMPT } : {}) }); L("set_image sent");
+      if (PROMPT) { send({ type: "prompt", prompt: PROMPT, enhance_prompt: true }); } }
+    if (m.type === "ice-candidate" && m.candidate && pc) { try { await pc.addIceCandidate(m.candidate); } catch {} }
+  };
+  ws.onclose = (e) => L("ws close " + e.code + " " + e.reason);
+  ws.onerror = () => L("ws error");
+  const tick = (now, meta) => { __stats.frames++; if (__stats.firstFrameSec === null) { __stats.firstFrameSec = +((performance.now() - T0) / 1000).toFixed(2); L("first output frame"); } __stats.fps = +(__stats.frames / ((performance.now() - T0) / 1000 - __stats.firstFrameSec + 1e-3)).toFixed(1); __stats.size = `${out.videoWidth}x${out.videoHeight}`; out.requestVideoFrameCallback(tick); };
+  out.requestVideoFrameCallback(tick);
+})().catch(e => { L("fatal " + e.message); __stats.errors.push(e.message); });
+</script>
