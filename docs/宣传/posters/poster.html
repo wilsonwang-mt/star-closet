@@ -36,7 +36,7 @@
   .vblock { position: absolute; top: var(--vtop); right: var(--vright); writing-mode: vertical-rl; text-orientation: mixed; }
   .h1 { font-weight: 900; font-size: var(--h1); line-height: 1.06; letter-spacing: .02em; text-shadow: 0 6px 60px rgba(0,0,0,.7); }
   .h1 .num { text-combine-upright: all; font-family: var(--latin); font-weight: 700; font-size: 1.12em; color: var(--champ); }
-  .h1 .mark { color: var(--champ); }
+  .h1 .mark { color: var(--champ); writing-mode: horizontal-tb; display: inline-block; width: 1em; text-align: center; line-height: 1; }
   .lead { font-size: var(--lead); font-weight: 700; line-height: 1.2; letter-spacing: .14em; color: var(--ink); margin-block-end: var(--lead-gap); text-shadow: 0 4px 30px rgba(0,0,0,.7); }
 
   /* 左上：倒计时 */
@@ -82,7 +82,7 @@
       img: { portrait: "img/p1-portrait.jpg", wide: "img/p1-wide.jpg" },
       hours: 15,
       lead: "你的周末，为什么总耗在",
-      h1: '没有结果的<br>试衣间<span class="mark">？</span>',
+      h1: '没有结果的<br>试衣间<span class="mark">?</span>',
       flip: true,
       slogan: "你以为逛更多的店，就能找到……",
     },
