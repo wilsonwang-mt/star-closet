@@ -16,7 +16,8 @@ import { AvatarError, removeOlderResults, requireTwinConsent } from "./service";
 // 2. 用户单独同意由 Anthropic（Claude）分析照片且配置了 ANTHROPIC_API_KEY 时，Claude 给出一句体型概括与结构化外观特征
 //    （发型、发色、脸型、肤色、身材类型、肩/腰/臀/腿相对比例、是否戴眼镜）；否则跳过。
 // 3. fal.ai 上的 nano-banana-pro/edit 以该用户全部照片为参考图，并行生成正面、四分之三侧面、背面三张标准形象照
-//    （统一素色贴身基础服装、浅米色影棚背景、自然光）。正面必须成功；侧面/背面失败允许为空。每张失败重试一次。
+//    （统一素色贴身基础服装、浅米色影棚背景、自然光）。参考图按 正脸、侧脸、全身正面、全身侧面、半身/其他 排序，
+//    压到长边 1536、JPEG q90 的 data URI。正面必须成功；侧面/背面失败允许为空。每张失败重试一次。
 // 4. 结果存私有存储 `<userId>/avatars/twin-<jobId>-front.jpg` 等，写一条 avatar_job（provider = twin，result_images 存 key 与分析结果）。
 //    新分身成功后才删除旧分身；一键删除（deleteAll）随用户前缀清理全部文件并清空 result_images。
 // 试穿（另一个任务）通过 getTwin / readTwinImageDataUri / getIdentityRefs 使用这组照片。
@@ -265,28 +266,69 @@ export function normalizeTraits(out: ModelTraits): { summary: string | null; tra
 }
 
 // ---------- 提示词 ----------
+// 2026-10-17 指挥台用真实 key 实测达标的模板（脸、发型、身材与参考一致，三张并行约 40 秒）。
+// Claude 分析得到的外观描述只作为补充短句附在 “Reproduce …” 一句之后，不覆盖模板约束。
+
+/** 参考图的顺序：正脸、侧脸、全身正面、全身侧面，最后是半身或其他。 */
+export const REFERENCE_ORDER = ["face", "extra", "front", "side", "back"] as const;
+
+const ROLE: Record<string, (pr: string) => string> = {
+  face: (pr) => `${pr} frontal face close-up`,
+  extra: (pr) => `${pr} side profile`,
+  front: (pr) => `${pr} full body`,
+  side: (pr) => `${pr} full body`,
+  back: (pr) => `an additional photo of ${pr === "her" ? "her" : "him"}`,
+};
+
+/** “Reference 1 is her frontal face close-up, reference 2 her side profile, references 3 and 4 her full body.” */
+export function referenceSentence(slots: readonly string[], pr: "her" | "his"): string {
+  const groups: { role: string; idx: number[] }[] = [];
+  slots.forEach((slot, i) => {
+    const role = (ROLE[slot] ?? ROLE.back)(pr);
+    const last = groups.at(-1);
+    if (last && last.role === role) last.idx.push(i + 1);
+    else groups.push({ role, idx: [i + 1] });
+  });
+  const list = (idx: number[]) => (idx.length === 1 ? `${idx[0]}` : `${idx.slice(0, -1).join(", ")} and ${idx.at(-1)}`);
+  const parts = groups.map((g, k) => {
+    const noun = g.idx.length === 1 ? "reference" : "references";
+    const head = `${k === 0 ? noun[0].toUpperCase() + noun.slice(1) : noun} ${list(g.idx)}`;
+    return k === 0 ? `${head} ${g.idx.length === 1 ? "is" : "are"} ${g.role}` : `${head} ${g.role}`;
+  });
+  return `${parts.join(", ")}.`;
+}
 
 const OUTFIT: Record<TwinGender, string> = {
-  female: "a plain white fitted short-sleeve T-shirt, light grey slim-fit full-length trousers and white flat shoes",
-  male: "a plain white short-sleeve T-shirt, light grey straight-leg full-length trousers and white sneakers",
+  female: "a plain white fitted short-sleeve crew-neck t-shirt, slim light grey ankle-length trousers, plain white flat sneakers",
+  male: "a plain white short-sleeve crew-neck t-shirt, light grey straight-leg trousers, plain white sneakers",
 };
 
-const VIEW: Record<TwinAngle, string> = {
-  front: "Front view: the person faces the camera directly and looks into the lens.",
-  side: "Three-quarter view: the body is turned about 45 degrees from the camera, the face still clearly visible in three-quarter profile.",
-  back: "Back view: the person stands facing away from the camera, showing the back of the head, hairstyle and body from behind.",
-};
+function view(angle: TwinAngle, pr: "her" | "his"): string {
+  if (angle === "front") return "standing facing the camera directly, front view";
+  if (angle === "side") return `standing in a three-quarter view, body turned about 45 degrees to ${pr} left, face still clearly visible`;
+  return "standing with " + pr + " back to the camera, back view, head slightly turned so the hair is visible";
+}
 
-export function twinPrompt(angle: TwinAngle, gender: TwinGender, a: { descriptor?: string | null; glasses?: boolean | null } = {}): string {
+export function twinPrompt(
+  angle: TwinAngle,
+  gender: TwinGender,
+  a: { descriptor?: string | null; glasses?: boolean | null; slots?: readonly string[] } = {},
+): string {
+  const noun = gender === "female" ? "woman" : "man";
+  const pr = gender === "female" ? "her" : "his";
+  const obj = gender === "female" ? "her" : "him";
+  const subj = gender === "female" ? "she" : "he";
+  const slots = a.slots?.length ? a.slots : ["face", "extra", "front", "side"];
   return [
-    "All reference images show the same real person.",
-    "Create a photorealistic full-body studio photograph of exactly this person: keep the face, facial features, glasses (or no glasses), hairstyle, hair color, skin tone and body proportions identical to the reference photos.",
-    a.descriptor ? `Appearance notes: ${a.descriptor}` : "",
-    a.glasses === true ? "The person wears their glasses as in the references." : a.glasses === false ? "The person does not wear glasses." : "",
-    VIEW[angle],
-    "Natural relaxed standing pose with both arms hanging naturally at the sides (not a T-pose). The entire body is in frame from the top of the head to the feet, with a little space above the head and below the feet.",
-    `Wearing simple form-fitting basics: ${OUTFIT[gender]}. No accessories, no bag, no hat.`,
-    "Seamless light beige studio backdrop, soft even natural light, true-to-life colors, sharp focus, vertical 3:4 composition. No text, no logos, no watermark.",
+    `Studio full-body identity photo of the SAME ${noun} shown in the reference photos.`,
+    referenceSentence(slots, pr),
+    `Reproduce ${pr} identity exactly: identical face shape, eyes, eyelids, eyebrows, nose, lips, jawline, skin tone and skin texture, identical hairstyle, hair length, parting and hair color, and identical body shape, height proportions, shoulder width, waist, hips and leg length as in the full-body references.`,
+    a.descriptor ? `Additional notes: ${a.descriptor}` : "",
+    a.glasses ? "Wearing the same glasses as in the reference." : "",
+    `Do not beautify, slim or idealize ${obj}; ${subj} must be instantly recognizable as the same person.`,
+    `Pose: ${view(angle, pr)}, natural relaxed standing posture, arms hanging naturally at ${pr} sides (not a T-pose), feet slightly apart, entire body visible from head to toe with some space above the head and below the feet.`,
+    `Wardrobe: ${OUTFIT[gender]}, no accessories, no logos.`,
+    "Seamless light warm-beige studio backdrop, soft even diffused daylight, subtle natural floor shadow, neutral white balance, photorealistic fashion catalog photography, sharp focus, 85mm lens look.",
   ]
     .filter(Boolean)
     .join(" ");
@@ -316,14 +358,23 @@ function falError(status: number): GenError {
   return new GenError(502, "生成服务暂时不可用，请稍后再试");
 }
 
-async function referenceUrl(key: string, mime: string): Promise<string> {
-  const storage = getStorage();
-  // Supabase 私有桶：15 分钟有效的签名 URL；本地存储没有可公开访问的地址，改用 data URI。
-  const signed = await storage.signedUrl(key, 900).catch(() => null);
-  if (signed) return signed;
-  const obj = await storage.get(key);
+/** 参考图：长边 1536、JPEG q90 的 data URI（指挥台实测参数）；sharp 不可用时原样转 data URI。 */
+export const REFERENCE_MAX_EDGE = 1536;
+
+async function referenceDataUri(key: string, mime: string): Promise<string> {
+  const obj = await getStorage().get(key);
   if (!obj) throw new AvatarError(409, "照片文件不存在，请重新上传");
-  return `data:${mime};base64,${Buffer.from(obj.bytes).toString("base64")}`;
+  try {
+    const { default: sharp } = await import("sharp");
+    const out = await sharp(obj.bytes)
+      .rotate()
+      .resize({ width: REFERENCE_MAX_EDGE, height: REFERENCE_MAX_EDGE, fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 90 })
+      .toBuffer();
+    return `data:image/jpeg;base64,${out.toString("base64")}`;
+  } catch {
+    return `data:${mime};base64,${Buffer.from(obj.bytes).toString("base64")}`;
+  }
 }
 
 async function generateOne(prompt: string, imageUrls: string[], signal: AbortSignal): Promise<Uint8Array> {
@@ -381,7 +432,7 @@ export async function generateTwin(userId: string, input: { gender?: unknown }, 
   try {
     const photos = (await livePhotos(userId)).filter((p, i, all) => all.findIndex((x) => x.slot === p.slot) === i);
     if (!hasRequiredSlots("twin", photos)) throw new AvatarError(400, requiredSlotsMessage("twin"));
-    const ordered = ["face", "front", "extra", "side", "back"]
+    const ordered = REFERENCE_ORDER
       .map((slot) => photos.find((p) => p.slot === slot))
       .filter((p): p is (typeof photos)[number] => !!p);
 
@@ -428,10 +479,11 @@ export async function generateTwin(userId: string, input: { gender?: unknown }, 
     if (!gender) throw new AvatarError(400, "请先选择形象性别");
 
     // 2. 三张并行生成
-    const imageUrls = await Promise.all(ordered.map((p) => referenceUrl(p.storageKey, p.mime)));
+    const imageUrls = await Promise.all(ordered.map((p) => referenceDataUri(p.storageKey, p.mime)));
+    const slots = ordered.map((p) => p.slot);
     const signal = AbortSignal.timeout(Math.max(10_000, deadline - Date.now()));
     const results = await Promise.allSettled(
-      TWIN_ANGLES.map((angle) => generateWithRetry(twinPrompt(angle, gender, { descriptor: analysis?.descriptor, glasses }), imageUrls, signal, deadline)),
+      TWIN_ANGLES.map((angle) => generateWithRetry(twinPrompt(angle, gender, { descriptor: analysis?.descriptor, glasses, slots }), imageUrls, signal, deadline)),
     );
     const front = results[0];
     if (front.status === "rejected") {

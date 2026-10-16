@@ -51,7 +51,7 @@ before(async () => {
     calls.push({ url, body });
     if (url === "https://fal.run/fal-ai/nano-banana-pro/edit") {
       const prompt = String(body?.prompt ?? "");
-      const angle = prompt.includes("Front view") ? "front" : prompt.includes("Three-quarter") ? "side" : "back";
+      const angle = prompt.includes("front view") ? "front" : prompt.includes("three-quarter view") ? "side" : "back";
       if (angle === failAngle && failTimes > 0) {
         failTimes--;
         return new Response("err", { status: 500 });
@@ -115,6 +115,15 @@ test("twinEnabled：FAL_KEY 且 AVATAR3D_PROVIDER 未设或为 twin；同意版�
   assert.deepEqual(parseConsentVersion(consentVersionFor("twin", false)), { thirdParty: "twin", bodyAnalysis: false });
 });
 
+test("referenceSentence：按实际参考图描述，连续的全身照合并", () => {
+  const { referenceSentence } = m.twin;
+  assert.equal(
+    referenceSentence(["face", "extra", "front", "side"], "her"),
+    "Reference 1 is her frontal face close-up, reference 2 her side profile, references 3 and 4 her full body.",
+  );
+  assert.equal(referenceSentence(["face", "front", "side", "back"], "his"), "Reference 1 is his frontal face close-up, references 2 and 3 his full body, reference 4 an additional photo of him.");
+});
+
 test("上传：数字分身模式收 face/front/extra/side/back，照片自上传起 30 天到期", async () => {
   await userWithPhotos("u-up", ["face", "front", "extra", "side", "back"]);
   const st = await m.service.getAvatarState("u-up");
@@ -130,10 +139,13 @@ test("generateTwin：分析 + 三张并行生成，存私有存储并可经契�
   assert.equal(fal.length, 3);
   for (const c of fal) {
     assert.equal((c.body!.image_urls as string[]).length, 3, "参考图为全部已上传照片");
-    assert.ok((c.body!.image_urls as string[]).every((u) => u.startsWith("data:image/png;base64,")));
+    assert.ok((c.body!.image_urls as string[]).every((u) => u.startsWith("data:image/jpeg;base64,")), "参考图压成 JPEG data URI");
     assert.equal(c.body!.aspect_ratio, "3:4");
     assert.equal(c.body!.resolution, "2K");
-    assert.match(String(c.body!.prompt), /white fitted short-sleeve T-shirt/);
+    assert.match(String(c.body!.prompt), /SAME woman/);
+    assert.match(String(c.body!.prompt), /Reference 1 is her frontal face close-up, reference 2 her side profile, reference 3 her full body\./);
+    assert.match(String(c.body!.prompt), /plain white fitted short-sleeve crew-neck t-shirt/);
+    assert.match(String(c.body!.prompt), /Wearing the same glasses as in the reference/);
     assert.match(String(c.body!.prompt), /thin round glasses/);
   }
 
@@ -166,7 +178,7 @@ test("重新生成：侧面失败一次会重试；成功后删除旧分身文�
   failAngle = "side";
   failTimes = 1;
   await m.twin.generateTwin("u1", { gender: "female" }, { analyze });
-  const sideCalls = calls.filter((c) => c.url.startsWith("https://fal.run/") && String(c.body?.prompt).includes("Three-quarter"));
+  const sideCalls = calls.filter((c) => c.url.startsWith("https://fal.run/") && String(c.body?.prompt).includes("three-quarter view"));
   assert.equal(sideCalls.length, 2);
   const now = (await m.twin.getTwin("u1"))!;
   assert.notEqual(now.jobId, old.jobId);
@@ -207,7 +219,10 @@ test("未同意照片分析：不调用分析；未选性别时报错", async ()
   assert.equal(t.summary, null);
   assert.equal(t.gender, "male");
   const prompt = String(calls.filter((c) => c.url.startsWith("https://fal.run/")).at(-1)?.body?.prompt);
-  assert.match(prompt, /white sneakers/);
+  assert.match(prompt, /SAME man/);
+  assert.match(prompt, /plain white sneakers/);
+  assert.match(prompt, /Reference 1 is his frontal face close-up, reference 2 his full body\./);
+  assert.doesNotMatch(prompt, /glasses/);
 });
 
 test("缺正脸照不能生成；未同意第三方不能生成", async () => {
