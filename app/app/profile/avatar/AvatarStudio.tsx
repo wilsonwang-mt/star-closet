@@ -108,8 +108,10 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
 
   // 生成中每 2 秒查询一次进度；查询本身会推进任务状态。
   const jobId = job?.id;
+  // 数字分身没有排队任务（同步生成），由 TwinStudio 自己处理“生成中”的恢复。
+  const twinJob = job?.provider === "twin";
   useEffect(() => {
-    if (!jobId || !active) return;
+    if (!jobId || !active || twinJob) return;
     let stop = false;
     const t = setInterval(async () => {
       const res = await fetch(`/api/avatar/jobs/${jobId}`, { cache: "no-store" }).catch(() => null);
@@ -129,7 +131,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
       stop = true;
       clearInterval(t);
     };
-  }, [jobId, active, setJob]);
+  }, [jobId, active, twinJob, setJob]);
 
   async function giveConsent() {
     setBusy("consent");

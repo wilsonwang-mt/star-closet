@@ -249,3 +249,21 @@ test("删除这个形象 / 一键删除：清掉分身图片与记录", async ()
   assert.ok(rows.every((r) => r.resultImages === null));
   assert.equal((await m.service.getAvatarState("u1")).twin, null);
 });
+
+test("生成中的分身作业：轮询 tickJob 不会把它改成失败；超过 150 秒视为中断；进行中再次生成返回 409", async () => {
+  const { db, schema } = m.db;
+  await db.insert(schema.user).values({ id: "u4", name: "测试", email: "u4@example.test" });
+  await m.service.recordConsent("u4", { store: true, thirdParty: true, offerVersion: m.providers.offerVersion() });
+  const id = "11111111-2222-4333-8444-555555555555";
+  await db.insert(schema.avatarJob).values({ id, userId: "u4", status: "processing", provider: "twin" });
+  const v = await m.service.tickJob("u4", id);
+  assert.equal(v?.status, "processing");
+  await assert.rejects(m.twin.generateTwin("u4", { gender: "female" }), /正在生成/);
+  await db
+    .update(schema.avatarJob)
+    .set({ updatedAt: new Date(Date.now() - 200_000), createdAt: new Date(Date.now() - 200_000) })
+    .where(eq(schema.avatarJob.id, id));
+  const st = await m.service.getAvatarState("u4");
+  assert.equal(st.job?.status, "failed");
+  assert.match(st.job?.error?.message ?? "", /中断/);
+});

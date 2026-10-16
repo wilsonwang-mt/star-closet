@@ -9,7 +9,7 @@ import { cleanSummary } from "./body";
 import { sniffImage } from "./image";
 import { BODY_ANALYSIS_NAME, hasRequiredSlots, requiredSlotsMessage } from "./providers";
 import { setPhotoExpiry } from "./purge";
-import { AvatarError, removeOlderResults, requireTwinConsent } from "./service";
+import { AvatarError, removeOlderResults, requireTwinConsent, TWIN_STALE_MS } from "./service";
 
 // 数字分身（D63）：不做 3D。
 // 1. 用户上传 2–5 张照片（正脸、全身正面必传；侧脸、全身侧面、半身/其他选传）。
@@ -424,6 +424,12 @@ export type GenerateDeps = { analyze?: TraitsCall };
 export async function generateTwin(userId: string, input: { gender?: unknown }, deps: GenerateDeps = {}): Promise<{ jobId: string }> {
   const { consent } = await requireTwinConsent(userId);
   if (inflight.has(userId)) throw new AvatarError(409, "正在生成你的形象，请稍候");
+  // 进程内的 inflight 只管同一实例；多实例部署时再看数据库里是否有仍在进行的生成。
+  const running = await db
+    .select({ updatedAt: schema.avatarJob.updatedAt })
+    .from(schema.avatarJob)
+    .where(and(eq(schema.avatarJob.userId, userId), eq(schema.avatarJob.provider, "twin"), eq(schema.avatarJob.status, "processing")));
+  if (running.some((r) => Date.now() - r.updatedAt.getTime() < TWIN_STALE_MS)) throw new AvatarError(409, "正在生成你的形象，请稍候");
   inflight.add(userId);
   const started = Date.now();
   const deadline = started + TOTAL_BUDGET_MS;

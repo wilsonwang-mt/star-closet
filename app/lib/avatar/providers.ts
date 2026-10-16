@@ -216,13 +216,14 @@ const metaperson: Avatar3DProvider = {
 
 // ---------- twin ----------
 // 数字分身由 POST /api/avatar/twin 同步生成并直接写成 succeeded / failed 作业，不存在需要轮询的任务。
+// poll 永远返回 processing：任何轮询（例如另一个标签页）都不能把正在生成的作业改成失败；超时由 service 的视图层判断。
 const twin: Avatar3DProvider = {
   info: INFO.twin,
   async submit() {
     throw new ProviderError("BAD_INPUT", "请在形象页生成数字分身");
   },
   async poll() {
-    return { state: "failed", code: "BAD_INPUT", message: "请在形象页生成数字分身" };
+    return { state: "processing" };
   },
   async cancel() {},
 };

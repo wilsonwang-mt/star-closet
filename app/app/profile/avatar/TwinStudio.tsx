@@ -64,8 +64,30 @@ export default function TwinStudio({
   const [now, setNow] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const generating = startedAt !== null;
+  // 页面重新打开时，服务端可能仍在生成（例如刷新了页面）：显示等待态并每 3 秒查询一次，直到结束。
+  const resumed = startedAt === null && state.job?.provider === "twin" && state.job.status === "processing";
+  const generating = startedAt !== null || resumed;
   const analysis = !!state.consent?.bodyAnalysis && !!state.offer.bodyAnalysis;
+  const resumeBase = resumed ? Date.now() - state.job!.elapsedSeconds * 1000 : null;
+  const [resumeAt] = useState(() => resumeBase);
+
+  useEffect(() => {
+    if (!resumed) return;
+    setNow(Date.now());
+    let stop = false;
+    const tick = setInterval(() => setNow(Date.now()), 1000);
+    const poll = setInterval(async () => {
+      const res = await fetch("/api/avatar", { cache: "no-store" }).catch(() => null);
+      if (stop || !res || !res.ok) return;
+      const next = (await res.json()) as AvatarState;
+      if (!(next.job?.provider === "twin" && next.job.status === "processing")) onState(next);
+    }, 3000);
+    return () => {
+      stop = true;
+      clearInterval(tick);
+      clearInterval(poll);
+    };
+  }, [resumed, onState]);
 
   useEffect(() => {
     if (startedAt === null) return;
@@ -121,7 +143,8 @@ export default function TwinStudio({
 
   // ---- 生成中 ----
   if (generating) {
-    const sec = Math.max(0, Math.round((now - startedAt) / 1000));
+    const base = startedAt ?? resumeAt ?? resumeBase ?? now;
+    const sec = Math.max(0, Math.round((now - base) / 1000));
     return (
       <section className="sc-glass card stack sc-rise">
         <h2 className="section-title">正在生成你的形象</h2>
@@ -245,6 +268,11 @@ export default function TwinStudio({
       </div>
       {regenerating && twin ? <p className={s.hint}>新形象生成成功后，旧的形象照会被删除。</p> : null}
       {state.job?.resultDeleted && !twin ? <p className="sc-meta">之前的形象已删除，可以重新生成。</p> : null}
+      {!error && state.job?.provider === "twin" && state.job.status === "failed" ? (
+        <p className="error" role="alert">
+          上次生成没有完成：{state.job.error?.message ?? "生成失败"}，可以重试。
+        </p>
+      ) : null}
       {error ? (
         <p className="error" role="alert">
           {error}

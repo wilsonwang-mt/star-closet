@@ -151,7 +151,13 @@ const view = (p: { id: ProviderId; isMock: boolean; name: string; processor: str
   processor: p.processor,
 });
 
+/** 数字分身的同步生成最长约 120 秒；超过这个时间仍是 processing，说明服务进程已中断。 */
+export const TWIN_STALE_MS = 150_000;
+
 function toJobView(j: JobRow): JobView {
+  if (j.provider === "twin" && j.status === "processing" && Date.now() - j.updatedAt.getTime() > TWIN_STALE_MS) {
+    j = { ...j, status: "failed", error: "PROVIDER_FAILED|生成中断，请重试" };
+  }
   const info = providerInfo(j.provider);
   const isMock = info?.isMock ?? true;
   const terminal = j.status === "succeeded" || j.status === "failed" || j.status === "canceled";
