@@ -261,7 +261,7 @@ export default function MetaPersonCreator({
       ro.disconnect();
       window.removeEventListener("resize", measure);
     };
-  }, [open]);
+  }, [open, shown]);
 
   function save() {
     const t = target.current;
@@ -314,6 +314,7 @@ export default function MetaPersonCreator({
               <p className={s.waitTitle}>正在用你的照片塑造形象</p>
               {summary ? <p className="serif-note">{summary}</p> : null}
               <span className="sc-meta">已用 {clock(now - (requestedAt ?? now))}</span>
+              {engine === "loading" ? <span className="sc-meta">形象引擎仍在加载，就绪后自动开始</span> : null}
             </div>
           </div>
         ) : null}

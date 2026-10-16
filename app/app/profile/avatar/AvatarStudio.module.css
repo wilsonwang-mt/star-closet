@@ -249,7 +249,8 @@
     color-mix(in srgb, var(--sc-bg) 46%, transparent);
   box-shadow: inset 0 0 0 .5px color-mix(in srgb, var(--sc-champ) 45%, transparent);
   isolation: isolate;
-  animation: tile-in .6s var(--sc-ease-rise) both;
+  /* 只淡入：舞台的位置要被测量来对齐创建器浮层，不能带位移或缩放 */
+  animation: fade-only .6s var(--sc-ease-rise) both;
 }
 
 /* 等待态：本人照片压暗去色，一道香槟光自左向右扫过；一屏只有这一处在动 */
