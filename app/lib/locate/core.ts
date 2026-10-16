@@ -421,7 +421,7 @@ function replyText(q: LocateQuery, hasSignal: boolean, outfits: ScoredOutfit[], 
 }
 
 function replyChips(q: LocateQuery, hasSignal: boolean, ambiguous: boolean) {
-  if (!hasSignal) return q.pages.length ? [] : ["户外婚礼，1500 以内", "男生第一次约会", "周末看展，暖一点的颜色"];
+  if (!hasSignal) return q.pages.length ? [] : ["户外婚礼，1500 以内", "男生第一次约会", "过年回家，新中式一点"];
   const chips: string[] = [];
   if (ambiguous) chips.push("只看女装", "只看男装");
   if (chips.length < 3) chips.push(q.budget !== null || q.tier ? "再便宜一点" : "预算 1000 以内");

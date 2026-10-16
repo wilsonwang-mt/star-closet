@@ -19,7 +19,8 @@ import styles from "./ChatDock.module.css";
 export const CHAT_OPEN_EVENT = "sc-chat:open";
 const STORE_KEY = "sc-chat-v1";
 const SHEET_QUERY = "(max-width: 639px)";
-const EXAMPLES = ["下周户外婚礼，1500 以内", "男生第一次约会，别太正式", "周末看展，想要暖一点的颜色"];
+// 示例只放规则层也能答好的句子：没有 key 时点它们也名副其实（D48）
+const EXAMPLES = ["下周户外婚礼，1500 以内", "男生第一次约会，别太正式", "过年回家，新中式一点"];
 
 type Msg = {
   id: string;
