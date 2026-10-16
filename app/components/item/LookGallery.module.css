@@ -101,3 +101,93 @@
 
 /* 生成中的阶段文案：紧贴标题，比秒数醒目一级 */
 .stage { margin: 0 0 2px; }
+
+/* 一键试穿（D63）：本人形象穿上这件的大图 + 说明与主按钮；手机上下排，桌面左右排。 */
+.quick {
+  display: grid;
+  gap: var(--sc-space-4);
+  align-items: center;
+}
+@media (min-width: 760px) {
+  .quick {
+    grid-template-columns: minmax(240px, 380px) 1fr;
+  }
+}
+.quickStage {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--sc-radius-card);
+  overflow: hidden;
+  background: var(--sc-bg-raised);
+  box-shadow: inset 0 0 0 0.5px var(--sc-glass-edge-2);
+  width: 100%;
+  max-width: 380px;
+}
+.quickImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.quickBlur {
+  filter: blur(10px) saturate(0.75) brightness(0.62);
+  transform: scale(1.08);
+}
+.quickZoom {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: zoom-in;
+}
+.quickLabel {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font: 400 11px/1.4 var(--sc-font-sans);
+  letter-spacing: 0.12em;
+  color: var(--sc-ink);
+  background: color-mix(in srgb, var(--sc-bg) 55%, transparent);
+  backdrop-filter: blur(8px);
+}
+.quickEmpty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  text-align: center;
+  font: 300 13px/1.6 var(--sc-font-sans);
+  color: var(--sc-ink-2);
+}
+.quickText {
+  display: grid;
+  gap: var(--sc-space-3);
+  align-content: center;
+  justify-items: start;
+}
+.quickTitle {
+  margin: 0;
+  font: 400 var(--sc-fs-title) / 1.35 var(--sc-font-serif);
+  letter-spacing: 0.1em;
+  color: var(--sc-ink);
+}
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(8, 7, 6, 0.86);
+  cursor: zoom-out;
+}
+.lightbox img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 16px;
+}

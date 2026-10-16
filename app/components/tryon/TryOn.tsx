@@ -9,13 +9,14 @@ import ItemThumb from "@/components/ItemThumb";
 import { reducedFade, springs } from "@/lib/motion";
 import { notWornLabels, planTryon } from "@/lib/tryon/plan";
 import type { TryonContext, TryonView } from "@/lib/tryon/service";
-import { cleanName, CloseIcon, compress, HangerIcon, preload, readError } from "./shared";
+import { cleanName, CloseIcon, compress, HangerIcon, preload, readError, stageLabel, waitFirst } from "./shared";
 import s from "./TryOn.module.css";
 
-// “穿在我身上”（整套）：把这一整套依次换到用户自己的正面全身照上（FASHN on fal.ai）。
+// “穿在我身上”（整套）：把这一整套依次换到用户自己的形象上（默认可灵 Kolors on fal.ai；底图优先数字分身正面照，D63）。
 // 搭配页改编结果卡在用；试衣间改为逐件试穿（LookTryOn.tsx）。
 // 没有配置试穿服务时不渲染入口（服务端传入 ctx.enabled = false），不访问网络。
-// 流程：准备（正面照 + 首次同意）→ 生成（光束扫过）→ 结果（淡入 + 轻微推近，与原搭配并排，可放大）。
+// 流程：准备（正面照 + 首次同意）→ 生成（光束扫过，显示第几件与排队 / 生成阶段）→ 结果（淡入 + 轻微推近，与原搭配并排，可放大）。
+// 生成走队列（D62）：提交后立即返回，这里轮询 /api/tryon/<id>，服务端每次轮询推进一步。
 
 export type TryOnItem = {
   id: string;
@@ -91,6 +92,7 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
   const chain = steps.map((st) => st.label).join(" → ");
 
   const [photoUrl, setPhotoUrl] = useState<string | null>(ctx.frontPhotoUrl);
+  const isTwin = ctx.baseSource === "twin" && photoUrl === ctx.frontPhotoUrl;
   const [consented, setConsented] = useState(ctx.consented);
   const [agree, setAgree] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -101,8 +103,16 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
   const notWorn = view?.appliedItemIds.length ? notWornLabels(items, view.appliedItemIds) : [];
   const [seconds, setSeconds] = useState(0);
   const [zoom, setZoom] = useState(false);
+  const [live, setLive] = useState<TryonView | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const autoStarted = useRef(false);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
 
   const ready = !!photoUrl && (consented || agree) && !uploading;
 
@@ -139,6 +149,7 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
     if (!photoUrl || !(consented || agree)) return;
     setPhase("running");
     setError(null);
+    setLive(null);
     const started = Date.now();
     const res = await fetch("/api/tryon", {
       method: "POST",
@@ -150,9 +161,17 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
       setPhase("error");
       return;
     }
-    const data = (await res.json()) as TryonView;
+    let data = (await res.json()) as TryonView;
     setConsented(true);
-    if (data.resultUrl) await preload(data.resultUrl);
+    setLive(data);
+    if (!data.resultUrl && data.status === "processing") data = await waitFirst(data, { alive: () => alive.current, onStage: setLive, pollMs: 1000 });
+    if (!alive.current) return;
+    if (data.status === "failed" || !data.resultUrl) {
+      setError(data.error ?? "试穿失败，请稍后再试");
+      setPhase("error");
+      return;
+    }
+    await preload(data.resultUrl);
     const wait = MIN_WAIT_MS - (Date.now() - started);
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
     setView(data);
@@ -252,14 +271,20 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
                     <>
                       <figure className={s.stage}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={photoUrl} alt="你的正面全身照" />
+                        <img src={photoUrl} alt={isTwin ? "你的数字分身" : "你的正面全身照"} />
                         <span className={s.stageLabel}>You</span>
                       </figure>
                       <div className={s.photoActions}>
-                        <label className={`link-btn ${s.fileBtn}`}>
-                          {uploading ? "上传中…" : "换一张"}
-                          <input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading} onChange={(e) => upload(e.target.files?.[0])} />
-                        </label>
+                        {isTwin ? (
+                          <Link href="/profile/avatar" className="link-btn">
+                            管理我的形象
+                          </Link>
+                        ) : (
+                          <label className={`link-btn ${s.fileBtn}`}>
+                            {uploading ? "上传中…" : "换一张"}
+                            <input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading} onChange={(e) => upload(e.target.files?.[0])} />
+                          </label>
+                        )}
                       </div>
                     </>
                   ) : (
@@ -271,8 +296,8 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
                         </span>
                         <input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading} onChange={(e) => upload(e.target.files?.[0])} />
                       </label>
-                      <Link href="/profile/avatar" className="link-btn">
-                        或在 3D 形象页上传
+                      <Link href="/profile/avatar" className="sc-cta compact">
+                        先建立你的形象
                       </Link>
                     </>
                   )}
@@ -295,7 +320,7 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
               {!consented ? (
                 <label className={s.consent}>
                   <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
-                  <span>同意把我的正面照发送给 FASHN（fal.ai）生成试穿图</span>
+                  <span>同意把我的形象照片发送给 {ctx.providerName} 生成试穿图</span>
                 </label>
               ) : null}
               {error ? (
@@ -323,6 +348,11 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
                 </figure>
                 <div className="stack" style={{ gap: 10 }}>
                   <p className="serif-note wait-step">依次换上{chain.replaceAll(" → ", "、")}</p>
+                  <span className="sc-meta" aria-live="polite">
+                    {live?.progress
+                      ? `第 ${live.progress.step}/${live.progress.total} 件 · ${stageLabel(live.stage, live.queuePosition)}`
+                      : stageLabel("sending")}
+                  </span>
                   <div className={`${s.pieces} adapt-scan`}>
                     {pieces.map((p) => (
                       <div key={p.itemId} className={`sc-glass sc-glass--row ${s.piece}`}>
