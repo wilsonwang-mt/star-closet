@@ -103,13 +103,22 @@ test("parseMpMessage：只接受白名单来源且 source 正确的消息", () =
   assert.deepEqual(numeric(0), { eventName: "action_availability_changed", actionName: "avatar_export", isAvailable: false });
 });
 
-test("setupMessages / creatorUrl：只发 accessToken，手机版不发界面参数", () => {
+test("setupMessages / creatorUrl：只发 accessToken；隐藏创建器自带的取图入口与示例形象（D56）", () => {
   const { setupMessages, creatorUrl, exportMessage } = m.proto;
   const desk = setupMessages("tok", false);
   assert.deepEqual(desk[0], { eventName: "authenticate", accessToken: "tok" });
   assert.deepEqual(desk[1], { eventName: "set_export_parameters", format: "glb", lod: 2, textureProfile: "1K.jpg", useZip: false });
-  assert.deepEqual(desk[2], { eventName: "set_ui_parameters", isExportButtonVisible: false });
-  assert.equal(setupMessages("tok", true).length, 2);
+  assert.deepEqual(desk[2], {
+    eventName: "set_ui_parameters",
+    isExportButtonVisible: false,
+    showSampleAvatars: false,
+    isTakeSelfieButtonVisible: false,
+    isBrowsePhotoButtonVisible: false,
+    isLanguageSelectionVisible: false,
+  });
+  const mobile = setupMessages("tok", true);
+  assert.equal(mobile.length, 3);
+  assert.deepEqual(mobile[2], { eventName: "set_ui_parameters", isNoPhotoVisible: false });
   assert.ok(!JSON.stringify(desk).includes("secret"));
   assert.deepEqual(creatorUrl(767), { url: "https://mobile.metaperson.avatarsdk.com/generator", mobile: true });
   assert.deepEqual(creatorUrl(768), { url: "https://metaperson.avatarsdk.com/iframe.html", mobile: false });
@@ -279,6 +288,71 @@ test("importMetaperson：需单独同意；导入后作业 succeeded、替换时
   assert.deepEqual(all.remotePurge, { sent: 0, failed: 0, pending: 0 });
   assert.equal(all.job, null);
   assert.equal(all.consent, null);
+});
+
+test("MetaPerson 模式上传（D56）：收正脸自拍、全身正面、全身侧面；需单独同意；自上传起 30 天到期；不访问外部服务", async () => {
+  const { db, schema } = m.db;
+  const { pngWithMetadata } = await import("./testing");
+  await db.insert(schema.user).values({ id: "mp2", name: "测试", email: "mp2@example.test" });
+  const file = (w = 600, h = 800) => new File([Buffer.from(pngWithMetadata(w, h))], "p.png", { type: "image/png" });
+  const status = (code: number) => (e: Error & { status?: number }) => e.status === code;
+  calls = [];
+  handler = () => new Response("nope", { status: 404 });
+
+  // 只同意保存、未同意 MetaPerson：不能上传
+  await consent("mp2", false);
+  await assert.rejects(m.service.addPhoto("mp2", "face", file(600, 600)), status(403));
+
+  await consent("mp2", true);
+  const t0 = Date.now();
+  await m.service.addPhoto("mp2", "face", file(600, 600));
+  await m.service.addPhoto("mp2", "front", file());
+  let st = await m.service.addPhoto("mp2", "side", file());
+  await assert.rejects(m.service.addPhoto("mp2", "back", file()), /正脸自拍/);
+  await assert.rejects(m.service.addPhoto("mp2", "extra", file()), status(400));
+  assert.deepEqual(st.photos.map((p) => p.slot).sort(), ["face", "front", "side"]);
+  const days30 = 30 * 86400_000;
+  for (const p of st.photos) {
+    const left = Date.parse(p.expiresAt!) - t0;
+    assert.ok(left > days30 - 60_000 && left <= days30 + 60_000, `${p.slot} 到期时间应为上传后 30 天`);
+  }
+  // 同一位置只保留一张
+  st = await m.service.addPhoto("mp2", "face", file(640, 640));
+  assert.equal(st.photos.filter((p) => p.slot === "face").length, 1);
+  assert.equal(st.photos.find((p) => p.slot === "face")?.width, 640);
+  // 服务端生成任务仍只属于 photos 模式
+  assert.equal(st.canGenerate, false);
+  await assert.rejects(m.service.createJob("mp2"), /创建器/);
+  assert.equal(calls.length, 0);
+
+  // photos 模式（未启用 MetaPerson）仍不收正脸自拍
+  const saved = process.env.AVATAR3D_PROVIDER;
+  process.env.AVATAR3D_PROVIDER = "mock";
+  try {
+    await assert.rejects(m.service.addPhoto("mp2", "face", file(600, 600)), /面部特写/);
+  } finally {
+    process.env.AVATAR3D_PROVIDER = saved;
+  }
+});
+
+test("importMetaperson：在用照片（含试穿卡写入、没有期限的正面照）自导入成功起 30 天到期，已有期限不延后", async () => {
+  const { db, schema } = m.db;
+  await db.insert(schema.user).values({ id: "mp3", name: "测试", email: "mp3@example.test" });
+  await consent("mp3", true);
+  const early = new Date(Date.now() + 5 * 86400_000);
+  await db.insert(schema.avatarPhoto).values([
+    { id: "mp3-front", userId: "mp3", slot: "front", storageKey: "mp3/photos/mp3-front.jpg", mime: "image/jpeg" },
+    { id: "mp3-face", userId: "mp3", slot: "face", storageKey: "mp3/photos/mp3-face.jpg", mime: "image/jpeg", expiresAt: early },
+  ]);
+  const glb = m.mannequin.buildMannequinGlb();
+  handler = (url) => (url.startsWith("https://files.avatarsdk.com/") ? new Response(Buffer.from(glb)) : new Response("nope", { status: 404 }));
+  const t0 = Date.now();
+  const st = await m.service.importMetaperson("mp3", { url: "https://files.avatarsdk.com/c.glb", avatarCode: "code-c" });
+  const front = st.photos.find((p) => p.id === "mp3-front")!;
+  const face = st.photos.find((p) => p.id === "mp3-face")!;
+  const left = Date.parse(front.expiresAt!) - t0;
+  assert.ok(left > 30 * 86400_000 - 60_000 && left <= 30 * 86400_000 + 60_000);
+  assert.equal(Date.parse(face.expiresAt!), early.getTime());
 });
 
 test("token / import 在未启用 metaperson 时拒绝", async () => {

@@ -19,7 +19,7 @@ export default async function AvatarPage() {
         <h1 className="sc-display" style={{ margin: "6px 0 8px" }}>我的 3D 形象</h1>
         <p className="serif-note">
           {state.mode === "metaperson"
-            ? "上传一张自拍，生成你本人的全身 3D 形象，可 360° 旋转查看。"
+            ? "上传正脸自拍与全身照，生成你本人的 3D 形象，可 360° 旋转查看。"
             : "上传正面、侧面、背面三张全身照，AI 为你生成可 360° 旋转查看的 3D 形象。"}
         </p>
       </section>

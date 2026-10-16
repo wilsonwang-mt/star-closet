@@ -41,6 +41,12 @@ export const SLOTS = ["front", "side", "back", "face", "extra"] as const;
 export type Slot = (typeof SLOTS)[number];
 /** 现在接受上传的位置：只收生成会用到的三张全身照。面部特写与补充照片不参与生成，不再收集（旧照片仍可查看与删除）。 */
 export const UPLOAD_SLOTS = ["front", "side", "back"] as const;
+/** MetaPerson 模式收的照片（D56）：正脸自拍（必传，用于建脸）、全身正面（必传，同时作为 2D 试穿的正面照）、全身侧面（选传）。 */
+export const MP_UPLOAD_SLOTS = ["face", "front", "side"] as const;
+/** 当前模式接受上传的位置。 */
+export function uploadSlotsFor(metaperson: boolean): readonly Slot[] {
+  return metaperson ? MP_UPLOAD_SLOTS : UPLOAD_SLOTS;
+}
 /** 一键删除时写入 error 的标记；带此标记的作业不再计入同意状态。 */
 const DELETED_MARK = "DELETED_BY_USER|用户已删除全部照片与形象";
 
@@ -260,13 +266,15 @@ export async function recordConsent(userId: string, input: { store: boolean; thi
 
 export async function addPhoto(userId: string, slot: string, file: File) {
   if (!(SLOTS as readonly string[]).includes(slot)) throw new AvatarError(400, "照片位置不对");
-  if (!(UPLOAD_SLOTS as readonly string[]).includes(slot)) {
-    throw new AvatarError(400, "面部特写与补充照片不参与生成，已不再收集");
+  const mpMode = metapersonEnabled();
+  if (!(uploadSlotsFor(mpMode) as readonly string[]).includes(slot)) {
+    throw new AvatarError(400, mpMode ? "只收正脸自拍、全身正面与全身侧面照" : "面部特写与补充照片不参与生成，已不再收集");
   }
   if (file.size > MAX_PHOTO_BYTES) throw new AvatarError(413, "单张照片不能超过 8MB");
   if (file.size === 0) throw new AvatarError(400, "照片是空文件");
-  const { provider: using } = await requireConsent(userId);
-  if (using.id === "metaperson") throw new AvatarError(400, "请在 MetaPerson 创建器中上传自拍");
+  // MetaPerson 模式：照片用于生成本人形象，须已单独同意由 MetaPerson 处理（D47）。
+  if (mpMode) await requireMetapersonConsent(userId);
+  else await requireConsent(userId);
 
   const raw = new Uint8Array(await file.arrayBuffer());
   if (raw.byteLength > MAX_PHOTO_BYTES) throw new AvatarError(413, "单张照片不能超过 8MB");
@@ -296,6 +304,8 @@ export async function addPhoto(userId: string, slot: string, file: File) {
       height: info.height,
       bytes: bytes.byteLength,
       qualityFlags: qualityFlags(slot, info, bytes.byteLength),
+      // D47/D56：MetaPerson 模式没有服务端生成任务，照片自上传起保留 30 天。
+      ...(mpMode ? { expiresAt: new Date(Date.now() + PHOTO_RETENTION_DAYS * 86400_000) } : {}),
     });
   } catch (e) {
     await storage.remove([key]).catch(() => {});
@@ -595,5 +605,7 @@ export async function importMetaperson(userId: string, input: { url: unknown; av
     throw e;
   }
   await removeOlderResults(userId, id);
+  // D47：在用照片（含试穿卡上传的正面照）自生成成功起最多保留 30 天；已有期限不延后。
+  await setPhotoExpiry(userId, (await livePhotos(userId)).map((p) => p.id), now);
   return getAvatarState(userId);
 }

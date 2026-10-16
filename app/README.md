@@ -31,23 +31,25 @@
 
 ## 3D 形象
 
-入口 `/profile/avatar`（登录后，档案页底部也有入口）。流程：同意卡 → 上传三张全身照 → 生成 → 查看 → 删除（MetaPerson 模式见下一小节）。存储与第三方处理规则见 AGENTS.md「2026-10-16 个人影像存储决定」（D47）。
+入口 `/profile/avatar`（登录后，档案页底部也有入口）。流程：同意卡 → 上传照片 → 生成 → 查看 → 删除（MetaPerson 模式见下一小节）。存储与第三方处理规则见 AGENTS.md「2026-10-16 个人影像存储决定」（D47）。
 
 ### MetaPerson 模式（比赛版推荐，未实测）
 
 `AVATAR3D_PROVIDER=metaperson` 且 `AVATARSDK_CLIENT_ID`、`AVATARSDK_CLIENT_SECRET` 都存在时启用（`lib/avatar/metaperson.ts`、`lib/avatar/metaperson-protocol.ts`），否则保持原来的 mock / tripo_fal 流程。没有真实 key，以下流程只有单元测试（mock fetch），尚未与 Avatar SDK 实测。
 
-- 页面：同意卡两项都要勾（“保存我的 3D 形象”+ D47 要求的单独一项“由 MetaPerson 根据你的自拍生成本人形象”，`consent_version = avatar-consent-v2:store+metaperson`）→ 玻璃卡里嵌入 MetaPerson 创建器（手机 70dvh、桌面 640px，加载中显示人形骨架；视口宽 <768 用 `https://mobile.metaperson.avatarsdk.com/generator`，否则 `https://metaperson.avatarsdk.com/iframe.html`，`allow="fullscreen"`）→ 用户在创建器里上传自拍并生成 → 可导出时出现主按钮「保存为我的 3D 形象」→ 服务端导入成功后切换到金色玻璃查看器（360° 旋转，无徽章），可「重新生成」或删除。
-- 前端事件（`app/profile/avatar/MetaPersonCreator.tsx`）：只处理当前 iframe、来源为上述两个 origin 且 `data.source === "metaperson_creator"` 的消息，回发时 targetOrigin 用该 origin。
-  1. `metaperson_creator_loaded` → 依次发送 `{eventName:"authenticate", accessToken}`、`{eventName:"set_export_parameters", format:"glb", lod:2, textureProfile:"1K.jpg", useZip:false}`，桌面版再发 `{eventName:"set_ui_parameters", isExportButtonVisible:false}`（手机版字段未核实，不发）。令牌若晚于加载事件到达，到达后再补发。
-  2. `authentication_status` 中 `isAuthenticated=false` → 显示错误。
-  3. `action_availability_changed`（`actionName:"avatar_export"`）决定主按钮是否可点；从未收到该事件时，以 `model_generated` 为准（兼容手机版）。
-  4. 点主按钮 → `{eventName:"export_avatar", format:"glb", lod:2, textureProfile:"1K.jpg", useZip:false}`；120 秒没有 `model_exported` 则恢复按钮。
-  5. `model_exported{url, avatarCode}`（无论由本站按钮还是创建器自带按钮触发）→ `POST /api/avatar/metaperson/import`。
+- 页面（D56）：同意卡两项都要勾（“保存我的照片与 3D 形象”+ D47 要求的单独一项“由 MetaPerson 根据你的自拍生成本人形象”，`consent_version = avatar-consent-v2:store+metaperson`）→ 本站自己的极简上传卡：正脸自拍（`face`，必传）、全身正面（`front`，必传，同时就是 2D 试穿用的正面照，只传一次）、全身侧面（`side`，选传），每格一个细线剪影示意和一句要求；再选“形象性别”（女 / 男，档案里没有性别字段）→「生成我的 3D 形象」→ 本站等待态（本人照片压暗、一道光扫过、“正在用你的照片塑造形象”、已用时间）→ 收到 `model_generated` 后淡入 MetaPerson 创建器，可调整发型与服装 →「保存为我的 3D 形象」→ 服务端导入成功后切换到金色玻璃查看器（360° 旋转，无徽章），可「重新生成」或删除。动效只动 transform / opacity；减弱动态时只淡入淡出。
+- 预加载：同意了 MetaPerson 之后（老用户即打开页面时；没有形象或点了「重新生成」时）立即挂载创建器 iframe（视口宽 <768 用 `https://mobile.metaperson.avatarsdk.com/generator`，否则 `https://metaperson.avatarsdk.com/iframe.html`，`allow="fullscreen"`），用户上传照片时引擎在后台加载，上传卡下方一条细线进度与已用时间（没有真实进度事件，曲线趋近但不到头，就绪后填满）。iframe 挂在 `document.body` 的浮层里：隐藏时固定在视口内、`opacity:0`、不可点击、`inert`（玻璃卡的 `backdrop-filter` 会改变 fixed 的定位基准，移出视口的跨域 iframe 会被浏览器节流）；显示时只改样式对齐到卡片里的舞台占位，不移动节点、不重新加载。仍遵守 D47：未勾选 MetaPerson 之前不加载创建器。
+- 前端事件（`app/profile/avatar/MetaPersonCreator.tsx`；协议纯函数在 `lib/avatar/metaperson-protocol.ts`，流程状态机在 `lib/avatar/metaperson-flow.ts`）：只处理当前 iframe、来源为上述两个 origin 且 `data.source === "metaperson_creator"` 的消息，回发时 targetOrigin 用该 origin。创建器的布尔字段兼容数字 1/0（桌面 1.42.0 实测）。
+  1. `metaperson_creator_loaded` → 依次发送 `{eventName:"authenticate", accessToken}`、`{eventName:"set_export_parameters", format:"glb", lod:2, textureProfile:"1K.jpg", useZip:false}`、`set_ui_parameters`：桌面 `{isExportButtonVisible:false, showSampleAvatars:false, isTakeSelfieButtonVisible:false, isBrowsePhotoButtonVisible:false, isLanguageSelectionVisible:false}`，手机 `{isNoPhotoVisible:false}`。令牌若晚于加载事件到达，到达后再补发。收到 `authentication_status`（`isAuthenticated` 为真）视为引擎就绪；8 秒内没有该事件也视为就绪。
+  2. 点「生成我的 3D 形象」→ 浏览器读取本人正脸照（同源私有地址），压到长边 1024px 的 JPEG，转 base64（不带 `data:` 前缀）→ 引擎就绪后发送 `{eventName:"generate_avatar", gender, age:"adult", image, blends:[{name,value}×8]}`（blends 只发桌面版，名称 Body/Neck/Shoulders/Chest/Forearms/Waist/Hips/Legs，裁剪到 -1..1、四舍五入到 0.05）。待机或尚未发出时创建器自己发的 `model_generated`（默认形象）不会让它提前露出。
+  3. 兜底：`generate_avatar` 发出 90 秒内没有 `model_generated`，或 `authentication_status` 为假 → 直接显示创建器原生界面，桌面版发 `{eventName:"set_ui_parameters", isBrowsePhotoButtonVisible:true}`，提示“请在下方直接选择你的正脸照片”。
+  4. `action_availability_changed`（`actionName:"avatar_export"`）决定主按钮是否可点；从未收到该事件时，以 `model_generated` 为准（兼容手机版）。
+  5. 点主按钮 → `{eventName:"export_avatar", format:"glb", lod:2, textureProfile:"1K.jpg", useZip:false}`；120 秒没有 `model_exported` 则恢复按钮。
+  6. `model_exported{url, avatarCode}`（无论由本站按钮还是创建器自带按钮触发）→ `POST /api/avatar/metaperson/import`。
 - `GET /api/avatar/metaperson/token`：需登录且已同意第三方处理，返回 `{ accessToken, expiresIn }`。服务端 `POST https://api.avatarsdk.com/o/token/`（Basic auth `CLIENT_ID:CLIENT_SECRET`，表单 `grant_type=client_credentials`），缓存到过期前 60 秒；secret 不出服务端。
 - `POST /api/avatar/metaperson/import`（body `{ url, avatarCode }`）：同样要求同意；`avatarCode` 只允许 `[A-Za-z0-9_-]{1,128}`；导出地址只允许 https、默认端口、主机为 `avatarsdk.com` 及其子域或 `AVATARSDK_EXPORT_HOSTS`（逗号追加）中的主机及其子域；手动跟随最多 3 次重定向、每一跳重新校验；限制 100MB 并校验 glTF 二进制头。存入 `<userId>/avatars/<jobId>.glb`，写一条 `avatar_job`（status succeeded、provider metaperson、`provider_task_id = avatarCode`），并删除本人旧形象的 GLB。主机不在白名单时返回 400，错误信息含主机名——首次实测若报错，把该主机加进 `AVATARSDK_EXPORT_HOSTS`。
 - 删除：删除单个形象和一键删除时，对 metaperson 作业调用 `DELETE https://api.avatarsdk.com/avatars/<avatarCode>/`（Bearer 令牌）。该接口对创建器生成的形象是否生效**未核实**；失败只记日志（不含响应体），不在界面提示。本站存储里的文件照常删除。
-- 照片：MetaPerson 模式下自拍只在创建器内上传给 MetaPerson，本站不接收照片（照片上传与生成任务接口返回 400），因此没有本站原图需要 30 天删除。同时开启 2D 试穿时，试穿用的正面照只能在试穿面板里上传（`POST /api/tryon/photo`，不受上述 400 限制），这张照片上传时即写 30 天 `expires_at`（见“2D 试穿”）。
+- 照片（D56）：`POST /api/avatar/photos` 在 MetaPerson 模式下接受 `face | front | side`（其他位置 400），要求已单独同意 MetaPerson（否则 403）；与 photos 模式相同的压缩、去元数据、私有存储与“每个位置只留一张”，并在上传时写 `expires_at = 上传时间 + 30 天`（D47）。导入形象成功后，对本人全部在用照片补写 30 天期限（已有期限不延后）。只有正脸照经 `generate_avatar` 发给 MetaPerson；全身正面照同时是 2D 试穿的正面照（试穿面板也可单独上传正面照，`POST /api/tryon/photo`，上传时同样写 30 天 `expires_at`，见“2D 试穿”）。服务端生成任务接口在该模式下仍返回 400。
 - 未配置时：未登录请求 `GET /api/avatar/metaperson/token` 返回 401；已登录返回 409 `{"error":"MetaPerson 未启用，请刷新页面"}`，导入接口同样 409，不访问外部服务（2026-10-16 生产构建冒烟实测）。
 
 - 同意卡分两项：(a) 同意上传并存储本人照片用于生成 3D 形象（必选）；(b) 同意把照片发送给 fal.ai（Tripo 3D）处理——只在配置了真实服务 key 时出现，可选，不勾选只能生成示意模型，之后可在“修改授权”里改。`avatar_job.consent_version` 同时记录两项：`avatar-consent-v2:store` 或 `avatar-consent-v2:store+tripo_fal`（旧版 v1 同意失效，需重新确认）。提交时带上卡片版本（`offerVersion`），处理方变了会要求刷新重读。
@@ -65,7 +67,7 @@
 - 删除：单张照片可删；单个形象可删（保留照片与同意）；“一键删除”清空该用户存储前缀下全部文件，照片软删除、作业标记 canceled，之后需重新同意。
 - 查看器：入口 `components/AvatarViewer.tsx`，实现在 `components/avatar-viewer/`（R3F，可拖动旋转；props `{ src, badges, poster?, height?, label?, showReset?, onReset? }`，说明见 `components/AvatarViewer.README.md`）。转动或缩放后右下角浮出“复位视角”，弹簧动画回到正面，可随时被拖动打断；减弱动态时直接跳回。`showReset` 默认 true，传 false 可隐藏。
 - mock 人台由 `lib/avatar/mannequin.ts` 程序生成（即 `public/models/mock-mannequin.glb`），来源与许可见 `public/models/LICENSE.md`；没有使用任何真人照片、扫描或第三方模型。
-- 测试：`npm test`（node:test + tsx）覆盖 MetaPerson 接入（`lib/avatar/metaperson.test.ts`：消息解析、令牌缓存、白名单与重定向、导入与替换、远端删除，全部 mock fetch）、元数据剥离、到期清理与规则模式改编回归（`lib/adapt/offline.test.ts`，直接读 `data/catalog.json`）；测试图全部由代码生成。
+- 测试：`npm test`（node:test + tsx）覆盖 MetaPerson 接入（`lib/avatar/metaperson.test.ts`：消息解析、令牌缓存、白名单与重定向、导入与替换、远端删除、MetaPerson 模式上传与 30 天期限，全部 mock fetch；`lib/avatar/metaperson-flow.test.ts`：`generate_avatar` 消息构造、blends 裁剪、90 秒与认证失败兜底）、元数据剥离、到期清理与规则模式改编回归（`lib/adapt/offline.test.ts`，直接读 `data/catalog.json`）；测试图全部由代码生成。
 
 API：`GET /api/avatar/metaperson/token`、`POST /api/avatar/metaperson/import`（MetaPerson 模式）、`GET|DELETE /api/avatar`、`POST /api/avatar/consent`（`{ store, thirdParty, offerVersion }`）、`POST /api/avatar/photos`（multipart：slot、file）、`DELETE /api/avatar/photos/[id]`、`POST /api/avatar/jobs`、`GET|DELETE /api/avatar/jobs/[id]`、`DELETE /api/avatar/jobs/[id]/result`、`GET /api/avatar/files/[...key]`。
 
