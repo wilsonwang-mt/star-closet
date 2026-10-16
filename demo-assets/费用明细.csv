@@ -1,0 +1,46 @@
+时间,模型,用途,单价(USD),累计(USD)
+2026-10-16T10:05:39.068Z,fal-ai/nano-banana-pro,f01 全身照,0.15,0.15
+2026-10-16T10:06:06.609Z,fal-ai/nano-banana-pro/edit,f01 half,0.15,0.3
+2026-10-16T10:06:35.629Z,fal-ai/nano-banana-pro/edit,f01 selfie,0.15,0.45
+2026-10-16T10:07:03.395Z,fal-ai/nano-banana-pro,m01 全身照,0.15,0.6
+2026-10-16T10:07:34.846Z,fal-ai/nano-banana-pro/edit,m01 half,0.15,0.75
+2026-10-16T10:08:01.918Z,fal-ai/nano-banana-pro/edit,m01 selfie,0.15,0.9
+2026-10-16T10:34:18.332Z,fal-ai/nano-banana-pro/edit,场景 I011-street,0.15,1.05
+2026-10-16T10:34:56.531Z,fal-ai/nano-banana-pro/edit,场景 I011-cafe,0.15,1.2
+2026-10-16T10:35:30.813Z,fal-ai/nano-banana-pro/edit,场景 I023-seaside,0.15,1.35
+2026-10-16T10:35:59.638Z,fal-ai/nano-banana-pro/edit,场景 I071-gallery,0.15,1.5
+2026-10-16T10:36:32.451Z,fal-ai/nano-banana-pro/edit,场景 I071-wedding,0.15,1.65
+2026-10-16T10:37:03.710Z,fal-ai/nano-banana-pro/edit,场景 I113-wedding,0.15,1.8
+2026-10-16T10:37:35.663Z,fal-ai/nano-banana-pro/edit,场景 I113-gallery,0.15,1.95
+2026-10-16T10:38:04.812Z,fal-ai/nano-banana-pro/edit,场景 I142-street,0.15,2.1
+2026-10-16T10:38:33.904Z,fal-ai/nano-banana-pro/edit,场景 I142-market,0.15,2.25
+2026-10-16T10:39:03.497Z,fal-ai/nano-banana-pro/edit,场景 I160-cafe,0.15,2.4
+2026-10-16T10:39:39.683Z,fal-ai/nano-banana-pro/edit,场景 I160-street,0.15,2.55
+2026-10-16T10:40:10.053Z,fal-ai/nano-banana-pro/edit,场景 I175-market,0.15,2.7
+2026-10-16T10:40:40.872Z,fal-ai/nano-banana-pro/edit,场景 I175-seaside,0.15,2.85
+2026-10-16T10:41:09.563Z,fal-ai/nano-banana-pro/edit,场景 I191-street,0.15,3
+2026-10-16T10:41:39.907Z,fal-ai/nano-banana-pro/edit,场景 I191-market,0.15,3.15
+2026-10-16T10:43:31.563Z,fal-ai/nano-banana-pro/edit,场景 I023-cafe,0.15,3.3
+2026-10-16T10:47:11.250Z,fal-ai/kling-video/v2.5-turbo/pro/image-to-video,Live I113-wedding,0.35,3.65
+2026-10-16T10:50:27.218Z,fal-ai/kling-video/v2.5-turbo/pro/image-to-video,Live I011-street,0.35,4
+2026-10-16T10:50:32.115Z,fal-ai/fashn/tryon/v1.6,T5-D 整套试穿测试,0.075,4.075
+2026-10-16T10:50:32.116Z,fal-ai/fashn/tryon/v1.6,T5-D 试衣间逐件试穿测试,0.075,4.15
+2026-10-16T10:52:08.949Z,fal-ai/kling-video/v2.5-turbo/pro/image-to-video,Live I023-cafe,0.35,4.5
+2026-10-16T10:53:56.263Z,fal-ai/kling-video/v2.5-turbo/pro/image-to-video,Live I071-gallery,0.35,4.85
+2026-10-16T10:56:05.957Z,fal-ai/kling-video/v2.5-turbo/pro/image-to-video,Live I113-wedding,0.35,5.2
+2026-10-16T10:57:41.628Z,fal-ai/kling-video/v2.5-turbo/pro/image-to-video,Live I142-street,0.35,5.55
+2026-10-16T11:00:07.987Z,fal-ai/kling-video/v2.5-turbo/pro/image-to-video,Live I160-cafe,0.35,5.9
+2026-10-16T11:01:26.668Z,fal-ai/kling-video/v2.5-turbo/pro/image-to-video,Live I175-market,0.35,6.25
+2026-10-16T11:03:47.881Z,fal-ai/kling-video/v2.5-turbo/pro/image-to-video,Live I191-street,0.35,6.6
+2026-10-16T11:05:35.586Z,fal-ai/kling-video/v2.5-turbo/pro/image-to-video,Live I011-cafe,0.35,6.95
+2026-10-16T11:06:19.612Z,fal-ai/nano-banana-pro/edit,T3 本人上身效果测试 I113-wedding,0.15,7.1
+2026-10-16T11:06:19.613Z,fal-ai/nano-banana-pro/edit,T3 本人上身效果测试 I113-gallery,0.15,7.25
+2026-10-16T11:06:19.613Z,fal-ai/kling-video/v2.5-turbo/pro/image-to-video,T3 Live 测试 I113-wedding,0.35,7.6
+2026-10-16T11:06:19.613Z,fal-ai/kling-video/v2.5-turbo/pro/image-to-video,T3 Live 测试 I113-gallery,0.35,7.95
+2026-10-16T11:07:11.715Z,fal-ai/kling-video/v2.5-turbo/pro/image-to-video,Live I023-seaside,0.35,8.3
+2026-10-16T11:09:05.178Z,fal-ai/kling-video/v2.5-turbo/pro/image-to-video,Live I071-wedding,0.35,8.65
+2026-10-16T11:10:40.139Z,fal-ai/kling-video/v2.5-turbo/pro/image-to-video,Live I113-gallery,0.35,9
+2026-10-16T11:13:01.004Z,fal-ai/kling-video/v2.5-turbo/pro/image-to-video,Live I142-market,0.35,9.35
+2026-10-16T11:14:25.294Z,fal-ai/kling-video/v2.5-turbo/pro/image-to-video,Live I160-street,0.35,9.7
+2026-10-16T11:16:17.609Z,fal-ai/kling-video/v2.5-turbo/pro/image-to-video,Live I175-seaside,0.35,10.05
+2026-10-16T11:17:47.460Z,fal-ai/kling-video/v2.5-turbo/pro/image-to-video,Live I191-market,0.35,10.4

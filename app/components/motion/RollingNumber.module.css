@@ -11,3 +11,5 @@
 .strip { display: block; will-change: transform; }
 .strip > span { display: block; height: 1.2em; text-align: center; }
 .tabular { font-variant-numeric: lining-nums tabular-nums; }
+/* CountTo 的装饰层：数字只画在伪元素里（不进 innerText），读屏与复制只有 sr-only 那一份 */
+.face::after { content: attr(data-v); }

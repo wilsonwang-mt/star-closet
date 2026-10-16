@@ -1,9 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AvatarViewer from "@/components/AvatarViewer";
-import MetaPersonCreator from "./MetaPersonCreator";
-import type { AvatarState, JobView, PhotoView, RemoteSummary, Slot } from "@/lib/avatar/service";
+import MetaPersonStudio from "./MetaPersonStudio";
+import TwinStudio from "./TwinStudio";
+import PhotoTile from "./PhotoTile";
+import { compressImage } from "./image-client";
+import { MP_PRIVACY_URL } from "@/lib/avatar/metaperson-protocol";
+import type { AvatarState, JobView, RemoteSummary, Slot } from "@/lib/avatar/service";
 import s from "./AvatarStudio.module.css";
 
 // 只收生成会用到的三张全身照；面部特写与补充照片不参与生成，已不再收集。
@@ -21,26 +25,6 @@ const STATUS_TEXT: Record<string, string> = {
   failed: "生成失败",
   canceled: "已取消",
 };
-
-const MAX_EDGE = 1600;
-
-// 在本机压缩到最长边 1600px 并重新编码为 JPEG：顺带去掉 EXIF（拍摄位置等）信息。服务端还会再剥离一次。
-async function compress(file: File): Promise<Blob> {
-  const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
-  const scale = Math.min(1, MAX_EDGE / Math.max(bmp.width, bmp.height));
-  const w = Math.max(1, Math.round(bmp.width * scale));
-  const h = Math.max(1, Math.round(bmp.height * scale));
-  const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("no canvas");
-  ctx.drawImage(bmp, 0, 0, w, h);
-  bmp.close();
-  const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.9));
-  if (!blob) throw new Error("encode failed");
-  return blob;
-}
 
 async function readError(res: Response | null, fallback: string) {
   if (!res) return "网络异常，请稍后再试";
@@ -60,6 +44,16 @@ function summaryText(r: RemoteSummary): string {
   return parts.length ? `；${parts.join("，")}` : "";
 }
 
+/**
+ * 删除后把这份 GLB 从查看器的加载缓存里移除：已删除的本人形象不再留在内存里，
+ * 之后任何组件也不会拿这个地址再取一次（文件已删，只会得到 404）。查看器的代码块此时已加载，动态引入不增加首屏体积。
+ * 必须在查看器卸载之后调用（见 forgotten 的 effect）：还挂着的查看器若在清缓存后重渲染，会重新请求这份已删除的文件。
+ */
+function forgetModel(url: string | null | undefined) {
+  if (!url) return;
+  void import("@/components/avatar-viewer/Viewer").then((m) => m.clearModelCache(url)).catch(() => undefined);
+}
+
 function Badges({ items }: { items: string[] }) {
   return (
     <div className="row" style={{ gap: 6 }}>
@@ -72,113 +66,33 @@ function Badges({ items }: { items: string[] }) {
   );
 }
 
-function PhotoTile({
-  label,
-  tip,
-  photo,
-  disabled,
-  busy,
-  error,
-  required,
-  onPick,
-  onDelete,
-}: {
-  label: string;
-  tip: string;
-  photo?: PhotoView;
-  disabled: boolean;
-  busy: boolean;
-  /** 本格上传或删除的错误，就近显示 */
-  error?: string;
-  /** 必填 / 二选一 / 可选 */
-  required: "必填" | "二选一" | "可选";
-  onPick?: (f: File) => void;
-  onDelete?: () => void;
-}) {
-  const input = useRef<HTMLInputElement>(null);
-  return (
-    <div className={s.tile}>
-      <button
-        type="button"
-        className={s.frame}
-        data-empty={photo ? undefined : true}
-        disabled={disabled || busy || !onPick}
-        onClick={() => input.current?.click()}
-        aria-label={photo ? `替换${label}照片` : `上传${label}全身照`}
-      >
-        {photo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img key={photo.id} src={photo.url} alt={`${label}照片`} />
-        ) : (
-          <span className={s.plus}>
-            <b aria-hidden="true">+</b>
-            {label}
-          </span>
-        )}
-        {busy ? (
-          <span className={s.busy} aria-hidden="true">
-            处理中…
-          </span>
-        ) : null}
-      </button>
-      {onPick ? (
-        <input
-          ref={input}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          hidden
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            e.target.value = "";
-            if (f) onPick(f);
-          }}
-        />
-      ) : null}
-      <div className={s.caption}>
-        <span>
-          {label} <span className={s.req}>{required}</span>
-        </span>
-        {photo && onDelete ? (
-          <button type="button" className={s.small} onClick={onDelete} disabled={busy} aria-label={`删除${label}照片`}>
-            删除
-          </button>
-        ) : null}
-      </div>
-      {photo ? (
-        <span className={s.hint}>
-          {photo.width}×{photo.height}
-        </span>
-      ) : (
-        <span className={s.hint}>{tip}</span>
-      )}
-      {photo?.hints.map((h) => (
-        <span key={h} className={`${s.hint} ${s.warn}`}>
-          提示：{h}
-        </span>
-      ))}
-      {error ? <span className="error">{error}</span> : null}
-    </div>
-  );
-}
-
 export default function AvatarStudio({ initial }: { initial: AvatarState }) {
   const [state, setState] = useState<AvatarState>(initial);
   const offer = state.offer.thirdParty;
   const [agreeStore, setAgreeStore] = useState(false);
   const [agreeThird, setAgreeThird] = useState(!!initial.consent?.thirdParty);
+  // D56：由 Anthropic（Claude）分析全身照，单独一项、可不勾；只在 MetaPerson 模式且服务端配置了 key 时出现。
+  // 数字分身模式（D63）同样提供这一项：分析体型、发型与脸部特征，让形象照更像本人。
+  const bodyOffer = state.mode === "metaperson" || state.mode === "twin" ? state.offer.bodyAnalysis : null;
+  const [agreeBody, setAgreeBody] = useState(!!initial.consent?.bodyAnalysis);
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
-  // 提示就近显示：at 为照片格（slot 或照片 id）、consent、job、delete。
-  // 底部的视觉隐藏 aria-live 区同步播报给读屏，就近文字不再重复声明 role。
+  // 提示就近显示：at 为照片格（slot 或照片 id）、consent、job、delete；就近的提示自己就是播报区（常驻的 role=status 容器或 role=alert）。
+  // at 为 "sr" 的提示没有就近位置（例如保存成功后整张卡换成查看器），只写进底部视觉隐藏的播报区。同一句话只出现一次。
   const [msg, setMsg] = useState<{ at: string; ok: boolean; text: string } | null>(null);
   const noteAt = (at: string) => (msg && msg.at === at ? msg : null);
   const job = state.job;
   const consented = !!state.consent?.current;
-  // MetaPerson 模式：自拍在嵌入的创建器里上传与生成，必须单独同意由 MetaPerson 处理才能打开创建器。
+  // MetaPerson 模式：照片在本站上传，正脸照交给嵌入的创建器生成（D56）；必须单独同意由 MetaPerson 处理才能上传、打开创建器。
   const mp = state.mode === "metaperson";
   const mpReady = mp && consented && state.consent?.thirdParty === "metaperson";
+  // 数字分身模式（D63）：须单独同意由 fal.ai 上的 AI 图像模型生成形象才能上传与生成。
+  const tw = state.mode === "twin";
+  const twReady = tw && consented && state.consent?.thirdParty === "twin";
+  // MetaPerson 与数字分身都必须勾选第三方处理才能开始。
+  const needThird = mp || tw;
   const [regenerating, setRegenerating] = useState(false);
-  const showConsentForm = !consented || editing || (mp && !mpReady);
+  const showConsentForm = !consented || editing || (mp && !mpReady) || (tw && !twReady);
   const mock = state.provider.isMock;
   // 真实服务按位置区分视角（front/left/back），侧面必填；示意模式正面 + 侧面或背面任一即可。
   const sideRequired = !mock;
@@ -186,12 +100,18 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
   const active = job?.status === "queued" || job?.status === "processing";
   const remoteName = offer?.name ?? "fal.ai（Tripo 3D）";
 
+  // 刚删除的 GLB 地址：随删除结果同一批提交，查看器卸载后（effect 阶段）再清缓存。
+  const [forgotten, setForgotten] = useState<string | null>(null);
+  useEffect(() => forgetModel(forgotten), [forgotten]);
+
   const setJob = useCallback((j: JobView) => setState((st) => ({ ...st, job: j })), []);
 
   // 生成中每 2 秒查询一次进度；查询本身会推进任务状态。
   const jobId = job?.id;
+  // 数字分身没有排队任务（同步生成），由 TwinStudio 自己处理“生成中”的恢复。
+  const twinJob = job?.provider === "twin";
   useEffect(() => {
-    if (!jobId || !active) return;
+    if (!jobId || !active || twinJob) return;
     let stop = false;
     const t = setInterval(async () => {
       const res = await fetch(`/api/avatar/jobs/${jobId}`, { cache: "no-store" }).catch(() => null);
@@ -211,7 +131,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
       stop = true;
       clearInterval(t);
     };
-  }, [jobId, active, setJob]);
+  }, [jobId, active, twinJob, setJob]);
 
   async function giveConsent() {
     setBusy("consent");
@@ -219,7 +139,12 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
     const res = await fetch("/api/avatar/consent", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ store: true, thirdParty: !!offer && agreeThird, offerVersion: state.offer.version }),
+      body: JSON.stringify({
+        store: true,
+        thirdParty: !!offer && agreeThird,
+        bodyAnalysis: !!bodyOffer && !!offer && agreeThird && agreeBody,
+        offerVersion: state.offer.version,
+      }),
     }).catch(() => null);
     setBusy(null);
     if (!res || !res.ok) return setMsg({ at: "consent", ok: false, text: await readError(res, "记录同意失败") });
@@ -227,6 +152,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
     setState(next);
     setEditing(false);
     setAgreeThird(!!next.consent?.thirdParty);
+    setAgreeBody(!!next.consent?.bodyAnalysis);
   }
 
   async function upload(slot: Slot, file: File) {
@@ -234,7 +160,8 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
     setMsg(null);
     let blob: Blob;
     try {
-      blob = await compress(file);
+      // 本机压缩到最长边 1600px 并重新编码为 JPEG：顺带去掉 EXIF（拍摄位置等）信息。服务端还会再剥离一次。
+      blob = await compressImage(file, 1600);
     } catch {
       setBusy(null);
       return setMsg({ at: slot, ok: false, text: "无法读取这张图片，请换一张 JPG 或 PNG" });
@@ -286,28 +213,31 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
     setBusy(null);
     if (!res || !res.ok) return setMsg({ at: "job", ok: false, text: await readError(res, "删除失败") });
     const body = (await res.json()) as { job: JobView };
+    setForgotten(job.glbUrl);
     setJob(body.job);
     // 卡片里已有“这个形象已删除…”的状态说明，这里只给读屏播报，不再就近重复显示
     setMsg({ at: "sr", ok: true, text: mp ? "已删除这个 3D 形象" : "已删除这个 3D 形象，照片仍保留" });
   }
 
   async function deleteEverything() {
-    if (!confirm("确定删除全部照片与 3D 形象吗？存储里的文件会一并删除，无法恢复。")) return;
+    if (!confirm(`确定删除全部照片与${tw ? "" : " 3D "}形象吗？存储里的文件会一并删除，无法恢复。`)) return;
     setBusy("delete");
     setMsg(null);
     const res = await fetch("/api/avatar", { method: "DELETE" }).catch(() => null);
     setBusy(null);
     if (!res || !res.ok) return setMsg({ at: "delete", ok: false, text: await readError(res, "删除失败") });
     const body = (await res.json()) as AvatarState & { remotePurge: RemoteSummary };
+    setForgotten(job?.glbUrl ?? null);
     setState(body);
     setAgreeStore(false);
     setAgreeThird(false);
-    setMsg({ at: "delete", ok: body.remotePurge.failed === 0, text: `已删除全部照片与 3D 形象${summaryText(body.remotePurge)}` });
+    setAgreeBody(false);
+    setMsg({ at: "delete", ok: body.remotePurge.failed === 0, text: `已删除全部照片与${tw ? "" : " 3D "}形象${summaryText(body.remotePurge)}` });
   }
 
   const photosBySlot = (slot: Slot) => state.photos.filter((p) => p.slot === slot);
   const legacy = state.photos.filter((p) => p.slot === "face" || p.slot === "extra");
-  const hasAny = state.photos.length > 0 || (job && job.status !== "canceled");
+  const hasAny = state.photos.length > 0 || (job && job.status !== "canceled") || !!state.twin;
   const remote = job ? remoteText(job.remotePurge, remoteName) : null;
 
   return (
@@ -319,35 +249,70 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
           {consented && !editing ? <span className="sc-badge">已同意</span> : null}
         </div>
         <p className="serif-note">
-          {mp
-            ? "自拍仅用于生成你的 3D 形象；形象私密保存、仅你可见，可随时删除。"
+          {tw
+            ? `照片仅用于生成你的形象，私密保存、仅你可见；原图 ${state.retentionDays} 天后自动删除，可随时一键删除。`
             : "照片仅用于生成你的 3D 形象，私密保存、仅你可见，可随时删除。"}
         </p>
 
         {showConsentForm ? (
           <>
             {state.consent && !state.consent.current ? <p className="error">说明已更新，请重新阅读并确认。</p> : null}
-            {noteAt("consent") ? <p className="error">{noteAt("consent")!.text}</p> : null}
+            {noteAt("consent") ? (
+              <p className="error" role="alert">
+                {noteAt("consent")!.text}
+              </p>
+            ) : null}
             {!consented ? (
               <label className={s.option}>
                 <input type="checkbox" checked={agreeStore} onChange={(e) => setAgreeStore(e.target.checked)} />
-                <span>{mp ? "我同意保存我的 3D 形象，仅自己可见" : "我同意上传照片，用于生成我的 3D 形象"}</span>
+                <span>
+                  {tw
+                    ? "保存我的照片与形象，仅自己可见"
+                    : mp
+                      ? "我同意保存我的照片与 3D 形象，仅自己可见"
+                      : "我同意上传照片，用于生成我的 3D 形象"}
+                </span>
               </label>
             ) : null}
             {offer ? (
               <label className={s.option}>
                 <input type="checkbox" checked={agreeThird} onChange={(e) => setAgreeThird(e.target.checked)} />
-                <span>{mp ? `由 ${offer.name} 根据你的自拍生成本人形象` : `由 ${offer.name} 根据照片生成更真实的本人形象`}</span>
+                <span>
+                  {tw
+                    ? "由 fal.ai 上的 AI 图像模型根据我的照片生成我的形象"
+                    : mp
+                      ? `由 ${offer.name} 根据你的自拍生成本人形象`
+                      : `由 ${offer.name} 根据照片生成更真实的本人形象`}
+                  {mp ? (
+                    <>
+                      {" · "}
+                      {/* 手机版创建器上传前会要求接受 Avatar SDK 的隐私政策，这里先给出同一份文件 */}
+                      <a className={s.policy} href={MP_PRIVACY_URL} target="_blank" rel="noopener noreferrer">
+                        隐私政策
+                      </a>
+                    </>
+                  ) : null}
+                </span>
+              </label>
+            ) : null}
+            {offer && bodyOffer ? (
+              <label className={s.option}>
+                <input type="checkbox" checked={agreeBody} onChange={(e) => setAgreeBody(e.target.checked)} />
+                <span>
+                  {tw
+                    ? "由 Anthropic（Claude）分析我的照片，理解身材、发型与脸部特征"
+                    : "由 Anthropic（Claude）分析我的全身照，参考我的照片调整 3D 形象的体型"}
+                </span>
               </label>
             ) : null}
             <div className={s.actions}>
               <button
                 type="button"
                 className="sc-cta"
-                disabled={(!consented && !agreeStore) || (mp && !agreeThird) || busy === "consent"}
+                disabled={(!consented && !agreeStore) || (needThird && !agreeThird) || busy === "consent"}
                 onClick={giveConsent}
               >
-                {busy === "consent" ? "记录中…" : consented ? "保存授权" : mp ? "同意并开始" : "同意并开始上传"}
+                {busy === "consent" ? "记录中…" : consented ? "保存授权" : needThird ? "同意并开始" : "同意并开始上传"}
               </button>
               {editing ? (
                 <button
@@ -356,6 +321,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
                   onClick={() => {
                     setEditing(false);
                     setAgreeThird(!!state.consent?.thirdParty);
+                    setAgreeBody(!!state.consent?.bodyAnalysis);
                   }}
                 >
                   取消
@@ -366,11 +332,16 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
         ) : (
           <div className={s.granted}>
             <span className={s.pill} data-on>
-              ✓ {mp ? "保存形象" : "存储照片"}
+              ✓ {needThird ? "保存照片与形象" : "存储照片"}
             </span>
             {offer ? (
               <span className={s.pill} data-on={state.consent?.thirdParty ? true : undefined}>
-                {state.consent?.thirdParty ? "✓" : "—"} 发送给 {offer.name}
+                {state.consent?.thirdParty ? "✓" : "—"} {tw ? `${offer.name} 生成形象` : `发送给 ${offer.name}`}
+              </span>
+            ) : null}
+            {offer && bodyOffer ? (
+              <span className={s.pill} data-on={state.consent?.bodyAnalysis ? true : undefined}>
+                {state.consent?.bodyAnalysis ? "✓" : "—"} {bodyOffer.name} {tw ? "照片分析" : "体型分析"}
               </span>
             ) : null}
             <span className={s.hint}>{new Date(state.consent!.at).toLocaleString("zh-CN")}</span>
@@ -383,50 +354,92 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
         )}
       </section>
 
-      {/* MetaPerson：创建器 → 保存 → 查看器 */}
-      {mp ? (
+      {/* 数字分身（D63）：上传照片 → 生成标准形象照 → 画廊。不加载 MetaPerson 创建器。 */}
+      {twReady ? (
+        <TwinStudio
+          state={state}
+          busy={busy}
+          errorAt={(at) => noteAt(at)?.text}
+          onUpload={upload}
+          onRemove={removePhoto}
+          onState={setState}
+          onNote={(text) => setMsg({ at: "sr", ok: true, text })}
+        />
+      ) : tw ? (
         <section className="sc-glass card stack sc-rise">
-          <div className="spread" style={{ alignItems: "flex-start" }}>
-            <h2 className="section-title">{job?.status === "succeeded" && job.glbUrl && !regenerating ? "你的形象" : "生成"}</h2>
-          </div>
-          {job?.status === "succeeded" && job.glbUrl && !regenerating ? (
-            <div className="stack" style={{ gap: 12 }}>
-              <AvatarViewer src={job.glbUrl} badges={job.badges} height={520} label="我的 3D 形象，可拖动 360° 旋转" />
-              <div className={s.actions}>
-                <button type="button" className="sc-cta sc-cta--ghost" onClick={() => setRegenerating(true)} disabled={!mpReady}>
-                  重新生成
-                </button>
-                <button type="button" className={s.small} onClick={deleteAvatar} disabled={busy === "result"}>
-                  {busy === "result" ? "删除中…" : "删除这个形象"}
-                </button>
-              </div>
+          <h2 className="section-title">生成你的形象</h2>
+          <p className="sc-meta">先在上方勾选同意。</p>
+        </section>
+      ) : null}
+
+      {/* MetaPerson：上传照片（创建器在后台预加载）→ 生成 → 保存 → 查看器 */}
+      {mp && job?.status === "succeeded" && job.glbUrl && !regenerating ? (
+        <section className="sc-glass card stack sc-rise">
+          <h2 className="section-title">你的形象</h2>
+          <div className="stack" style={{ gap: 12 }}>
+            <AvatarViewer src={job.glbUrl} badges={job.badges} height={520} label="我的 3D 形象，可拖动 360° 旋转" />
+            {state.bodyAnalysis?.summary ? <p className="sc-meta">参考你的照片：{state.bodyAnalysis.summary}</p> : null}
+            <div className={s.actions}>
+              <button
+                type="button"
+                className="sc-cta sc-cta--ghost"
+                onClick={() => {
+                  setMsg(null); // 上一次的“已保存 / 已删除”不再适用
+                  setRegenerating(true);
+                }}
+                disabled={!mpReady}
+              >
+                重新生成
+              </button>
+              <button type="button" className={s.small} onClick={deleteAvatar} disabled={busy === "result"}>
+                {busy === "result" ? "删除中…" : "删除这个形象"}
+              </button>
+            </div>
+            <div role="status" aria-live="polite">
               {noteAt("job") ? <p className={noteAt("job")!.ok ? "sc-meta" : "error"}>{noteAt("job")!.text}</p> : null}
             </div>
-          ) : mpReady ? (
+          </div>
+        </section>
+      ) : mpReady ? (
+        <MetaPersonStudio
+          state={state}
+          busy={busy}
+          errorAt={(at) => noteAt(at)?.text}
+          onUpload={upload}
+          onRemove={removePhoto}
+          onImported={(next) => {
+            setState(next);
+            setRegenerating(false);
+            setMsg({ at: "sr", ok: true, text: "已保存你的 3D 形象" });
+          }}
+          footer={
             <>
-              <p className="serif-note">在下方上传一张清晰的正脸自拍，生成后保存为你的 3D 形象。</p>
-              <MetaPersonCreator
-                onImported={(next) => {
-                  setState(next);
-                  setRegenerating(false);
-                  setMsg({ at: "sr", ok: true, text: "已保存你的 3D 形象" });
-                }}
-              />
               {regenerating && job?.status === "succeeded" && job.glbUrl ? (
-                <button type="button" className={s.small} style={{ justifySelf: "start" }} onClick={() => setRegenerating(false)}>
+                <button
+                  type="button"
+                  className={s.small}
+                  style={{ justifySelf: "start" }}
+                  onClick={() => {
+                    setMsg(null);
+                    setRegenerating(false);
+                  }}
+                >
                   返回当前形象
                 </button>
               ) : null}
               {job?.resultDeleted ? <p className="sc-meta">之前的形象已删除，可以重新生成。</p> : null}
             </>
-          ) : (
-            <p className="sc-meta">先在上方勾选同意。</p>
-          )}
+          }
+        />
+      ) : mp ? (
+        <section className="sc-glass card stack sc-rise">
+          <h2 className="section-title">生成你的 3D 形象</h2>
+          <p className="sc-meta">先在上方勾选同意。</p>
         </section>
       ) : null}
 
       {/* 照片 */}
-      {!mp ? (
+      {state.mode === "photos" ? (
       <section className="sc-glass card stack sc-rise">
         <h2 className="section-title">上传全身照</h2>
         <p className="serif-note">
@@ -478,7 +491,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
       ) : null}
 
       {/* 生成与结果 */}
-      {!mp ? (
+      {state.mode === "photos" ? (
       <section className="sc-glass card stack sc-rise">
         <div className="spread" style={{ alignItems: "flex-start" }}>
           <h2 className="section-title">生成</h2>
@@ -546,7 +559,9 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
             {!consented ? "先在上方勾选同意。" : sideRequired ? "先上传正面和侧面全身照。" : "先上传正面，以及侧面或背面全身照。"}
           </p>
         ) : null}
-        {noteAt("job") ? <p className={noteAt("job")!.ok ? "sc-meta" : "error"}>{noteAt("job")!.text}</p> : null}
+        <div role="status" aria-live="polite">
+          {noteAt("job") ? <p className={noteAt("job")!.ok ? "sc-meta" : "error"}>{noteAt("job")!.text}</p> : null}
+        </div>
       </section>
       ) : null}
 
@@ -558,20 +573,22 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
           {hasAny ? (
             <>
               <p className="sc-meta">
-                删除全部照片与 3D 形象。
+                {tw ? "删除全部照片与形象照。" : "删除全部照片与 3D 形象。"}
               </p>
               <button type="button" className="link-btn" style={{ justifySelf: "start" }} onClick={deleteEverything} disabled={busy === "delete"}>
                 {busy === "delete" ? "删除中…" : "一键删除全部照片与形象"}
               </button>
             </>
           ) : null}
-          {noteAt("delete") ? <p className={noteAt("delete")!.ok ? "sc-meta" : "error"}>{noteAt("delete")!.text}</p> : null}
+          <div role="status" aria-live="polite">
+            {noteAt("delete") ? <p className={noteAt("delete")!.ok ? "sc-meta" : "error"}>{noteAt("delete")!.text}</p> : null}
+          </div>
         </section>
       ) : null}
 
-      {/* 读屏播报：视觉上隐藏，提示文字已就近显示在对应卡片里 */}
+      {/* 读屏播报：只播没有就近位置的提示（at = "sr"），其余提示由就近的播报区负责，避免同一句出现两次 */}
       <p role="status" aria-live="polite" className="sr-only">
-        {msg?.text ?? ""}
+        {msg?.at === "sr" ? msg.text : ""}
       </p>
     </div>
   );

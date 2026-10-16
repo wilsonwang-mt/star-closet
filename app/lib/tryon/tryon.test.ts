@@ -112,7 +112,8 @@ beforeEach(() => {
   plans = [];
   failModes = new Set();
   delete process.env.FAL_KEY;
-  delete process.env.TRYON_PROVIDER;
+  // 本文件覆盖备选的 FASHN 路径（默认 Kolors → nano 见 kolors.test.ts）：固定 TRYON_PROVIDER=fashn_fal。
+  process.env.TRYON_PROVIDER = "fashn_fal";
 });
 
 after(() => {

@@ -258,6 +258,9 @@ export const avatarJob = pgTable(
     // 外部生成服务的任务编号与状态查询地址（持久化，替代进程内存；服务重启后可继续轮询）。
     providerTaskId: text("provider_task_id"),
     providerStatusUrl: text("provider_status_url"),
+    // 数字分身（D63）：一组标准形象照的私有存储 key 与分析结果
+    // { front, side, back, summary, traits, gender }；其他模式为 null。
+    resultImages: jsonb("result_images").$type<Record<string, unknown>>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -297,3 +300,28 @@ export const tryonConsent = pgTable("tryon_consent", {
   consentVersion: text("consent_version").notNull(), // 如 "tryon-consent-v1:fashn_fal"
   consentAt: timestamp("consent_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// ---- 商品详情页“上身效果”：本人穿着这件单品出现在场景里（T3）----
+// 输入为本人正面全身照（avatar_photo.slot = front）+ 单品图 + 场景描述，经 fal 生成场景图，再在后台生成 3–4 秒 Live 视频。
+// 文件存私有存储 `<userId>/avatars/scene-<id>.jpg|mp4`（沿用现有 key 规则，一键删除时随用户前缀清理）。
+// 同一用户同一件单品只保留最新一组结果。
+
+export const sceneRender = pgTable(
+  "scene_render",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    itemId: text("item_id").notNull(),
+    sceneId: text("scene_id").notNull(),
+    status: text("status").notNull().default("processing"), // "processing" | "succeeded" | "failed"
+    imageKey: text("image_key"),
+    videoKey: text("video_key"),
+    // fal queue 的状态查询地址；视频生成中时有值，完成或失败后清空。
+    videoStatusUrl: text("video_status_url"),
+    error: text("error"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("scene_render_user_item_idx").on(t.userId, t.itemId)],
+);

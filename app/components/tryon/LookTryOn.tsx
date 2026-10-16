@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -13,7 +14,8 @@ import type { LookTryon } from "./useLookTryon";
 import base from "./TryOn.module.css";
 import s from "./LookTryOn.module.css";
 
-// 试衣间逐件试穿：用户自己的形象穿着选中的衣服，一件一件来。
+// 试衣间逐件试穿：用户自己的形象穿着选中的衣服，一件一件来。底图优先用数字分身正面照（D63），没有时用正面全身照；
+// 都没有时引导去 /profile/avatar 建立形象（仍保留直接上传正面照作兜底）。
 // - 卡片上每件可上身的单品（上装、下装、外套、连衣裙）有“试穿这件”；鞋、包、配饰不出现这个按钮。
 // - 面板：舞台（正在看的那张）+ 穿搭进度（正面照 → 第 1 件 → 第 2 件……，点哪张看哪张，下一件就穿在那张上）+ 这一套的单品。
 // - 生成中：底图压暗虚化，光束扫过，写明正在穿上哪一件、真实阶段（排队中 / 生成中）与已用时间；可以关掉面板，穿好后出现在这一套里。
@@ -171,6 +173,7 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
   const shownKey = t.selected ? `${t.selected.id}:${t.selected.mode}` : `photo:${t.photoUrl ?? ""}`;
   const refiningShown = !!t.selected?.refining && !t.pending;
   const ready = t.hasBase && (t.consented || t.agree) && !t.uploading;
+  const baseAlt = t.isTwin ? "你的数字分身" : "你的正面全身照";
   const wornName = (f: TryonView) => {
     const it = f.wornItemId ? byId.get(f.wornItemId) : null;
     return it ? cleanName(it.name) : f.applied.join("、");
@@ -296,7 +299,7 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
                   <motion.img
                     key={shownKey}
                     src={shownUrl}
-                    alt={t.selected ? `穿上${wornName(t.selected)}的你` : "你的正面全身照"}
+                    alt={t.selected ? `穿上${wornName(t.selected)}的你` : baseAlt}
                     className={s.frame}
                     onError={t.selected ? () => t.drop(t.selected!.id) : undefined}
                     {...crossfade}
@@ -305,18 +308,24 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
               </AnimatePresence>
 
               {!shownUrl ? (
-                <label className={`${base.upload} ${s.stageUpload}`}>
+                <div className={`${base.upload} ${s.stageUpload}`} style={{ gap: 12, alignContent: "center", cursor: "default" }}>
                   <span>
-                    <strong>{t.uploading ? "上传中…" : "上传正面全身照"}</strong>
-                    站直、正面、光线充足
+                    <strong>还没有你的形象</strong>
+                    上传 3–5 张照片，生成你的数字分身
                   </span>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    disabled={t.uploading}
-                    onChange={(e) => void t.upload(e.target.files?.[0])}
-                  />
-                </label>
+                  <Link href="/profile/avatar" className="sc-cta compact">
+                    先建立你的形象
+                  </Link>
+                  <label className={`link-btn ${base.fileBtn}`}>
+                    {t.uploading ? "上传中…" : "或直接上传一张正面全身照"}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      disabled={t.uploading}
+                      onChange={(e) => void t.upload(e.target.files?.[0])}
+                    />
+                  </label>
+                </div>
               ) : null}
 
               {shownUrl && !t.pending ? (
@@ -392,15 +401,17 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
                   : t.selected
                     ? "下一件穿在这一张上"
                     : t.photoUrl
-                      ? "从你的照片开始"
-                      : "先放一张正面全身照"}
+                      ? t.isTwin
+                        ? "从你的数字分身开始，一件一件穿上"
+                        : "从你的照片开始"
+                      : "先建立你的形象"}
               </span>
               <span className={s.stageActions}>
                 {t.pending ? null : t.selected ? (
                   <>
                     {t.photoUrl ? (
                       <button type="button" className="link-btn" onClick={() => t.select(null)}>
-                        从我的照片重新开始
+                        {t.isTwin ? "从我的分身重新开始" : "从我的照片重新开始"}
                       </button>
                     ) : (
                       photoInput("上传照片重新开始", `link-btn ${base.fileBtn}`)
@@ -410,7 +421,13 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
                     </button>
                   </>
                 ) : t.photoUrl ? (
-                  photoInput(t.uploading ? "上传中…" : "换一张照片", `link-btn ${base.fileBtn}`)
+                  t.isTwin ? (
+                    <Link href="/profile/avatar" className="link-btn">
+                      管理我的形象
+                    </Link>
+                  ) : (
+                    photoInput(t.uploading ? "上传中…" : "换一张照片", `link-btn ${base.fileBtn}`)
+                  )
                 ) : null}
               </span>
             </div>
@@ -425,7 +442,7 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
                     type="button"
                     className={s.frameBtn}
                     aria-pressed={t.selectedId === null}
-                    aria-label="你的照片"
+                    aria-label={t.isTwin ? "你的数字分身" : "你的照片"}
                     disabled={!!t.pending}
                     onClick={() => t.select(null)}
                   >
@@ -433,7 +450,7 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       {t.photoUrl ? <img className={s.frameShot} src={t.photoUrl} alt="" /> : <span className={s.framePlaceholder}>+</span>}
                     </span>
-                    <span className={s.frameCap}>照片</span>
+                    <span className={s.frameCap}>{t.isTwin ? "分身" : "照片"}</span>
                   </button>
                 </li>
                 {/* popLayout：退场的“穿上中”立刻让出位置，新的一张在同一格里接替 */}
@@ -524,7 +541,7 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
             {!t.consented ? (
               <label className={base.consent}>
                 <input type="checkbox" checked={t.agree} onChange={(e) => t.setAgree(e.target.checked)} />
-                <span>同意把我的正面照发送给 FASHN（fal.ai）生成试穿图</span>
+                <span>同意把我的形象照片发送给 {t.providerName} 生成试穿图</span>
               </label>
             ) : null}
             {t.error ? (
@@ -562,7 +579,7 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
           >
             <motion.img
               src={shownUrl}
-              alt={t.selected ? `穿上${wornName(t.selected)}的你` : "你的正面全身照"}
+              alt={t.selected ? `穿上${wornName(t.selected)}的你` : baseAlt}
               initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.92 }}
               animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1 }}
               exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}

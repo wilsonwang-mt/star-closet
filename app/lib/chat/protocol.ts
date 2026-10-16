@@ -1,4 +1,4 @@
-// 悬浮对话（D56）的前后端协议：卡片数据与 NDJSON 流事件。客户端与服务端共用，只放类型与常量。
+// 悬浮对话（D66）的前后端协议：卡片数据与 NDJSON 流事件。客户端与服务端共用，只放类型与常量。
 import type { LocateQuery, PageKey } from "../locate/core";
 
 export type ClosetCard = {

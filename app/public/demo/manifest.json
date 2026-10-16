@@ -1,0 +1,152 @@
+{
+  "models": {
+    "f01": {
+      "full": "/demo/models/f01-full.jpg",
+      "half": "/demo/models/f01-half.jpg",
+      "selfie": "/demo/models/f01-selfie.jpg"
+    },
+    "m01": {
+      "full": "/demo/models/m01-full.jpg",
+      "half": "/demo/models/m01-half.jpg",
+      "selfie": "/demo/models/m01-selfie.jpg"
+    }
+  },
+  "items": {
+    "I011": {
+      "model": "f01",
+      "scenes": [
+        {
+          "id": "street",
+          "title": "城市街头黄昏",
+          "image": "/demo/scenes/I011-street.jpg",
+          "live": "/demo/live/I011-street.mp4"
+        },
+        {
+          "id": "cafe",
+          "title": "周五的咖啡馆",
+          "image": "/demo/scenes/I011-cafe.jpg",
+          "live": "/demo/live/I011-cafe.mp4"
+        }
+      ]
+    },
+    "I023": {
+      "model": "f01",
+      "scenes": [
+        {
+          "id": "cafe",
+          "title": "周五的咖啡馆",
+          "image": "/demo/scenes/I023-cafe.jpg",
+          "live": "/demo/live/I023-cafe.mp4"
+        },
+        {
+          "id": "seaside",
+          "title": "海边度假",
+          "image": "/demo/scenes/I023-seaside.jpg",
+          "live": "/demo/live/I023-seaside.mp4"
+        }
+      ]
+    },
+    "I071": {
+      "model": "f01",
+      "scenes": [
+        {
+          "id": "gallery",
+          "title": "美术馆",
+          "image": "/demo/scenes/I071-gallery.jpg",
+          "live": "/demo/live/I071-gallery.mp4"
+        },
+        {
+          "id": "wedding",
+          "title": "户外草坪婚礼",
+          "image": "/demo/scenes/I071-wedding.jpg",
+          "live": "/demo/live/I071-wedding.mp4"
+        }
+      ]
+    },
+    "I113": {
+      "model": "f01",
+      "scenes": [
+        {
+          "id": "wedding",
+          "title": "户外草坪婚礼",
+          "image": "/demo/scenes/I113-wedding.jpg",
+          "live": "/demo/live/I113-wedding.mp4"
+        },
+        {
+          "id": "gallery",
+          "title": "美术馆",
+          "image": "/demo/scenes/I113-gallery.jpg",
+          "live": "/demo/live/I113-gallery.mp4"
+        }
+      ]
+    },
+    "I142": {
+      "model": "f01",
+      "scenes": [
+        {
+          "id": "street",
+          "title": "城市街头黄昏",
+          "image": "/demo/scenes/I142-street.jpg",
+          "live": "/demo/live/I142-street.mp4"
+        },
+        {
+          "id": "market",
+          "title": "周末市集",
+          "image": "/demo/scenes/I142-market.jpg",
+          "live": "/demo/live/I142-market.mp4"
+        }
+      ]
+    },
+    "I160": {
+      "model": "m01",
+      "scenes": [
+        {
+          "id": "cafe",
+          "title": "周五的咖啡馆",
+          "image": "/demo/scenes/I160-cafe.jpg",
+          "live": "/demo/live/I160-cafe.mp4"
+        },
+        {
+          "id": "street",
+          "title": "城市街头黄昏",
+          "image": "/demo/scenes/I160-street.jpg",
+          "live": "/demo/live/I160-street.mp4"
+        }
+      ]
+    },
+    "I175": {
+      "model": "m01",
+      "scenes": [
+        {
+          "id": "market",
+          "title": "周末市集",
+          "image": "/demo/scenes/I175-market.jpg",
+          "live": "/demo/live/I175-market.mp4"
+        },
+        {
+          "id": "seaside",
+          "title": "海边度假",
+          "image": "/demo/scenes/I175-seaside.jpg",
+          "live": "/demo/live/I175-seaside.mp4"
+        }
+      ]
+    },
+    "I191": {
+      "model": "m01",
+      "scenes": [
+        {
+          "id": "street",
+          "title": "城市街头黄昏",
+          "image": "/demo/scenes/I191-street.jpg",
+          "live": "/demo/live/I191-street.mp4"
+        },
+        {
+          "id": "market",
+          "title": "周末市集",
+          "image": "/demo/scenes/I191-market.jpg",
+          "live": "/demo/live/I191-market.mp4"
+        }
+      ]
+    }
+  }
+}

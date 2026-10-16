@@ -66,6 +66,9 @@ revoke all on table public.profile, public.avatar_photo, public.avatar_job from 
 alter table public.tryon enable row level security;
 alter table public.tryon_consent enable row level security;
 revoke all on table public.tryon, public.tryon_consent from anon, authenticated;
+-- 商品详情页“上身效果”（scene_render 指向用本人正面照生成的场景图与 Live 视频，迁移 0004）：同样不对 Data API 开放。
+alter table public.scene_render enable row level security;
+revoke all on table public.scene_render from anon, authenticated;
 
 -- 5. 建项目时勾选“Enable automatic RLS”会生成 public.rls_auto_enable()（SECURITY DEFINER 的事件触发器函数）。
 --    它只该由建表事件触发，收回 Data API 角色的调用权限；不影响自动开启 RLS。

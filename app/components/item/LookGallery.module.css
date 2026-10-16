@@ -1,0 +1,193 @@
+.section {
+  display: grid;
+  gap: var(--sc-space-4);
+}
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sc-space-3);
+}
+.title {
+  margin: 6px 0 4px;
+  font: 400 var(--sc-fs-title) / 1.3 var(--sc-font-serif);
+  letter-spacing: 0.12em;
+  color: var(--sc-ink);
+}
+
+/* 横向画廊：手机一屏约 1.4 张，露出下一张提示可横滑；桌面并排 3 张。 */
+.rail {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: min(68vw, 300px);
+  gap: var(--sc-space-3);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 2px;
+  padding: 4px 2px 10px;
+  scrollbar-width: none;
+}
+.rail::-webkit-scrollbar {
+  display: none;
+}
+@media (min-width: 900px) {
+  .rail {
+    grid-auto-columns: calc((100% - 2 * var(--sc-space-3)) / 3);
+  }
+}
+.cell {
+  scroll-snap-align: start;
+}
+
+/* 等待卡：暗场上一道光束扫过（只动 transform / opacity）。 */
+.waiting {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--sc-radius-card);
+  overflow: hidden;
+  background: var(--sc-bg-raised);
+  box-shadow: inset 0 0 0 0.5px var(--sc-glass-edge-2);
+}
+.beam {
+  position: absolute;
+  inset: -20% -80%;
+  background: linear-gradient(100deg, transparent 40%, rgba(232, 207, 156, 0.18) 50%, transparent 60%);
+  animation: beam 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+@keyframes beam {
+  from { transform: translateX(-45%); }
+  to { transform: translateX(45%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .beam {
+    animation: none;
+    opacity: 0.5;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sc-space-3);
+}
+.prep {
+  display: grid;
+  gap: var(--sc-space-3);
+  width: 100%;
+  max-width: 440px;
+}
+.prepRow {
+  display: grid;
+  gap: 4px;
+}
+.consent {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font: 300 13px/1.6 var(--sc-font-sans);
+  color: var(--sc-ink-2);
+  cursor: pointer;
+}
+.consent input {
+  margin-top: 4px;
+  accent-color: var(--sc-champ);
+}
+.error {
+  margin: 0;
+  font: 300 13px/1.6 var(--sc-font-sans);
+  color: var(--sc-champ-text);
+}
+
+/* 生成中的阶段文案：紧贴标题，比秒数醒目一级 */
+.stage { margin: 0 0 2px; }
+
+/* 一键试穿（D63）：本人形象穿上这件的大图 + 说明与主按钮；手机上下排，桌面左右排。 */
+.quick {
+  display: grid;
+  gap: var(--sc-space-4);
+  align-items: center;
+}
+@media (min-width: 760px) {
+  .quick {
+    grid-template-columns: minmax(240px, 380px) 1fr;
+  }
+}
+.quickStage {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--sc-radius-card);
+  overflow: hidden;
+  background: var(--sc-bg-raised);
+  box-shadow: inset 0 0 0 0.5px var(--sc-glass-edge-2);
+  width: 100%;
+  max-width: 380px;
+}
+.quickImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.quickBlur {
+  filter: blur(10px) saturate(0.75) brightness(0.62);
+  transform: scale(1.08);
+}
+.quickZoom {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: zoom-in;
+}
+.quickLabel {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font: 400 11px/1.4 var(--sc-font-sans);
+  letter-spacing: 0.12em;
+  color: var(--sc-ink);
+  background: color-mix(in srgb, var(--sc-bg) 55%, transparent);
+  backdrop-filter: blur(8px);
+}
+.quickEmpty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  text-align: center;
+  font: 300 13px/1.6 var(--sc-font-sans);
+  color: var(--sc-ink-2);
+}
+.quickText {
+  display: grid;
+  gap: var(--sc-space-3);
+  align-content: center;
+  justify-items: start;
+}
+.quickTitle {
+  margin: 0;
+  font: 400 var(--sc-fs-title) / 1.35 var(--sc-font-serif);
+  letter-spacing: 0.1em;
+  color: var(--sc-ink);
+}
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(8, 7, 6, 0.86);
+  cursor: zoom-out;
+}
+.lightbox img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 16px;
+}

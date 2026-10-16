@@ -9,9 +9,12 @@ import { deleteRemoteAvatar, metapersonEnabled } from "./metaperson";
 // - metaperson：Avatar SDK 的 MetaPerson Creator。用户在本站嵌入的创建器里上传自拍、生成形象，导出后由服务端下载转存
 //   （见 metaperson.ts、POST /api/avatar/metaperson/import）。不走 submit/poll；AVATAR3D_PROVIDER=metaperson 且
 //   AVATARSDK_CLIENT_ID、AVATARSDK_CLIENT_SECRET 都存在才启用，同样要求用户单独勾选第三方处理（D47）。
+// - twin（D63，数字分身）：不做 3D。用户上传 3–5 张照片，Claude 分析体型/发型/脸部特征，fal.ai 上的 nano-banana-pro/edit
+//   生成一组标准形象照（正面、侧面、背面）。设置了 FAL_KEY 且 AVATAR3D_PROVIDER 未设或为 twin 时启用；同样要求用户单独勾选（D47）。
+//   生成走 POST /api/avatar/twin（同步），不走 submit/poll，见 twin.ts。
 // Meshy 备选适配器比赛版未实现。
 
-export type ProviderId = "mock" | "tripo_fal" | "metaperson";
+export type ProviderId = "mock" | "tripo_fal" | "metaperson" | "twin";
 
 export type ProviderInfo = {
   id: ProviderId;
@@ -77,35 +80,66 @@ const INFO: Record<ProviderId, ProviderInfo> = {
     processor: "Avatar SDK 的 MetaPerson 创建器（第三方服务，位于境外）：自拍在创建器内上传并由其生成形象，本站只保存导出的 3D 形象",
     fidelityNote: "MetaPerson 根据你的自拍生成的 3D 形象。",
   },
+  twin: {
+    id: "twin",
+    isMock: false,
+    name: "fal.ai",
+    processor: "fal.ai 上的 AI 图像模型（第三方服务，位于境外）：根据你上传的照片生成你的一组标准形象照",
+    fidelityNote: "AI 根据你的照片生成的形象照。",
+  },
 };
 
+/** 数字分身（D63）：设置了 FAL_KEY，且 AVATAR3D_PROVIDER 未设或为 twin。 */
+export function twinEnabled(): boolean {
+  const p = process.env.AVATAR3D_PROVIDER;
+  return !!process.env.FAL_KEY && (!p || p === "twin");
+}
+
 // ---------- 同意版本 ----------
-// consent_version 同时记录两项：
+// consent_version 同时记录各项：
 //   avatar-consent-v2:store            只同意本站保存照片（只能生成示意模型）
 //   avatar-consent-v2:store+tripo_fal  另外单独同意把照片发送给 fal.ai（Tripo 3D）
+//   avatar-consent-v2:store+metaperson            单独同意由 MetaPerson 生成本人形象
+//   avatar-consent-v2:store+metaperson+anthropic  另外单独同意由 Anthropic（Claude）分析全身照、参考照片调整体型（D56）
 // 同意卡文案改动时提升版本号，旧版本的同意随之失效、需要重新确认。
 export const CONSENT_BASE = "avatar-consent-v2";
 
-export function consentVersionFor(thirdParty: ProviderId | null): string {
+/** bodyAnalysis 只在第三方为 MetaPerson 或数字分身时生效（分析结果只用于这两种形象）。 */
+export function consentVersionFor(thirdParty: ProviderId | null, bodyAnalysis = false): string {
+  if ((thirdParty === "metaperson" || thirdParty === "twin") && bodyAnalysis) return `${CONSENT_BASE}:store+${thirdParty}+${BODY_ANALYSIS_ID}`;
   return thirdParty && thirdParty !== "mock" ? `${CONSENT_BASE}:store+${thirdParty}` : `${CONSENT_BASE}:store`;
 }
 
-export function parseConsentVersion(v: string | null | undefined): { thirdParty: ProviderId | null } | null {
-  if (v === `${CONSENT_BASE}:store`) return { thirdParty: null };
-  if (v === `${CONSENT_BASE}:store+tripo_fal`) return { thirdParty: "tripo_fal" };
-  if (v === `${CONSENT_BASE}:store+metaperson`) return { thirdParty: "metaperson" };
+export function parseConsentVersion(v: string | null | undefined): { thirdParty: ProviderId | null; bodyAnalysis: boolean } | null {
+  if (v === `${CONSENT_BASE}:store`) return { thirdParty: null, bodyAnalysis: false };
+  if (v === `${CONSENT_BASE}:store+tripo_fal`) return { thirdParty: "tripo_fal", bodyAnalysis: false };
+  if (v === `${CONSENT_BASE}:store+metaperson`) return { thirdParty: "metaperson", bodyAnalysis: false };
+  if (v === `${CONSENT_BASE}:store+metaperson+${BODY_ANALYSIS_ID}`) return { thirdParty: "metaperson", bodyAnalysis: true };
+  if (v === `${CONSENT_BASE}:store+twin`) return { thirdParty: "twin", bodyAnalysis: false };
+  if (v === `${CONSENT_BASE}:store+twin+${BODY_ANALYSIS_ID}`) return { thirdParty: "twin", bodyAnalysis: true };
   return null;
+}
+
+// ---------- 体型分析（D56） ----------
+// 第三个第三方处理方：Anthropic（Claude）读取全身正面/侧面照与身高体重，给出 8 个身体比例参数与一句体型概括。
+// 只在 MetaPerson 模式且配置了 ANTHROPIC_API_KEY 时出现在同意卡上，且须用户单独勾选；否则只按身高体重粗略设定。
+export const BODY_ANALYSIS_ID = "anthropic";
+export const BODY_ANALYSIS_NAME = "Anthropic（Claude）";
+
+export function bodyAnalysisOffered(): boolean {
+  return (metapersonEnabled() || twinEnabled()) && !!process.env.ANTHROPIC_API_KEY;
 }
 
 /** 配置了真实服务 key 时返回该服务；否则 null（同意卡不显示第二项）。 */
 export function thirdPartyInfo(): ProviderInfo | null {
   if (metapersonEnabled()) return INFO.metaperson;
+  if (twinEnabled()) return INFO.twin;
   return process.env.AVATAR3D_PROVIDER === "tripo_fal" && process.env.FAL_KEY ? INFO.tripo_fal : null;
 }
 
 /** 用户看到的同意卡版本：第二项是否出现、写的是哪家服务。提交同意时用来确认卡片没有过期。 */
 export function offerVersion(): string {
-  return `${CONSENT_BASE}:offer:${thirdPartyInfo()?.id ?? "none"}`;
+  return `${CONSENT_BASE}:offer:${thirdPartyInfo()?.id ?? "none"}${bodyAnalysisOffered() ? `+${BODY_ANALYSIS_ID}` : ""}`;
 }
 
 /** 按用户的同意决定实际使用的服务：只有单独同意了第三方、且该服务仍已配置，才用真实服务。 */
@@ -122,11 +156,13 @@ export function providerForConsent(thirdParty: ProviderId | null): ProviderInfo 
 export function hasRequiredSlots(id: string, photos: { slot: string }[]) {
   const slots = new Set(photos.map((p) => p.slot));
   if (!slots.has("front")) return false;
+  if (id === "twin") return slots.has("face");
   if (id === "tripo_fal") return slots.has("side");
   return slots.has("side") || slots.has("back");
 }
 
 export function requiredSlotsMessage(id: string) {
+  if (id === "twin") return "需要正脸照和全身正面照";
   return id === "tripo_fal" ? "需要正面和侧面全身照，背面可选" : "需要正面全身照，以及侧面或背面全身照至少一张";
 }
 
@@ -136,7 +172,7 @@ export function maxPollSeconds() {
 }
 
 export function providerInfo(id: string): ProviderInfo | null {
-  return id === "mock" || id === "tripo_fal" || id === "metaperson" ? INFO[id] : null;
+  return id === "mock" || id === "tripo_fal" || id === "metaperson" || id === "twin" ? INFO[id] : null;
 }
 
 export function getProvider(id: string): Avatar3DProvider {
@@ -145,6 +181,7 @@ export function getProvider(id: string): Avatar3DProvider {
     return tripoFal;
   }
   if (id === "metaperson") return metaperson;
+  if (id === "twin") return twin;
   return mock;
 }
 
@@ -173,6 +210,20 @@ const metaperson: Avatar3DProvider = {
   },
   async poll() {
     return { state: "failed", code: "BAD_INPUT", message: "请在 MetaPerson 创建器中生成形象" };
+  },
+  async cancel() {},
+};
+
+// ---------- twin ----------
+// 数字分身由 POST /api/avatar/twin 同步生成并直接写成 succeeded / failed 作业，不存在需要轮询的任务。
+// poll 永远返回 processing：任何轮询（例如另一个标签页）都不能把正在生成的作业改成失败；超时由 service 的视图层判断。
+const twin: Avatar3DProvider = {
+  info: INFO.twin,
+  async submit() {
+    throw new ProviderError("BAD_INPUT", "请在形象页生成数字分身");
+  },
+  async poll() {
+    return { state: "processing" };
   },
   async cancel() {},
 };

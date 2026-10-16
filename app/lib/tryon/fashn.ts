@@ -1,7 +1,8 @@
 import type { FashnCategory } from "./plan";
 
-// FASHN v1.6 虚拟试穿（fal.ai 托管）。只在服务端调用，浏览器拿不到 key。
-// 启用条件：设置了 FAL_KEY（TRYON_PROVIDER 可不设，设置时必须为 fashn_fal）。没有 key 时不发起任何外部请求。
+// fal 队列接口（通用：提交 / 状态 / 结果 / 取消，FASHN、可灵 Kolors、nano-banana 共用）+ FASHN v1.6 的提交。
+// 只在服务端调用，浏览器拿不到 key。是否启用、用哪个模型由 provider.ts 决定；没有 FAL_KEY 时不发起任何外部请求。
+// FASHN 自 D62 起为备选（TRYON_PROVIDER=fashn_fal）。
 // 文档：https://fal.ai/models/fal-ai/fashn/tryon/v1.6 ——输入 model_image / garment_image（URL 或 base64 data URI）、
 // category、mode、garment_photo_type、output_format、sync_mode；输出 images[0].url（864×1296）。
 // 走队列接口（D62）：提交后立刻返回，由前端轮询 /api/tryon/<id> 时服务端查询状态、取回结果，不再占着一个长请求。
@@ -10,8 +11,6 @@ import type { FashnCategory } from "./plan";
 
 export const FASHN_MODEL = "fal-ai/fashn/tryon/v1.6";
 export const QUEUE_ENDPOINT = `https://queue.fal.run/${FASHN_MODEL}`;
-export const PROVIDER_ID = "fashn_fal";
-export const PROVIDER_NAME = "FASHN（fal.ai）";
 
 export class TryonError extends Error {
   constructor(
@@ -20,12 +19,6 @@ export class TryonError extends Error {
   ) {
     super(message);
   }
-}
-
-export function isTryonEnabled(): boolean {
-  const provider = process.env.TRYON_PROVIDER;
-  if (provider && provider !== PROVIDER_ID) return false;
-  return !!process.env.FAL_KEY;
 }
 
 /**
@@ -53,7 +46,7 @@ export class FashnTransientError extends Error {}
 
 function falKey(): string {
   const key = process.env.FAL_KEY;
-  if (!isTryonEnabled() || !key) throw new TryonError(503, "试穿服务未开放");
+  if (!key) throw new TryonError(503, "试穿服务未开放");
   return key;
 }
 
@@ -70,10 +63,27 @@ const isQueueUrl = (u: unknown): u is string => typeof u === "string" && u.start
 
 /** 提交一次 FASHN 到 fal 队列，返回查询地址（不等待生成）。 */
 export async function submitFashn(input: FashnInput, signal?: AbortSignal): Promise<FashnJob> {
+  return submitQueue(
+    FASHN_MODEL,
+    {
+      model_image: input.modelImage,
+      garment_image: input.garmentImage,
+      category: input.category,
+      mode: input.mode,
+      garment_photo_type: "flat-lay",
+      output_format: "jpeg",
+      sync_mode: input.syncMode ?? true,
+    },
+    signal,
+  );
+}
+
+/** 提交任意 fal 模型到队列（https://queue.fal.run/<model>），返回查询地址（不等待生成）。 */
+export async function submitQueue(model: string, body: Record<string, unknown>, signal?: AbortSignal): Promise<FashnJob> {
   const key = falKey();
   let res: Response;
   try {
-    res = await fetch(QUEUE_ENDPOINT, {
+    res = await fetch(`https://queue.fal.run/${model}`, {
       method: "POST",
       headers: {
         Authorization: `Key ${key}`,
@@ -81,15 +91,7 @@ export async function submitFashn(input: FashnInput, signal?: AbortSignal): Prom
         // 请求 fal 不保存本次请求的输入输出（与 3D 形象一致，D47）。
         "X-Fal-Store-IO": "0",
       },
-      body: JSON.stringify({
-        model_image: input.modelImage,
-        garment_image: input.garmentImage,
-        category: input.category,
-        mode: input.mode,
-        garment_photo_type: "flat-lay",
-        output_format: "jpeg",
-        sync_mode: input.syncMode ?? true,
-      }),
+      body: JSON.stringify(body),
       signal: signal ?? AbortSignal.timeout(30_000),
       cache: "no-store",
     });
@@ -134,8 +136,9 @@ export async function fashnResult(job: FashnJob, signal?: AbortSignal): Promise<
   const res = await queueGet(job.responseUrl, signal ?? AbortSignal.timeout(30_000));
   if (res.status >= 500) throw new FashnTransientError(String(res.status));
   if (!res.ok) throw httpError(res.status);
-  const data = (await res.json().catch(() => null)) as { images?: { url?: unknown }[] } | null;
-  const url = data?.images?.[0]?.url;
+  // FASHN / nano-banana 返回 images[0].url；可灵 Kolors 返回 image.url（单个对象）。
+  const data = (await res.json().catch(() => null)) as { images?: { url?: unknown }[]; image?: { url?: unknown } } | null;
+  const url = data?.images?.[0]?.url ?? data?.image?.url;
   if (typeof url !== "string" || !(url.startsWith("https://") || url.startsWith("data:image/"))) {
     throw new TryonError(502, "试穿服务没有返回图片，请稍后再试");
   }

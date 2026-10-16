@@ -29,7 +29,7 @@
 
 尚未接入：单品可旋转 GLB、打赏、站内支付。场景视频（`public/scenes/*-web.mp4`）只加载并播放当前显示的那一段，减弱动态时只显示首帧。试衣间里的咖啡馆生活场景只是标注了“AI 生成场景示意 · 合身未验证”的示意图。
 
-## 悬浮对话（D56）
+## 悬浮对话（D66）
 
 全站右下角的圆形入口（首页标题旁还有一枚「说场合和预算」引导胶囊），说出场合、风格、预算、性别或想像谁，对话里直接出卡片：衣橱卡 → `/closet/[id]`，搭配卡 → `/outfit/[id]`，功能卡 → 试衣间、3D 形象、2D 试穿（有 `FAL_KEY` 才出现）、档案、登录。手机是底部抽屉，桌面是右下角浮窗；对话存在 sessionStorage，路由切换与刷新都不丢；遇到吸底操作条（`.cta-bar`）时，手机上入口停靠进操作条右侧、成为主按钮旁的圆形次按钮（操作条加 `data-dock-reserve` 留位），其他会挡住入口的元素（`[data-dock-avoid]`）则把入口抬到它上方。
 
@@ -38,25 +38,43 @@
 - 用户的话不落库，服务端日志只记错误类型。
 - 测试：`lib/locate/locate.test.ts`（17 个样例，直接读 `data/catalog.json`）。
 
-## 3D 形象
+## 数字分身（原 3D 形象）
 
-入口 `/profile/avatar`（登录后，档案页底部也有入口）。流程：同意卡 → 上传三张全身照 → 生成 → 查看 → 删除（MetaPerson 模式见下一小节）。存储与第三方处理规则见 AGENTS.md「2026-10-16 个人影像存储决定」（D47）。
+入口 `/profile/avatar`（登录后，档案页底部也有入口）。存储与第三方处理规则见 AGENTS.md「2026-10-16 个人影像存储决定」（D47）；方案与边界见决策记录 D63。
 
-### MetaPerson 模式（比赛版推荐，未实测）
+### 数字分身模式（D63，比赛版现行，未用真实 key 实测）
+
+不做 3D：用户上传 3–5 张照片，得到一组照片级“标准形象照”（正面、四分之三侧面、背面），在页面左右滑动查看，代替 3D 旋转；之后试穿用这组照片作底图。
+
+- 启用：`FAL_KEY` 存在，且 `AVATAR3D_PROVIDER` 未设或为 `twin`（`lib/avatar/providers.ts` 的 `twinEnabled()`）。此模式不加载 MetaPerson 创建器。配置 `ANTHROPIC_API_KEY` 时同意卡多一项照片分析。
+- 同意卡（D47，三项各自勾选）：保存我的照片与形象，仅自己可见（必选）；由 fal.ai 上的 AI 图像模型根据我的照片生成我的形象（必选才能上传）；由 Anthropic（Claude）分析我的照片（可选）。`consent_version = avatar-consent-v2:store+twin` 或 `…:store+twin+anthropic`。
+- 上传卡：正脸（`face`，必传）、全身正面（`front`，必传，同时是试穿底图）、侧脸（`extra`）、全身侧面（`side`）、半身或其他（`back`），每格一张，至少 2 张、最多 5 张；浏览器压缩为 JPEG，服务端再剥元数据，存私有存储，照片自上传起 30 天到期。形象性别在上传区自选。
+- 生成 `POST /api/avatar/twin { gender }`（`lib/avatar/twin.ts` 的 `generateTwin`，同步，`maxDuration = 120`）：需登录与同意；先（同意且有 key 时）用 `claude-opus-5-5` 分析全部照片，得到一句不超过 30 字的概括、特征（发型、发色、脸型、肤色、身材、肩/腰/臀/腿、眼镜）和一段英文外观描述，30 秒超时则跳过；再以全部照片为 `image_urls`（顺序：正脸、侧脸、全身正面、全身侧面、半身或其他；每张压到长边 1536、JPEG q90 的 data URI）用指挥台实测达标的提示词模板（同一人、不美化不修身、素色基础款、暖米色影棚、85mm 质感；Claude 描述只作补充短句）并行调用 `fal-ai/nano-banana-pro/edit` 三次（`aspect_ratio 3:4`、`resolution 2K`、`X-Fal-Store-IO: 0`），每张失败且剩余时间足够时重试一次；正面必须成功，侧面/背面失败则为空。结果存 `<userId>/avatars/twin-<jobId>-<front|side|back>.<ext>`，写 `avatar_job`（`provider = twin`，`result_images = { front, side, back, summary, traits, gender, descriptor }`）。新分身成功后才删除旧分身文件；同一用户同时只允许一个生成。
+- 展示：“你的形象”卡——画廊可拖动、方向键、圆点切换，交叉淡入 + 轻微视差（只动 transform / opacity，减弱动态只淡入淡出），下方一句概括与特征标签，按钮「去试穿」（`/fitting-room`）「重新生成」「删除这个形象」。生成中显示等待态：本人全身照压暗 + 香槟扫光，阶段文案按真实秒数切换（正在读取你的照片 → 正在理解你的身材与发型 → 正在为你拍摄标准照），显示已用秒数，不显示百分比。
+- 删除：「删除这个形象」删形象照、保留照片（`DELETE /api/avatar/jobs/<id>/result`）；「一键删除」清掉全部照片、形象照与记录。
+- 给试穿的接口（`lib/avatar/twin.ts`）：`getTwin(userId)`、`readTwinImageDataUri(key)`、`getIdentityRefs(userId)`（分身正面 + 正脸 + 侧脸，最多 4 张 data URI）。
+- 数据库：迁移 `drizzle/0005_twin_result_images.sql` 给 `avatar_job` 加 `result_images jsonb`，需要在 Supabase 执行（`npm run db:setup`）；未执行时形象页会因缺列报错。
+- 测试：`lib/avatar/twin.test.ts`（全部 mock fal 与分析，合成纯色图片）。
+- 成本：建一次分身约 0.45–0.6 美元。
+
+### MetaPerson 模式（已停用，D63；代码保留）
 
 `AVATAR3D_PROVIDER=metaperson` 且 `AVATARSDK_CLIENT_ID`、`AVATARSDK_CLIENT_SECRET` 都存在时启用（`lib/avatar/metaperson.ts`、`lib/avatar/metaperson-protocol.ts`），否则保持原来的 mock / tripo_fal 流程。没有真实 key，以下流程只有单元测试（mock fetch），尚未与 Avatar SDK 实测。
 
-- 页面：同意卡两项都要勾（“保存我的 3D 形象”+ D47 要求的单独一项“由 MetaPerson 根据你的自拍生成本人形象”，`consent_version = avatar-consent-v2:store+metaperson`）→ 玻璃卡里嵌入 MetaPerson 创建器（手机 70dvh、桌面 640px，加载中显示人形骨架；视口宽 <768 用 `https://mobile.metaperson.avatarsdk.com/generator`，否则 `https://metaperson.avatarsdk.com/iframe.html`，`allow="fullscreen"`）→ 用户在创建器里上传自拍并生成 → 可导出时出现主按钮「保存为我的 3D 形象」→ 服务端导入成功后切换到金色玻璃查看器（360° 旋转，无徽章），可「重新生成」或删除。
-- 前端事件（`app/profile/avatar/MetaPersonCreator.tsx`）：只处理当前 iframe、来源为上述两个 origin 且 `data.source === "metaperson_creator"` 的消息，回发时 targetOrigin 用该 origin。
-  1. `metaperson_creator_loaded` → 依次发送 `{eventName:"authenticate", accessToken}`、`{eventName:"set_export_parameters", format:"glb", lod:2, textureProfile:"1K.jpg", useZip:false}`，桌面版再发 `{eventName:"set_ui_parameters", isExportButtonVisible:false}`（手机版字段未核实，不发）。令牌若晚于加载事件到达，到达后再补发。
-  2. `authentication_status` 中 `isAuthenticated=false` → 显示错误。
-  3. `action_availability_changed`（`actionName:"avatar_export"`）决定主按钮是否可点；从未收到该事件时，以 `model_generated` 为准（兼容手机版）。
-  4. 点主按钮 → `{eventName:"export_avatar", format:"glb", lod:2, textureProfile:"1K.jpg", useZip:false}`；120 秒没有 `model_exported` 则恢复按钮。
-  5. `model_exported{url, avatarCode}`（无论由本站按钮还是创建器自带按钮触发）→ `POST /api/avatar/metaperson/import`。
+- 页面（D56）：同意卡两项都要勾（“保存我的照片与 3D 形象”+ D47 要求的单独一项“由 MetaPerson 根据你的自拍生成本人形象”，`consent_version = avatar-consent-v2:store+metaperson`）→ 本站自己的极简上传卡：正脸自拍（`face`，必传）、全身正面（`front`，必传，同时就是 2D 试穿用的正面照，只传一次）、全身侧面（`side`，选传），每格一个细线剪影示意和一句要求；再选“形象性别”（女 / 男，档案里没有性别字段）→「生成我的 3D 形象」→ 本站等待态（本人照片压暗、一道光扫过、“正在用你的照片塑造形象”、已用时间）→ 收到 `model_generated` 后淡入 MetaPerson 创建器，可调整发型与服装 →「保存为我的 3D 形象」→ 服务端导入成功后切换到金色玻璃查看器（360° 旋转，无徽章），可「重新生成」或删除。动效只动 transform / opacity；减弱动态时只淡入淡出。
+- 预加载：同意了 MetaPerson 之后（老用户即打开页面时；没有形象或点了「重新生成」时）立即挂载创建器 iframe（视口宽 <768 用 `https://mobile.metaperson.avatarsdk.com/generator`，否则 `https://metaperson.avatarsdk.com/iframe.html`，`allow="fullscreen"`），用户上传照片时引擎在后台加载，上传卡下方一条细线进度与已用时间（没有真实进度事件，曲线趋近但不到头，就绪后填满）。iframe 挂在 `document.body` 的浮层里：隐藏时固定在视口内、`opacity:0`、不可点击、`inert`（玻璃卡的 `backdrop-filter` 会改变 fixed 的定位基准，移出视口的跨域 iframe 会被浏览器节流）；显示时只改样式对齐到卡片里的舞台占位，不移动节点、不重新加载。仍遵守 D47：未勾选 MetaPerson 之前不加载创建器。
+- 前端事件（`app/profile/avatar/MetaPersonCreator.tsx`；协议纯函数在 `lib/avatar/metaperson-protocol.ts`，流程状态机在 `lib/avatar/metaperson-flow.ts`）：只处理当前 iframe、来源为上述两个 origin 且 `data.source === "metaperson_creator"` 的消息，回发时 targetOrigin 用该 origin。创建器的布尔字段兼容数字 1/0（桌面 1.42.0 实测）。
+  1. `metaperson_creator_loaded` → 依次发送 `{eventName:"authenticate", accessToken}`、`{eventName:"set_export_parameters", format:"glb", lod:2, textureProfile:"1K.jpg", useZip:false}`、`set_ui_parameters`：桌面 `{isExportButtonVisible:false, showSampleAvatars:false, isTakeSelfieButtonVisible:false, isBrowsePhotoButtonVisible:false, isLanguageSelectionVisible:false}`，手机 `{isNoPhotoVisible:false}`。令牌若晚于加载事件到达，到达后再补发。收到 `authentication_status`（`isAuthenticated` 为真）视为引擎就绪；8 秒内没有该事件也视为就绪。
+  2. 点「生成我的 3D 形象」→ 浏览器读取本人正脸照（同源私有地址），压到长边 1024px 的 JPEG，转 base64（不带 `data:` 前缀）→ 引擎就绪后发送 `{eventName:"generate_avatar", gender, age:"adult", image, blends:[{name,value}×8]}`（blends 只发桌面版，名称 Body/Neck/Shoulders/Chest/Forearms/Waist/Hips/Legs，裁剪到 -1..1、四舍五入到 0.05）。待机或尚未发出时创建器自己发的 `model_generated`（默认形象）不会让它提前露出。
+  3. 兜底：`generate_avatar` 发出 90 秒内没有 `model_generated`，或 `authentication_status` 为假 → 直接显示创建器原生界面，桌面版发 `{eventName:"set_ui_parameters", isBrowsePhotoButtonVisible:true}`，提示“请在下方直接选择你的正脸照片”。
+  4. `action_availability_changed`（`actionName:"avatar_export"`）决定主按钮是否可点；从未收到该事件时，以 `model_generated` 为准（兼容手机版）。
+  5. 点主按钮 → `{eventName:"export_avatar", format:"glb", lod:2, textureProfile:"1K.jpg", useZip:false}`；120 秒没有 `model_exported` 则恢复按钮。
+  6. `model_exported{url, avatarCode}`（无论由本站按钮还是创建器自带按钮触发）→ `POST /api/avatar/metaperson/import`。
+- 体型分析（D56，`lib/avatar/body.ts`，`POST /api/avatar/body-analysis`）：需登录且已同意 MetaPerson。同意卡在 MetaPerson 模式且配置了 `ANTHROPIC_API_KEY` 时多一项可选的单独勾选“由 Anthropic（Claude）分析我的全身照，参考我的照片调整 3D 形象的体型”（`consent_version = avatar-consent-v2:store+metaperson+anthropic`，`offerVersion` 随之带 `+anthropic`）。勾选后，点生成时服务端读取本人全身正面（必需）与侧面（可选）照片和档案身高体重，照 `lib/adapt/ai.ts` 的写法调用 `claude-opus-5-5`（`messages.parse` + `zodOutputFormat`，effort low，超时 45 秒、重试 1 次），输出性别模板、8 个身体比例参数与一句不超过 30 字的体型概括（数值范围不写进 schema，由代码裁剪到 -1..1、四舍五入到 0.05；概括超长时截断，出现“精准/还原/复刻/1:1”整句丢弃）。未勾选、没有 key、调用失败或拒绝时不报错，只按 BMI 粗设 Body / Waist / Hips（BMI 22 为 0，每 ±8 约 ±1，Waist ×0.8、Hips ×0.6），缺身高体重时全部为 0。只存 Claude 的结果，挂在当前全身正面照的 `avatar_photo.quality_flags.bodyAnalysis`（不改表；同一组照片不重复调用；换照片后重算；撤回体型分析同意后删除；照片删除或到期后由 `purgeExpiredPhotos` 抹掉）；身高体重估算每次重算、不存，档案清空身高体重后不留副本，作为 `generate_avatar` 的 blends 传入，概括显示在等待态、生成结果与形象卡上（“参考你的照片：…”）。界面只说“参考你的照片调整体型”，不写“精准还原”。浏览器最多等 100 秒，超时就不带体型参数继续。未用真实 key 实测。
 - `GET /api/avatar/metaperson/token`：需登录且已同意第三方处理，返回 `{ accessToken, expiresIn }`。服务端 `POST https://api.avatarsdk.com/o/token/`（Basic auth `CLIENT_ID:CLIENT_SECRET`，表单 `grant_type=client_credentials`），缓存到过期前 60 秒；secret 不出服务端。
 - `POST /api/avatar/metaperson/import`（body `{ url, avatarCode }`）：同样要求同意；`avatarCode` 只允许 `[A-Za-z0-9_-]{1,128}`；导出地址只允许 https、默认端口、主机为 `avatarsdk.com` 及其子域或 `AVATARSDK_EXPORT_HOSTS`（逗号追加）中的主机及其子域；手动跟随最多 3 次重定向、每一跳重新校验；限制 100MB 并校验 glTF 二进制头。存入 `<userId>/avatars/<jobId>.glb`，写一条 `avatar_job`（status succeeded、provider metaperson、`provider_task_id = avatarCode`），并删除本人旧形象的 GLB。主机不在白名单时返回 400，错误信息含主机名——首次实测若报错，把该主机加进 `AVATARSDK_EXPORT_HOSTS`。
 - 删除：删除单个形象和一键删除时，对 metaperson 作业调用 `DELETE https://api.avatarsdk.com/avatars/<avatarCode>/`（Bearer 令牌）。该接口对创建器生成的形象是否生效**未核实**；失败只记日志（不含响应体），不在界面提示。本站存储里的文件照常删除。
-- 照片：MetaPerson 模式下自拍只在创建器内上传给 MetaPerson，本站不接收照片（照片上传与生成任务接口返回 400），因此没有本站原图需要 30 天删除。同时开启 2D 试穿时，试穿用的正面照只能在试穿面板里上传（`POST /api/tryon/photo`，不受上述 400 限制），这张照片上传时即写 30 天 `expires_at`（见“2D 试穿”）。
+- 照片（D56）：`POST /api/avatar/photos` 在 MetaPerson 模式下接受 `face | front | side`（其他位置 400），要求已单独同意 MetaPerson（否则 403）；与 photos 模式相同的压缩、去元数据、私有存储与“每个位置只留一张”，并在上传时写 `expires_at = 上传时间 + 30 天`（D47）。导入形象成功后，对本人全部在用照片补写 30 天期限（已有期限不延后）。只有正脸照经 `generate_avatar` 发给 MetaPerson；全身正面照同时是 2D 试穿的正面照（试穿面板也可单独上传正面照，`POST /api/tryon/photo`，上传时同样写 30 天 `expires_at`，见“2D 试穿”）。服务端生成任务接口在该模式下仍返回 400。
 - 未配置时：未登录请求 `GET /api/avatar/metaperson/token` 返回 401；已登录返回 409 `{"error":"MetaPerson 未启用，请刷新页面"}`，导入接口同样 409，不访问外部服务（2026-10-16 生产构建冒烟实测）。
 
 - 同意卡分两项：(a) 同意上传并存储本人照片用于生成 3D 形象（必选）；(b) 同意把照片发送给 fal.ai（Tripo 3D）处理——只在配置了真实服务 key 时出现，可选，不勾选只能生成示意模型，之后可在“修改授权”里改。`avatar_job.consent_version` 同时记录两项：`avatar-consent-v2:store` 或 `avatar-consent-v2:store+tripo_fal`（旧版 v1 同意失效，需重新确认）。提交时带上卡片版本（`offerVersion`），处理方变了会要求刷新重读。
@@ -74,11 +92,20 @@
 - 删除：单张照片可删；单个形象可删（保留照片与同意）；“一键删除”清空该用户存储前缀下全部文件，照片软删除、作业标记 canceled，之后需重新同意。
 - 查看器：入口 `components/AvatarViewer.tsx`，实现在 `components/avatar-viewer/`（R3F，可拖动旋转；props `{ src, badges, poster?, height?, label?, showReset?, onReset? }`，说明见 `components/AvatarViewer.README.md`）。转动或缩放后右下角浮出“复位视角”，弹簧动画回到正面，可随时被拖动打断；减弱动态时直接跳回。`showReset` 默认 true，传 false 可隐藏。
 - mock 人台由 `lib/avatar/mannequin.ts` 程序生成（即 `public/models/mock-mannequin.glb`），来源与许可见 `public/models/LICENSE.md`；没有使用任何真人照片、扫描或第三方模型。
-- 测试：`npm test`（node:test + tsx）覆盖 MetaPerson 接入（`lib/avatar/metaperson.test.ts`：消息解析、令牌缓存、白名单与重定向、导入与替换、远端删除，全部 mock fetch）、元数据剥离、到期清理与规则模式改编回归（`lib/adapt/offline.test.ts`，直接读 `data/catalog.json`）；测试图全部由代码生成。
+- 测试：`npm test`（node:test + tsx）覆盖 MetaPerson 接入（`lib/avatar/metaperson.test.ts`：消息解析、令牌缓存、白名单与重定向、导入与替换、远端删除、MetaPerson 模式上传与 30 天期限，全部 mock fetch；`lib/avatar/metaperson-flow.test.ts`：`generate_avatar` 消息构造、blends 裁剪、90 秒与认证失败兜底；`lib/avatar/body.test.ts`：体型分析的同意、BMI 退化、失败/拒绝不报错、结果缓存与随照片删除抹掉、请求形状，Claude 全部用假函数或本地假响应）、元数据剥离、到期清理与规则模式改编回归（`lib/adapt/offline.test.ts`，直接读 `data/catalog.json`）；测试图全部由代码生成。
 
-API：`GET /api/avatar/metaperson/token`、`POST /api/avatar/metaperson/import`（MetaPerson 模式）、`GET|DELETE /api/avatar`、`POST /api/avatar/consent`（`{ store, thirdParty, offerVersion }`）、`POST /api/avatar/photos`（multipart：slot、file）、`DELETE /api/avatar/photos/[id]`、`POST /api/avatar/jobs`、`GET|DELETE /api/avatar/jobs/[id]`、`DELETE /api/avatar/jobs/[id]/result`、`GET /api/avatar/files/[...key]`。
+API：`GET /api/avatar/metaperson/token`、`POST /api/avatar/metaperson/import`、`POST /api/avatar/body-analysis`（MetaPerson 模式）、`GET|DELETE /api/avatar`、`POST /api/avatar/consent`（`{ store, thirdParty, bodyAnalysis?, offerVersion }`）、`POST /api/avatar/photos`（multipart：slot、file）、`DELETE /api/avatar/photos/[id]`、`POST /api/avatar/jobs`、`GET|DELETE /api/avatar/jobs/[id]`、`DELETE /api/avatar/jobs/[id]/result`、`GET /api/avatar/files/[...key]`。
 
 ## 2D 试穿
+
+**2026-10-17 更新（D62 / D63，`feat/twin-tryon`）——以本段为准，下文 FASHN 细节仅适用于 `TRYON_PROVIDER=fashn_fal`：**
+
+- 模型编排（`lib/tryon/provider.ts`，两段式与队列框架不变）：默认 `TRYON_PROVIDER=kolors_nano`——第一段“快出图”用可灵 Kolors（`fal-ai/kling/v1-5/kolors-virtual-try-on`，输入 `human_image_url` / `garment_image_url` / `sync_mode`，输出 `image.url`，约 20 秒），第二段“细化”用 `fal-ai/nano-banana-pro/edit` 多参考（约 45 秒），好了原地替换、界面写“正在细化”。鞋、包、配饰 Kolors 不支持，只跑 nano 一段。可选 `nano_fal`（只跑 nano）、`kolors_fal`（只跑 Kolors）、`fashn_fal`（原 FASHN performance → quality，备选保留）。整套每步一段（默认 Kolors）。
+- nano 请求（`lib/tryon/nano.ts`）：`image_urls = [底图, 正脸（有分身时）, 商品图]`，每张转为长边 1536、JPEG q92 的 data URI；`aspect_ratio 3:4`、`resolution 2K`、`num_images 1`；提示词为指挥台实测有效的 virtual try-on 文案，按分身性别换 her / his，没有正脸时去掉 reference 2；鞋包配饰改为 wearing / carrying the item。
+- 底图（`lib/tryon/base.ts`）：有数字分身时用分身正面标准形象照（`lib/avatar/twin.ts` 的 `getTwin` + `readTwinImageDataUri`），没有时退回正面全身照；都没有时 409“先建立你的形象”，界面引导去 `/profile/avatar`（保留直接上传正面照作兜底）。缓存键 `twin:<jobId>` / `photo:<id>` + 单品。
+- 商品详情页一键试穿：`POST /api/tryon/quick { itemId, consent? }`，同一套逐件两段式，不属于任何搭配；前端轮询 `GET /api/tryon/<id>`。上身效果场景图的身份参考改为 `getIdentityRefs`（最多 4 张），已有一键试穿结果时一并作衣服参考。
+- 同意（D47）：文案“同意把我的形象照片发送给 fal.ai 上的 AI 模型生成试穿图”，版本 `tryon-consent-v2:fal`；旧 `tryon-consent-v1:fashn_fal` 需要重新同意，切换 fal 上的模型不需要。
+- 测试：`lib/tryon/kolors.test.ts`（模拟队列与数字分身：Kolors 请求体、nano 细化参数与提示词、分身优先、无分身退回正面照、无形象 409、鞋包只跑 nano、同意升级、场景多参考、单段模式）；`lib/tryon/tryon.test.ts` 固定 `TRYON_PROVIDER=fashn_fal` 覆盖 FASHN 备选。真实 key 下的 Kolors 队列、nano `sync_mode` 与耗时未在本分支实测。
 
 用户自己的形象穿着选中的衣服，一件一件来（试衣间主路径）；搭配页改编结果卡仍保留整套“穿在我身上”。服务：fal.ai 上的 FASHN v1.6，走队列接口（`https://queue.fal.run/fal-ai/fashn/tryon/v1.6` 提交，之后用提交响应里的 `status_url` / `response_url` 查询；D62）。2026-10-17 已用本机 `FAL_KEY` 与 AI 生成的虚构模特图实测，耗时见[交付记录](../docs/交付记录.md)。
 
@@ -109,6 +136,28 @@ API：`GET /api/avatar/metaperson/token`、`POST /api/avatar/metaperson/import`�
 - 表：`tryon`（id、user_id、source_look_id、source_outfit_id、outfit_snapshot、item_ids、applied_categories、status、result_key、error、created_at）、`tryon_consent`（user_id、consent_version、consent_at），迁移 `drizzle/0003_tryon.sql`；Supabase 上执行 `npm run db:setup` 后再执行一次 `supabase/rls.sql`。
 - 测试：`lib/tryon/tryon.test.ts`，fetch 模拟 fal 队列（提交 → 状态 → 结果）：品类映射与逐件叠加规则；两段式依次报排队 → 出图并细化中 → 换成清晰的一张，两张都存、都删；缓存命中不发请求、另一套复制结果；预热只跑 performance、不进穿搭进度、认领时补提交 quality 且不重复；细化中继续穿时底图用快速的一张；细化失败保留快速、快速失败等细化、两段都失败才失败；改造前遗留的处理中记录判为失败；`baseTryonId` 属于他人 / 失败 / 处理中 / 不存在 / 文件已删一律 404 且不调用 FASHN；鞋包配饰 422、不在这套里 404；整套逐步推进、中间步骤把结果地址交给下一步；过期正面照不再使用；试穿面板上传的正面照写入 30 天 `expires_at` 并清掉没用上的预热结果；无 key 与未同意（含预热）不发请求；清空存储后记录清理；3D 形象一键删除同时删除试穿记录与同意。
 - 前端轮询（`components/tryon/shared.tsx`）：间隔按两次请求的开始时间计（`pollDelay()`，最少 150 ms），链路慢时不会在每次响应之后再整段等待；测试 `lib/tryon/poll.test.ts`（模拟 fetch）。
+
+## 商品详情页与上身效果（T3）
+
+**2026-10-17 更新（D63，`feat/twin-tryon`）：**
+
+- “上身效果”区块顶部新增「一键试穿」（`components/item/LookGallery.tsx`）：已登录且有数字分身或正面全身照时为主按钮；把这件穿到本人形象上（数字分身正面照优先），结果大图展示、点图放大。上装 / 下装 / 外套 / 连衣裙先由可灵 Kolors 快出图（约 20 秒），再由 nano-banana 多参考细化、原地替换（图上标“正在细化”）；鞋、包、配饰只跑 nano-banana（约 45 秒）。接口 `POST /api/tryon/quick { itemId, consent? }`，前端轮询 `GET /api/tryon/<id>`，与试衣间同一套两段式、缓存与同意（见“2D 试穿”）。等待态写阶段文案（正在读取你的形象 → 正在为你换上这件 → 正在调整光影 → 正在收尾）与秒数。没有形象时主按钮为「先建立你的形象」（`/profile/avatar`），场景图的准备区仍保留直接上传正面照作兜底。
+- 场景图（`lib/scene/service.ts`）的身份参考由单张正面照改为 `getIdentityRefs(userId)`（数字分身正面 + 正脸 + 侧脸，最多 4 张；没有分身时退回底图一张）；本人已有这件的一键试穿结果时一并作为衣服参考。提示词按图片数量动态编号。`hasFrontPhoto` 改为“有可用形象”（分身或正面照）。
+- 同意文案统一为“同意把我的形象照片发送给 fal.ai 上的 AI 模型生成试穿图”（`tryon-consent-v2:fal`）。
+
+入口：衣橱页、搭配页、改编结果里的单品缩略图与名称都链接到 `/item/[id]`（`components/ItemThumb.tsx` 新增可选 `href`，`components/ItemList.tsx` 传入；替换下拉不变）。
+
+- 页面（`app/item/[id]/`）：所属衣橱的场景图做背景（`Scene cover`）；首屏左侧玻璃台面上的商品大图，右侧名称、价格（金箔）、颜色 / 材质 / 尺码 / 版型 / 季节、所属衣橱（链接回衣橱页）与购买按钮（目录 `buy_url` / `buy_label`，新窗口打开）；下方“上身效果”画廊与“这件出现在哪些搭配里”（搭配卡链接 `/outfit/[id]`，N° 为所属衣橱内序号）。不存在的单品返回 404（这一段没有 `loading.tsx`，状态码正确）。
+- “上身效果”画廊（`components/item/LookGallery.tsx`），按优先级：
+  1. 本人：已登录、有正面全身照（`avatar_photo.slot = front`，与 2D 试穿共用）、已同意（`tryon_consent`，与 2D 试穿同一项）、配置了 `FAL_KEY` → 点“生成我的上身效果”，约 30 秒出 2 张场景图，标题“你的上身效果”。缺照片或同意时，在画廊下方就地上传照片（复用 `POST /api/tryon/photo`）并勾选同意。
+  2. 演示模特：读取 `public/demo/manifest.json`（T2 产出，路径只接受 `/demo/` 下的本站文件），标题“模特上身”，并写明“演示模特 · 由 AI 生成的虚构人物”。
+  3. 都没有：已登录显示生成入口，未登录为“登录后生成我的上身效果”（`/login?next=/item/[id]`）。
+- 生成（`lib/scene/service.ts`，`POST /api/scene { itemId, consent? }`，`maxDuration 120`）：`fal-ai/nano-banana-pro/edit`，输入本人正面照 + 单品图 + 场景描述（`lib/scene/scenes.ts`，按单品场合与风格标签从 T2 那组 6 个场景里选 2 个），要求单品颜色款式材质与商品图一致、人物长相不变；两张并行生成。请求头 `X-Fal-Store-IO: 0`。同一用户同一件单品只保留最新一组（重新生成前删旧记录与文件）。
+- Live：场景图存好后立即向 fal queue 提交 `fal-ai/kling-video/v2.5-turbo/pro/image-to-video`（5 秒、细微动作、无声），状态地址存 `scene_render.video_status_url`；`GET /api/scene?itemId=` 每次推进一次轮询，完成后取回 mp4 存私有存储。浏览器每 5 秒查询一次，视频就绪前卡片用纯前端效果（推镜 + 光影扫过、无 LIVE 标），就绪后显示 LIVE 标并播放真视频。视频经 `GET /api/scene/video/[id]` 读取（支持 Range，iOS Safari 需要；他人 404）。Kling 原始输出约 1080p、14–17MB，未在服务端转码。
+- `<LivePhoto>`（`components/live/`）：桌面悬停约 150ms、手机长按约 300ms（`navigator.vibrate` 可用时轻震一次）开始，松开或移出回到静态图；按下时弹簧放大到约 1.04、预先模糊的一层同图淡入再淡出、视频从第一帧淡入、LIVE 圆环描一圈。视频 `preload="none"`，首次激活才设置地址；减弱动态时只显示静态图。只动 transform / opacity（模糊层的 blur 为静态值，只改 opacity；LIVE 圆环为 14px SVG 的描边动画）。
+- 存储：`<userId>/avatars/scene-<id>.jpg|mp4`（沿用现有 key 规则）。3D 形象“一键删除”在 `lib/avatar/service.ts` 的 `deleteAll` 里多一行调用 `deleteAllSceneRenders()`，删除记录与文件。
+- 表：`scene_render`（id、user_id → user 级联删除、item_id、scene_id、status、image_key、video_key、video_status_url、error、created_at；索引 user_id + item_id），迁移 `drizzle/0004_scene_render.sql`；`supabase/rls.sql` 为它开启 RLS 并收回 Data API 权限。Supabase 上需执行 `npm run db:setup`（迁移 0004）后再执行一次 `supabase/rls.sql`。
+- 测试：`lib/scene/scenes.test.ts`（场景挑选、演示清单路径过滤）。fal 调用没有单元测试，真实 key 实测见 `demo-assets/T3报告.md`。
 
 ## 界面提示（D48）
 
@@ -142,7 +191,7 @@ npm run dev                  # http://localhost:3000
 目录 v0.2、个人档案与 3D 形象之后，据各开发会话的记录，以下步骤都还没有在发起用户的 Supabase 上执行过（这些会话只用本地 PGlite，没有连接用户的 Supabase）：
 
 1. `.env.local` 设置 `DATABASE_URL`（transaction pooler 即可）；迁移需要会话模式连接，可另设 `DATABASE_MIGRATE_URL`（5432 端口）。
-2. 运行 `npm run db:setup`：按顺序执行尚未执行的迁移——0001（profile / avatar_photo / avatar_job）、0002（目录 v0.2 字段、`avatar_photo.expires_at`、外部任务字段）、0003（2D 试穿 `tryon` / `tryon_consent`），再写入目录 v0.2。MetaPerson 不需要新表（沿用 `avatar_job`，provider 为 `metaperson`）。衣橱、搭配、单品都做 upsert，搭配与单品的对应关系整体重写；不删除旧行（试衣间引用单品编号），所以 v0.1 中编号不再使用的旧单品会留在库里。
+2. 运行 `npm run db:setup`：按顺序执行尚未执行的迁移——0001（profile / avatar_photo / avatar_job）、0002（目录 v0.2 字段、`avatar_photo.expires_at`、外部任务字段）、0003（2D 试穿 `tryon` / `tryon_consent`）、0004（上身效果 `scene_render`）、0005（数字分身 `avatar_job.result_images`），再写入目录 v0.2。MetaPerson 不需要新表（沿用 `avatar_job`，provider 为 `metaperson`）。衣橱、搭配、单品都做 upsert，搭配与单品的对应关系整体重写；不删除旧行（试衣间引用单品编号），所以 v0.1 中编号不再使用的旧单品会留在库里。
 3. 在 SQL Editor 再执行一次 `supabase/rls.sql`，为新表开启 RLS 并收回 Data API 权限。
 4. 如需把照片和 GLB 存到 Supabase：在 SQL Editor 执行 `supabase/storage.sql` 建私有桶 `avatar-private`，并在 `.env.local` 设置 `SUPABASE_URL` 与 `SUPABASE_SERVICE_ROLE_KEY`（只在服务端使用）。两项都有才启用，否则仍写本地 `.data/uploads/`。
 5. 每天运行一次 `npm run avatar:purge` 的定时任务（见上文“30 天删除”）。

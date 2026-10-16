@@ -45,7 +45,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body>
         <SiteNav initialTheme={pref} />
         <main className="container">{children}</main>
-        {/* 全站悬浮对话（D56）：与导航同级，路由切换不卸载 */}
+        {/* 全站悬浮对话（D66）：与导航同级，路由切换不卸载 */}
         <ChatDock />
       </body>
     </html>

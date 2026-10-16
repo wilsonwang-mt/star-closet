@@ -8,7 +8,7 @@ import { emptyQuery, locate, parseQuery, type LocateCatalog, type LocateQuery, t
 
 export const dynamic = "force-dynamic";
 
-// 悬浮对话（D56）。返回 NDJSON 流：
+// 悬浮对话（D66）。返回 NDJSON 流：
 //   1. rules —— 规则层即时结果（读目录后 <50ms），保证 1–2 秒内有卡片；
 //   2. delta… —— AI 的一两句话，逐段流出（第一段替换规则那句）；
 //   3. cards / chips —— AI 用工具选出的卡片（已按目录与性别校验）；

@@ -60,7 +60,7 @@ export default function LookCard({ look, tryon, tryons }: { look: Look; tryon?: 
                 <span className={tr.rowText}>
                   <span className="item-name" style={{ display: "block" }}>{it.name.replace(/^占位：/, "")}</span>
                   <span className="sc-meta">
-                    {it.category} · {it.color}
+                    {it.displayCategory || it.category} · {it.color}
                   </span>
                 </span>
                 <span className={`row ${tr.rowEnd}`} style={{ justifyContent: "flex-end" }}>

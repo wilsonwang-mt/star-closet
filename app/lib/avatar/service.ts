@@ -3,6 +3,8 @@ import { db, schema } from "@/lib/db";
 import { avatarKey, getStorage, photoKey } from "@/lib/storage";
 import { MAX_PHOTO_BYTES, QUALITY_HINTS, qualityFlags, sniffImage, type QualityFlags } from "./image";
 import {
+  BODY_ANALYSIS_NAME,
+  bodyAnalysisOffered,
   consentVersionFor,
   getProvider,
   hasRequiredSlots,
@@ -13,6 +15,7 @@ import {
   providerInfo,
   requiredSlotsMessage,
   thirdPartyInfo,
+  twinEnabled,
   type ErrorCode,
   type ProviderHandle,
   type ProviderId,
@@ -27,7 +30,9 @@ import {
   setPhotoExpiry,
 } from "./purge";
 import { checkAvatarCode, downloadExport, metapersonEnabled } from "./metaperson";
+import { currentBodyAnalysis, type BodyAnalysisView } from "./body";
 import { stripMetadata } from "./strip";
+import { twinImageKeys, twinViewOf, type TwinView } from "./twin";
 import { deleteAllTryons } from "@/lib/tryon/service";
 
 // 3D 形象：同意 → 上传照片 → 生成（draft → queued → processing → succeeded / failed，可 canceled）→ 查看 → 删除。
@@ -41,6 +46,22 @@ export const SLOTS = ["front", "side", "back", "face", "extra"] as const;
 export type Slot = (typeof SLOTS)[number];
 /** 现在接受上传的位置：只收生成会用到的三张全身照。面部特写与补充照片不参与生成，不再收集（旧照片仍可查看与删除）。 */
 export const UPLOAD_SLOTS = ["front", "side", "back"] as const;
+/** MetaPerson 模式收的照片（D56）：正脸自拍（必传，用于建脸）、全身正面（必传，同时作为 2D 试穿的正面照）、全身侧面（选传）。 */
+export const MP_UPLOAD_SLOTS = ["face", "front", "side"] as const;
+/**
+ * 数字分身模式收的照片（D63）：正脸（face，必传）、全身正面（front，必传，同时是试穿底图来源）、侧脸（extra，选传）、
+ * 全身侧面（side，选传）、半身或其他角度（back，选传）。每个位置一张，最多 5 张。
+ */
+export const TWIN_UPLOAD_SLOTS = ["face", "front", "extra", "side", "back"] as const;
+export type AvatarMode = "photos" | "metaperson" | "twin";
+export function currentMode(): AvatarMode {
+  return metapersonEnabled() ? "metaperson" : twinEnabled() ? "twin" : "photos";
+}
+/** 当前模式接受上传的位置。 */
+export function uploadSlotsFor(mode: AvatarMode | boolean): readonly Slot[] {
+  if (mode === "twin") return TWIN_UPLOAD_SLOTS;
+  return mode === true || mode === "metaperson" ? MP_UPLOAD_SLOTS : UPLOAD_SLOTS;
+}
 /** 一键删除时写入 error 的标记；带此标记的作业不再计入同意状态。 */
 const DELETED_MARK = "DELETED_BY_USER|用户已删除全部照片与形象";
 
@@ -80,17 +101,21 @@ export type JobView = {
 export type ProviderView = { id: ProviderId; isMock: boolean; name: string; processor: string };
 
 export type AvatarState = {
-  /** photos：上传三张全身照由服务端生成（mock / tripo_fal）；metaperson：在嵌入的 MetaPerson 创建器里用自拍生成。 */
-  mode: "photos" | "metaperson";
+  /** photos：上传三张全身照由服务端生成（mock / tripo_fal）；metaperson：在嵌入的 MetaPerson 创建器里用自拍生成；twin：数字分身（D63）。 */
+  mode: AvatarMode;
+  /** 数字分身：最近一次成功生成的一组形象照；没有为 null。 */
+  twin: TwinView | null;
   /** 同意卡：offerVersion 用来确认用户看到的卡片没有过期；thirdParty 为 null 时不显示第二项。 */
-  offer: { version: string; thirdParty: ProviderView | null };
+  offer: { version: string; thirdParty: ProviderView | null; bodyAnalysis: { name: string } | null };
   /** 按用户同意实际使用的服务 */
   provider: ProviderView;
-  consent: { version: string; at: string; current: boolean; thirdParty: ProviderId | null } | null;
+  consent: { version: string; at: string; current: boolean; thirdParty: ProviderId | null; bodyAnalysis: boolean } | null;
   photos: PhotoView[];
   job: JobView | null;
   canGenerate: boolean;
   retentionDays: number;
+  /** 当前全身照的体型分析（D56）；照片换了或没有分析为 null */
+  bodyAnalysis: BodyAnalysisView | null;
 };
 
 export type RemoteSummary = { sent: number; failed: number; pending: number };
@@ -126,7 +151,13 @@ const view = (p: { id: ProviderId; isMock: boolean; name: string; processor: str
   processor: p.processor,
 });
 
+/** 数字分身的同步生成最长约 120 秒；超过这个时间仍是 processing，说明服务进程已中断。 */
+export const TWIN_STALE_MS = 150_000;
+
 function toJobView(j: JobRow): JobView {
+  if (j.provider === "twin" && j.status === "processing" && Date.now() - j.updatedAt.getTime() > TWIN_STALE_MS) {
+    j = { ...j, status: "failed", error: "PROVIDER_FAILED|生成中断，请重试" };
+  }
   const info = providerInfo(j.provider);
   const isMock = info?.isMock ?? true;
   const terminal = j.status === "succeeded" || j.status === "failed" || j.status === "canceled";
@@ -136,7 +167,7 @@ function toJobView(j: JobRow): JobView {
     provider: j.provider,
     isMock,
     glbUrl: j.status === "succeeded" && j.resultGlbKey ? fileUrl(j.resultGlbKey) : null,
-    resultDeleted: j.status === "succeeded" && !j.resultGlbKey,
+    resultDeleted: j.status === "succeeded" && (j.provider === "twin" ? !j.resultImages : !j.resultGlbKey),
     fidelityNote: j.fidelityNote,
     badges: badgesFor(isMock),
     error: j.status === "failed" ? parseError(j.error) : null,
@@ -186,12 +217,18 @@ function consentOf(jobs: JobRow[]): AvatarState["consent"] {
   const j = jobs.find((x) => x.consentVersion && x.consentAt);
   if (!j || !j.consentVersion || !j.consentAt) return null;
   const parsed = parseConsentVersion(j.consentVersion);
-  return { version: j.consentVersion, at: j.consentAt.toISOString(), current: !!parsed, thirdParty: parsed?.thirdParty ?? null };
+  return {
+    version: j.consentVersion,
+    at: j.consentAt.toISOString(),
+    current: !!parsed,
+    thirdParty: parsed?.thirdParty ?? null,
+    bodyAnalysis: parsed?.bodyAnalysis ?? false,
+  };
 }
 
 function offer(): AvatarState["offer"] {
   const tp = thirdPartyInfo();
-  return { version: offerVersion(), thirdParty: tp ? view(tp) : null };
+  return { version: offerVersion(), thirdParty: tp ? view(tp) : null, bodyAnalysis: bodyAnalysisOffered() ? { name: BODY_ANALYSIS_NAME } : null };
 }
 
 export async function getAvatarState(userId: string): Promise<AvatarState> {
@@ -201,8 +238,11 @@ export async function getAvatarState(userId: string): Promise<AvatarState> {
   const consent = consentOf(jobs);
   const provider = providerForConsent(consent?.current ? consent.thirdParty : null);
   const job = jobs.find((j) => j.status !== "draft");
+  const mode = currentMode();
+  const twinJob = mode === "twin" ? jobs.find((j) => j.provider === "twin" && j.status === "succeeded" && j.resultImages) : undefined;
   return {
-    mode: metapersonEnabled() ? "metaperson" : "photos",
+    mode,
+    twin: twinJob ? twinViewOf(twinJob) : null,
     offer: offer(),
     provider: view(provider),
     consent,
@@ -210,6 +250,7 @@ export async function getAvatarState(userId: string): Promise<AvatarState> {
     job: job ? toJobView(job) : null,
     canGenerate: !!consent?.current && provider.id !== "metaperson" && hasRequiredSlots(provider.id, photos),
     retentionDays: PHOTO_RETENTION_DAYS,
+    bodyAnalysis: consent?.current && consent.bodyAnalysis ? currentBodyAnalysis(photos) : null,
   };
 }
 
@@ -224,12 +265,16 @@ async function requireConsent(userId: string) {
  * 记录同意。store（保存照片）必选；thirdParty（发送给第三方服务）只有在配置了真实服务时才可勾选。
  * offerVersion 必须与当前同意卡一致，防止用户看到的是旧的“谁处理”说明。
  */
-export async function recordConsent(userId: string, input: { store: boolean; thirdParty: boolean; offerVersion: unknown }) {
+export async function recordConsent(
+  userId: string,
+  input: { store: boolean; thirdParty: boolean; offerVersion: unknown; bodyAnalysis?: boolean },
+) {
   if (!input.store) throw new AvatarError(400, "需要勾选同意保存照片");
   if (input.offerVersion !== offerVersion()) throw new AvatarError(409, "处理方已变更，请刷新页面重新阅读说明");
   const tp = thirdPartyInfo();
   if (input.thirdParty && !tp) throw new AvatarError(409, "第三方生成服务未启用，请刷新页面");
-  const version = consentVersionFor(input.thirdParty && tp ? tp.id : null);
+  if (input.bodyAnalysis && !bodyAnalysisOffered()) throw new AvatarError(409, "体型分析未启用，请刷新页面");
+  const version = consentVersionFor(input.thirdParty && tp ? tp.id : null, !!input.bodyAnalysis);
   const provider = providerForConsent(input.thirdParty && tp ? tp.id : null);
   const now = new Date();
   const [draft] = await db
@@ -260,13 +305,18 @@ export async function recordConsent(userId: string, input: { store: boolean; thi
 
 export async function addPhoto(userId: string, slot: string, file: File) {
   if (!(SLOTS as readonly string[]).includes(slot)) throw new AvatarError(400, "照片位置不对");
-  if (!(UPLOAD_SLOTS as readonly string[]).includes(slot)) {
-    throw new AvatarError(400, "面部特写与补充照片不参与生成，已不再收集");
+  const mode = currentMode();
+  // MetaPerson / 数字分身模式没有排队任务，照片自上传起保留 30 天（D47）。
+  const mpMode = mode !== "photos";
+  if (!(uploadSlotsFor(mode) as readonly string[]).includes(slot)) {
+    throw new AvatarError(400, mode === "metaperson" ? "只收正脸自拍、全身正面与全身侧面照" : "面部特写与补充照片不参与生成，已不再收集");
   }
   if (file.size > MAX_PHOTO_BYTES) throw new AvatarError(413, "单张照片不能超过 8MB");
   if (file.size === 0) throw new AvatarError(400, "照片是空文件");
-  const { provider: using } = await requireConsent(userId);
-  if (using.id === "metaperson") throw new AvatarError(400, "请在 MetaPerson 创建器中上传自拍");
+  // MetaPerson / 数字分身模式：照片用于生成本人形象，须已单独同意由第三方处理（D47）。
+  if (mode === "metaperson") await requireMetapersonConsent(userId);
+  else if (mode === "twin") await requireTwinConsent(userId);
+  else await requireConsent(userId);
 
   const raw = new Uint8Array(await file.arrayBuffer());
   if (raw.byteLength > MAX_PHOTO_BYTES) throw new AvatarError(413, "单张照片不能超过 8MB");
@@ -296,6 +346,8 @@ export async function addPhoto(userId: string, slot: string, file: File) {
       height: info.height,
       bytes: bytes.byteLength,
       qualityFlags: qualityFlags(slot, info, bytes.byteLength),
+      // D47/D56：MetaPerson 模式没有服务端生成任务，照片自上传起保留 30 天。
+      ...(mpMode ? { expiresAt: new Date(Date.now() + PHOTO_RETENTION_DAYS * 86400_000) } : {}),
     });
   } catch (e) {
     await storage.remove([key]).catch(() => {});
@@ -328,6 +380,7 @@ export async function deletePhoto(userId: string, id: string) {
 export async function createJob(userId: string): Promise<JobView> {
   const { jobs, consent, provider } = await requireConsent(userId);
   if (provider.id === "metaperson") throw new AvatarError(400, "请在 MetaPerson 创建器中生成形象");
+  if (provider.id === "twin") throw new AvatarError(400, "请用“生成我的形象”按钮生成数字分身");
   const active = jobs.find((j) => j.status === "queued" || j.status === "processing");
   if (active) throw new AvatarError(409, "已有一个正在生成的任务");
   const photos = (await livePhotos(userId)).filter((p) => (UPLOAD_SLOTS as readonly string[]).includes(p.slot));
@@ -387,17 +440,24 @@ function handleOf(j: JobRow): ProviderHandle | null {
   return j.providerTaskId && isLiveStatusUrl(j.providerStatusUrl) ? { taskId: j.providerTaskId, statusUrl: j.providerStatusUrl } : null;
 }
 
-/** 新形象生成成功后，清理本人其他作业留下的旧 GLB（照片不动）。 */
-async function removeOlderResults(userId: string, keepJobId: string) {
+/** 新形象生成成功后，清理本人其他作业留下的旧 GLB 与旧的数字分身形象照（照片不动）。 */
+export async function removeOlderResults(userId: string, keepJobId: string) {
   const older = await db
-    .select({ id: schema.avatarJob.id, key: schema.avatarJob.resultGlbKey })
+    .select({ id: schema.avatarJob.id, key: schema.avatarJob.resultGlbKey, images: schema.avatarJob.resultImages })
     .from(schema.avatarJob)
-    .where(and(eq(schema.avatarJob.userId, userId), ne(schema.avatarJob.id, keepJobId), isNotNull(schema.avatarJob.resultGlbKey)));
+    .where(
+      and(
+        eq(schema.avatarJob.userId, userId),
+        ne(schema.avatarJob.id, keepJobId),
+        or(isNotNull(schema.avatarJob.resultGlbKey), isNotNull(schema.avatarJob.resultImages)),
+      ),
+    );
   if (!older.length) return;
-  await getStorage().remove(older.map((o) => o.key!));
+  const keys = older.flatMap((o) => [o.key, ...twinImageKeys(o.images)]).filter((k): k is string => !!k);
+  if (keys.length) await getStorage().remove(keys);
   await db
     .update(schema.avatarJob)
-    .set({ resultGlbKey: null, resultPreviewKey: null })
+    .set({ resultGlbKey: null, resultPreviewKey: null, resultImages: null })
     .where(inArray(schema.avatarJob.id, older.map((o) => o.id)));
 }
 
@@ -518,10 +578,11 @@ export async function cancelJob(userId: string, jobId: string): Promise<JobView 
 export async function deleteResult(userId: string, jobId: string): Promise<{ job: JobView; remotePurge: RemotePurge }> {
   const job = await getOwnJob(userId, jobId);
   if (!job || job.status !== "succeeded") throw new AvatarError(404, "形象不存在");
-  if (job.resultGlbKey) await getStorage().remove([job.resultGlbKey]);
+  const keys = [job.resultGlbKey, ...twinImageKeys(job.resultImages)].filter((k): k is string => !!k);
+  if (keys.length) await getStorage().remove(keys);
   await db
     .update(schema.avatarJob)
-    .set({ resultGlbKey: null, resultPreviewKey: null, updatedAt: new Date() })
+    .set({ resultGlbKey: null, resultPreviewKey: null, resultImages: null, updatedAt: new Date() })
     .where(eq(schema.avatarJob.id, job.id));
   const purged = await purgeRemoteForJob(job);
   const remotePurge = job.provider === "metaperson" ? "skipped" : purged;
@@ -535,7 +596,7 @@ export async function deleteAll(userId: string): Promise<AvatarState & { remoteP
   const now = new Date();
   await db
     .update(schema.avatarJob)
-    .set({ status: "canceled", error: DELETED_MARK, resultGlbKey: null, resultPreviewKey: null, updatedAt: now })
+    .set({ status: "canceled", error: DELETED_MARK, resultGlbKey: null, resultPreviewKey: null, resultImages: null, updatedAt: now })
     .where(eq(schema.avatarJob.userId, userId));
   await db
     .update(schema.avatarPhoto)
@@ -544,6 +605,7 @@ export async function deleteAll(userId: string): Promise<AvatarState & { remoteP
   await Promise.all(active.map(safeCancel));
   // 试穿结果图由本人照片生成，一键删除时一并删除记录、结果图与试穿同意（D47）。
   await deleteAllTryons(userId);
+  await (await import("@/lib/scene/service")).deleteAllSceneRenders(userId); // 商品详情页上身效果（T3）
   await getStorage().removeUserPrefix(userId);
   const summary: RemoteSummary = { sent: 0, failed: 0, pending: 0 };
   for (const j of jobs) {
@@ -559,6 +621,14 @@ export async function requireMetapersonConsent(userId: string) {
   if (!metapersonEnabled()) throw new AvatarError(409, "MetaPerson 未启用，请刷新页面");
   const r = await requireConsent(userId);
   if (r.consent.thirdParty !== "metaperson") throw new AvatarError(403, "请先勾选同意由 MetaPerson 生成形象");
+  return r;
+}
+
+/** 数字分身模式下的同意检查：必须已单独同意由 fal.ai 上的 AI 图像模型生成形象，且服务仍已配置（D47、D63）。 */
+export async function requireTwinConsent(userId: string) {
+  if (!twinEnabled()) throw new AvatarError(409, "形象生成服务未启用，请刷新页面");
+  const r = await requireConsent(userId);
+  if (r.consent.thirdParty !== "twin") throw new AvatarError(403, "请先勾选同意由 fal.ai 上的 AI 图像模型生成你的形象");
   return r;
 }
 
@@ -595,5 +665,7 @@ export async function importMetaperson(userId: string, input: { url: unknown; av
     throw e;
   }
   await removeOlderResults(userId, id);
+  // D47：在用照片（含试穿卡上传的正面照）自生成成功起最多保留 30 天；已有期限不延后。
+  await setPhotoExpiry(userId, (await livePhotos(userId)).map((p) => p.id), now);
   return getAvatarState(userId);
 }

@@ -1,4 +1,4 @@
-// 悬浮对话的 AI 层（D56）：Claude 流式输出一两句话，并用工具调用选出要展示的卡片（Gen UI）。
+// 悬浮对话的 AI 层（D66）：Claude 流式输出一两句话，并用工具调用选出要展示的卡片（Gen UI）。
 // - 模型只返回 id，服务端按目录与性别校验后才解析成卡片；目录外的 id 一律丢弃，不重试。
 // - 规则层已经先给了结果，这里慢一点、失败了都不影响首个反馈；调用方负责超时与回退。
 // - 目录放在系统提示末尾并开启缓存（Opus 5.5 最小可缓存前缀 512 token），多轮对话只付一次目录的输入。
@@ -8,7 +8,7 @@ import { genderAllows, PAGE_KEYS, type LocateCatalog, type LocateQuery, type Loc
 import { availablePages, closetCard, outfitCard, pageCard, pagesForPrompt } from "./catalog";
 import type { ChatCard, ChatTurn } from "./protocol";
 
-// Opus 5.5（effort low）+ fast mode（2026-10-16 用户决定，D56）：同一个模型，输出速度更快，价格为标准的 2 倍。
+// Opus 5.5（effort low）+ fast mode（2026-10-16 用户决定，D66）：同一个模型，输出速度更快，价格为标准的 2 倍。
 // fast mode 是 Claude API 的研究预览（beta `fast-mode-2026-02-01`），只支持 Opus 5.5 / Opus 5 / Opus 4.8；
 // CHAT_SPEED=standard 可关掉，CHAT_MODEL 可换模型，都不改代码。
 const MODEL = process.env.CHAT_MODEL || "claude-opus-5-5";

@@ -2,7 +2,8 @@ import { json, readBodyLimited, withUser } from "@/lib/avatar/http";
 import { MAX_PHOTO_BYTES } from "@/lib/avatar/image";
 import { addPhoto, AvatarError } from "@/lib/avatar/service";
 
-// 上传一张照片：multipart/form-data，字段 slot（front|side|back）与 file。
+// 上传一张照片：multipart/form-data，字段 slot 与 file。slot：photos 模式 front|side|back；
+// MetaPerson 模式 face|front|side（D56，需已同意由 MetaPerson 处理，照片自上传起保留 30 天）。
 // 请求体在解析前限制为 8MB + 表单开销（含 chunked 上传）；服务端按文件头识别类型（JPG/PNG/WebP），
 // 剥离 EXIF（含 GPS）等元数据后再存储，记录宽高与质量提示。
 const BODY_LIMIT = MAX_PHOTO_BYTES + 64 * 1024;

@@ -1,6 +1,6 @@
 "use client";
 
-// 首页标题旁的引导胶囊：取代手机首屏的筛选行（D51），点开就是全站悬浮对话（D56）。
+// 首页标题旁的引导胶囊：取代手机首屏的筛选行（D51），点开就是全站悬浮对话（D66）。
 import { CHAT_OPEN_EVENT } from "./ChatDock";
 import styles from "./ChatDock.module.css";
 
