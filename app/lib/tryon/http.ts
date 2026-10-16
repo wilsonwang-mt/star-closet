@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { AvatarError } from "@/lib/avatar/service";
+import { QuotaError } from "@/lib/usage";
 import { TryonError } from "./fashn";
 
 const NO_STORE = { "Cache-Control": "private, no-store" };
@@ -18,7 +19,7 @@ export async function withTryonUser(fn: (userId: string) => Promise<Response>): 
   try {
     return await fn(user.id);
   } catch (e) {
-    if (e instanceof TryonError || e instanceof AvatarError) return json({ error: e.message }, e.status);
+    if (e instanceof TryonError || e instanceof AvatarError || e instanceof QuotaError) return json({ error: e.message }, e.status);
     console.error("[tryon]", e instanceof Error ? e.message : "unknown error");
     return json({ error: "服务暂时不可用，请稍后再试" }, 500);
   }

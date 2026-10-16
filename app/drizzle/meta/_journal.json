@@ -43,6 +43,13 @@
       "when": 1792169337681,
       "tag": "0005_twin_result_images",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792175634732,
+      "tag": "0006_usage_counter",
+      "breakpoints": true
     }
   ]
 }

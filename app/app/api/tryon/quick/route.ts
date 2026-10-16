@@ -2,6 +2,7 @@ import { after } from "next/server";
 import { readBodyLimited } from "@/lib/avatar/http";
 import { json, withTryonUser } from "@/lib/tryon/http";
 import { createQuickTryon, TryonError } from "@/lib/tryon/service";
+import { withQuota } from "@/lib/usage";
 
 // 商品详情页“一键试穿”：POST { itemId, consent? }，把这一件穿到本人形象上（数字分身正面照优先，否则正面全身照）。
 // 与试衣间逐件同一套两段式（只提交到 fal 队列就返回，前端轮询 GET /api/tryon/<id>）：上装 / 下装 / 外套 / 连衣裙先用可灵 Kolors
@@ -22,6 +23,10 @@ export async function POST(req: Request) {
     }
     const itemId = typeof body?.itemId === "string" ? body.itemId : "";
     if (!ITEM_RE.test(itemId)) throw new TryonError(400, "请求格式不对");
-    return json(await createQuickTryon(userId, itemId, { consent: body?.consent === true }, (task) => after(task)), 201);
+    // 与试衣间共用每日试穿上限（D64）。
+    const view = await withQuota(userId, "tryon", () =>
+      createQuickTryon(userId, itemId, { consent: body?.consent === true }, (task) => after(task)),
+    );
+    return json(view, 201);
   });
 }

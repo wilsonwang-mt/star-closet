@@ -41,11 +41,13 @@ export default function Adapter({
   catalog,
   aiEnabled,
   tryon,
+  signedIn,
 }: {
   outfit: Outfit;
   catalog: Item[];
   aiEnabled: boolean;
   tryon?: TryonContext;
+  signedIn?: boolean;
 }) {
   const router = useRouter();
   const [request, setRequest] = useState("");
@@ -79,6 +81,11 @@ export default function Adapter({
   }
 
   async function adapt(text: string) {
+    // 改编需要登录（D64：会调用 Claude，按用户每日限次）；未登录先去登录，登录后回到这套搭配。
+    if (signedIn === false) {
+      router.push(`/login?next=/outfit/${outfit.id}`);
+      return;
+    }
     const current = items ?? outfit.items;
     setBefore(current);
     const started = Date.now();
@@ -92,6 +99,10 @@ export default function Adapter({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ outfitId: outfit.id, request: text }),
       });
+      if (res.status === 401) {
+        router.push(`/login?next=/outfit/${outfit.id}`);
+        return;
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "改编失败");
       const wait = MIN_WAIT_MS - (Date.now() - started);
