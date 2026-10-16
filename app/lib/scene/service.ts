@@ -1,18 +1,20 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, gt, isNull, or } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import type { Item } from "@/lib/catalog";
 import { avatarKey, getStorage } from "@/lib/storage";
 import { sniffImage } from "@/lib/avatar/image";
-import { CONSENT_VERSION as TRYON_CONSENT_VERSION, recordConsent } from "@/lib/tryon/service";
+import { baseInfo, identityRefs } from "@/lib/tryon/base";
+import { hasConsent, itemTryonImage, recordConsent } from "@/lib/tryon/service";
 import { compressSceneImage } from "./compress";
 import { isSceneId, pickScenes, SCENES, type SceneId } from "./scenes";
 
 // 商品详情页“上身效果”（T3）：本人穿着这件单品出现在 2 个场景里，并在后台生成 Live 视频。
-// - 前提：已登录；有本人正面全身照（avatar_photo.slot = front，与 2D 试穿共用）；已勾选试穿同意（tryon_consent，D47）；设置了 FAL_KEY。
-// - 场景图：fal-ai/nano-banana-pro/edit，输入本人正面照 + 单品图 + 场景描述；要求单品颜色款式材质与商品图一致、人物长相不变。
+// - 前提：已登录；有数字分身或本人正面全身照（与 2D 试穿共用）；已勾选试穿同意（tryon_consent，D47）；设置了 FAL_KEY。
+// - 场景图：fal-ai/nano-banana-pro/edit，输入身份参考（D63：数字分身正面 + 正脸 + 侧脸，最多 4 张；没有分身时为正面照一张）
+//   + 已有的一键试穿结果（若有，保证衣服准确）+ 单品图 + 场景描述；要求单品颜色款式材质与商品图一致、人物长相不变。
 // - Live：场景图生成后提交 fal queue（Kling 2.5 Turbo Pro image-to-video，5 秒、细微动作、无声）；GET 时推进一次轮询。
 // - 存储：`<userId>/avatars/scene-<id>.jpg|mp4`；场景图入库前用 sharp 压到长边 1600、JPEG q82（compress.ts）（一键删除 3D 形象时随用户前缀清理，见 lib/avatar/service.ts deleteAll）。
 // - 同一用户同一件单品只保留最新一组：重新生成前删除旧记录与文件。
@@ -76,29 +78,6 @@ function toView(row: typeof schema.sceneRender.$inferSelect): SceneRenderView {
   };
 }
 
-/** 本人正面照（与 2D 试穿同一规则：未删除、未过 30 天期限）。 */
-async function frontPhoto(userId: string) {
-  const rows = await db
-    .select()
-    .from(schema.avatarPhoto)
-    .where(
-      and(
-        eq(schema.avatarPhoto.userId, userId),
-        eq(schema.avatarPhoto.slot, "front"),
-        isNull(schema.avatarPhoto.deletedAt),
-        or(isNull(schema.avatarPhoto.expiresAt), gt(schema.avatarPhoto.expiresAt, new Date())),
-      ),
-    )
-    .orderBy(desc(schema.avatarPhoto.createdAt))
-    .limit(1);
-  return rows[0] ?? null;
-}
-
-async function hasConsent(userId: string): Promise<boolean> {
-  const rows = await db.select().from(schema.tryonConsent).where(eq(schema.tryonConsent.userId, userId)).limit(1);
-  return rows[0]?.consentVersion === TRYON_CONSENT_VERSION;
-}
-
 async function rowsFor(userId: string, itemId: string) {
   return db
     .select()
@@ -110,9 +89,10 @@ async function rowsFor(userId: string, itemId: string) {
 export async function getSceneState(userId: string | null, itemId: string): Promise<SceneState> {
   const enabled = sceneEnabled();
   if (!userId) return { enabled, signedIn: false, hasFrontPhoto: false, consented: false, renders: [] };
-  const [photo, consented, rows] = await Promise.all([frontPhoto(userId), hasConsent(userId), rowsFor(userId, itemId)]);
+  const [base, consented, rows] = await Promise.all([baseInfo(userId), hasConsent(userId), rowsFor(userId, itemId)]);
   const ticked = enabled ? await Promise.all(rows.map((r) => tickVideo(r).catch(() => r))) : rows;
-  return { enabled, signedIn: true, hasFrontPhoto: !!photo, consented, renders: ticked.map(toView) };
+  // hasFrontPhoto：有可用的形象（数字分身或正面全身照）；字段名沿用旧名。
+  return { enabled, signedIn: true, hasFrontPhoto: !!base.url, consented, renders: ticked.map(toView) };
 }
 
 // ---- fal ----
@@ -129,15 +109,6 @@ function falError(status: number): SceneError {
   return new SceneError(502, "生成服务暂时不可用，请稍后再试");
 }
 
-async function storedImage(key: string, mime?: string): Promise<string> {
-  const storage = getStorage();
-  const signed = await storage.signedUrl(key, 900).catch(() => null);
-  if (signed) return signed;
-  const obj = await storage.get(key);
-  if (!obj) throw new SceneError(409, "没有找到你的正面全身照，请重新上传");
-  return `data:${mime ?? obj.contentType};base64,${Buffer.from(obj.bytes).toString("base64")}`;
-}
-
 async function garmentImage(image: string | null): Promise<string> {
   if (!image) throw new SceneError(422, "这件单品没有可用的图片");
   if (image.startsWith("https://")) return image;
@@ -149,12 +120,17 @@ async function garmentImage(image: string | null): Promise<string> {
   return `data:${mime};base64,${bytes.toString("base64")}`;
 }
 
-function scenePrompt(item: Item, sceneId: SceneId): string {
+/** 场景图提示词：图片顺序为 身份参考 1..refCount →（一键试穿结果）→ 单品图。 */
+export function scenePrompt(item: Pick<Item, "name" | "color" | "material" | "subcategory" | "displayCategory" | "category">, sceneId: SceneId, refCount = 1, hasTryon = false): string {
   const kind = [item.color, item.material, item.subcategory ?? item.displayCategory ?? item.category].filter(Boolean).join(" ");
+  const tryonIdx = hasTryon ? refCount + 1 : 0;
+  const g = refCount + (hasTryon ? 2 : 1);
+  const person = refCount > 1 ? `Images 1–${refCount} are reference photos of the same person.` : "Image 1 is the person.";
+  const who = refCount > 1 ? `images 1–${refCount}` : "image 1";
   return [
-    `Image 1 is the person. Image 2 is the garment: "${item.name.replace(/^占位：/, "")}" (${kind}).`,
-    "Create a cinematic editorial photo of the exact same person from image 1 — keep their face, hair, skin tone, body shape and identity unchanged — wearing exactly the garment from image 2; keep its color, cut, pattern, details and material exactly the same as image 2.",
-    "Complete the outfit with simple understated pieces that suit it; the garment from image 2 must be the clear hero of the look.",
+    `${person}${hasTryon ? ` Image ${tryonIdx} shows this person already wearing the garment — use it to match exactly how the garment looks and fits.` : ""} Image ${g} is the garment: "${item.name.replace(/^占位：/, "")}" (${kind}).`,
+    `Create a cinematic editorial photo of the exact same person from ${who} — keep their face, hair, skin tone, body shape and identity unchanged — wearing exactly the garment from image ${g}; keep its color, cut, pattern, details and material exactly the same as image ${g}.`,
+    `Complete the outfit with simple understated pieces that suit it; the garment from image ${g} must be the clear hero of the look.`,
     `Setting: ${SCENES[sceneId].prompt}. Natural candid moment, the person walking or pausing naturally, full body or three-quarter body framing.`,
     "Warm champagne-gold cinematic light, shallow depth of field, subtle film grain, photorealistic, vertical 3:4 composition. No text, no logos.",
   ].join(" ");
@@ -167,11 +143,15 @@ async function fetchBytes(url: string, signal?: AbortSignal): Promise<Uint8Array
   return new Uint8Array(await res.arrayBuffer());
 }
 
-async function generateImage(model: string, garment: string, item: Item, sceneId: SceneId, signal: AbortSignal): Promise<Uint8Array> {
+type SceneInputs = { refs: string[]; tryon: string | null; garment: string };
+
+async function generateImage(inputs: SceneInputs, item: Item, sceneId: SceneId, signal: AbortSignal): Promise<Uint8Array> {
+  const { refs, tryon, garment } = inputs;
+  const image_urls = [...refs, ...(tryon ? [tryon] : []), garment];
   const res = await fetch(`https://fal.run/${IMAGE_MODEL}`, {
     method: "POST",
     headers: falHeaders(),
-    body: JSON.stringify({ prompt: scenePrompt(item, sceneId), image_urls: [model, garment], aspect_ratio: "3:4", resolution: "2K", num_images: 1, output_format: "jpeg" }),
+    body: JSON.stringify({ prompt: scenePrompt(item, sceneId, refs.length, !!tryon), image_urls, aspect_ratio: "3:4", resolution: "2K", num_images: 1, output_format: "jpeg" }),
     signal,
     cache: "no-store",
   }).catch((e: Error) => {
@@ -246,10 +226,13 @@ export async function createScenes(userId: string, item: Item, opts: { consent?:
   if (!sceneEnabled()) throw new SceneError(503, "上身效果暂未开放");
   if (opts.consent === true) await recordConsent(userId);
   if (!(await hasConsent(userId))) throw new SceneError(403, "请先勾选同意，再生成上身效果");
-  const photo = await frontPhoto(userId);
-  if (!photo) throw new SceneError(409, "先上传一张正面全身照");
-
-  const [model, garment] = await Promise.all([storedImage(photo.storageKey, photo.mime), garmentImage(item.image)]);
+  // 身份参考：数字分身多张（更像本人），没有分身时为正面照一张；已有一键试穿结果时一并作参考（衣服更准确）。
+  const [refs, tryon, garment] = await Promise.all([
+    identityRefs(userId),
+    itemTryonImage(userId, item.id).catch(() => null),
+    garmentImage(item.image),
+  ]);
+  if (!refs.length) throw new SceneError(409, "先建立你的形象");
   // 同一件单品只保留最新一组。
   await removeRows(await rowsFor(userId, item.id));
 
@@ -260,7 +243,7 @@ export async function createScenes(userId: string, item: Item, opts: { consent?:
       const id = randomUUID();
       await db.insert(schema.sceneRender).values({ id, userId, itemId: item.id, sceneId, status: "processing" });
       try {
-        const bytes = await generateImage(model, garment, item, sceneId, signal);
+        const bytes = await generateImage({ refs, tryon, garment }, item, sceneId, signal);
         const info = sniffImage(bytes);
         if (!info) throw new SceneError(502, "生成结果无法读取，请稍后再试");
         // 入库前压缩到长边 1600、JPEG q82（原图 2K 约 1.5MB/张）；Live 视频仍用原图作输入，画质不受影响。
