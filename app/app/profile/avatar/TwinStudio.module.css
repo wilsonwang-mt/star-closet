@@ -30,7 +30,8 @@
 .gallery { display: grid; gap: var(--sc-space-3); justify-items: center; }
 .stage {
   position: relative;
-  width: min(100%, 440px);
+  /* 整张照片在首屏内放得下：高度不超过视口的 70% */
+  width: min(100%, 440px, calc(70dvh * 3 / 4));
   aspect-ratio: 3 / 4;
   overflow: hidden;
   border-radius: 20px;
