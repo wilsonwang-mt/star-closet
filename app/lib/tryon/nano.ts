@@ -5,8 +5,13 @@ import { submitQueue, type FashnJob } from "./fashn";
 // nano-banana 多参考约 45 秒，衣长、领型、扣子、腰带与商品图一致，人物也是本人。
 // - image_urls = [底图（分身正面照 / 上一步试穿结果 / 正面照）, 正脸（有则加）, 商品图]，每张长边 1536、JPEG q92 的 data URI。
 // - aspect_ratio 3:4、resolution 2K、num_images 1；输出 images[0].url。鞋包配饰同一提示词，只把动词改成 wearing / carrying the item。
+// - output_format jpeg（fal OpenAPI：jpeg / png / webp，默认 png，2026-10-17 核对）：默认的 2K PNG 有 6.7–7.1MB、data URI 8.9–9.5MB，
+//   超过 Vercel 函数 4.5MB 的响应上限，手机上也要多下载几倍的字节。下一步叠穿时底图本来就会被 toJpegDataUri 压成 JPEG q92，
+//   所以 PNG 的无损在叠穿里用不上，只影响最后展示的那一张。FASHN 同样用 jpeg（fashn.ts）。
 
 export const NANO_MODEL = "fal-ai/nano-banana-pro/edit";
+/** 结果图格式；改回 "png" 时结果超过内联上限，service.ts 会先写桶再返回存储地址（见 deliver）。 */
+export const NANO_OUTPUT_FORMAT = "jpeg";
 const MAX_EDGE = 1536;
 const JPEG_QUALITY = 92;
 
@@ -80,6 +85,7 @@ export async function nanoBody(input: NanoInput, signal?: AbortSignal): Promise<
     aspect_ratio: "3:4",
     resolution: "2K",
     num_images: 1,
+    output_format: NANO_OUTPUT_FORMAT,
     // 结果以 data URI 返回，fal 不留 CDN 副本（D47）；fal OpenAPI 已列出 sync_mode 与 resolution 1K/2K/4K（2026-10-17 核对）。
     sync_mode: input.syncMode ?? true,
   };
