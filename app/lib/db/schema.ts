@@ -325,3 +325,19 @@ export const sceneRender = pgTable(
   },
   (t) => [index("scene_render_user_item_idx").on(t.userId, t.itemId)],
 );
+
+// ---- 每用户每日调用计数（D64 防滥用与花费上限）----
+// 付费接口（改编、试穿、场景图、数字分身、体型分析）每次调用前原子地 +1，超过当日上限返回 429。
+// day 为北京时间（Asia/Shanghai）日期 YYYY-MM-DD；kind 见 lib/usage.ts。账号删除时级联删除。
+export const usageCounter = pgTable(
+  "usage_counter",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    day: text("day").notNull(),
+    kind: text("kind").notNull(),
+    count: integer("count").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.day, t.kind] })],
+);

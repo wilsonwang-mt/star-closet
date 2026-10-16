@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { json, readBodyLimited, withUser } from "@/lib/avatar/http";
 import { AvatarError, getAvatarState } from "@/lib/avatar/service";
 import { generateTwin } from "@/lib/avatar/twin";
+import { withQuota } from "@/lib/usage";
 
 // 数字分身（D63）：需登录，且已单独同意由 fal.ai 上的 AI 图像模型生成形象。
 // POST { gender: "female" | "male" }：校验通过、作业写入（status=processing）后立即返回最新 AvatarState，
@@ -30,22 +31,25 @@ export async function POST(req: Request) {
         throw new AvatarError(400, "请求格式不对");
       }
     }
-    let settled = false;
-    let failure: unknown = null;
-    const run = generateTwin(userId, { gender: body?.gender }).then(
-      () => void (settled = true),
-      (e) => {
-        settled = true;
-        failure = e;
-      },
-    );
-    // 校验类错误（未同意、缺照片、正在生成）在写入作业前抛出：等到作业出现或 promise 结束为止（最多约 10 秒）。
-    for (let i = 0; i < 50 && !settled; i++) {
-      if (await hasProcessingJob(userId)) break;
-      await new Promise((r) => setTimeout(r, 200));
-    }
-    if (settled && failure) throw failure;
-    if (!settled) after(() => run);
+    // 每用户每日数字分身上限（D64）：校验类错误（4xx，尚未调用 fal）退回这次计数。
+    await withQuota(userId, "twin", async () => {
+      let settled = false;
+      let failure: unknown = null;
+      const run = generateTwin(userId, { gender: body?.gender }).then(
+        () => void (settled = true),
+        (e) => {
+          settled = true;
+          failure = e;
+        },
+      );
+      // 校验类错误（未同意、缺照片、正在生成）在写入作业前抛出：等到作业出现或 promise 结束为止（最多约 10 秒）。
+      for (let i = 0; i < 50 && !settled; i++) {
+        if (await hasProcessingJob(userId)) break;
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      if (settled && failure) throw failure;
+      if (!settled) after(() => run);
+    });
     return json(await getAvatarState(userId));
   });
 }

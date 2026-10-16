@@ -2,6 +2,7 @@ import { after } from "next/server";
 import { readBodyLimited } from "@/lib/avatar/http";
 import { json, withTryonUser } from "@/lib/tryon/http";
 import { createTryon, TryonError, type TryonInput } from "@/lib/tryon/service";
+import { withQuota } from "@/lib/usage";
 
 // 发起试穿：只提交到 fal 队列就返回（D62），前端再轮询 GET /api/tryon/<id>。请求体（首次试穿带 consent: true 记录同意）：
 // - 逐件（试衣间主路径）：{ lookId 或 outfitId, itemIds: [一件], baseTryonId? }——先提交 performance 立刻出图，
@@ -30,6 +31,7 @@ export async function POST(req: Request) {
       prewarm: body.prewarm === true,
       consent: body.consent === true,
     };
-    return json(await createTryon(userId, input, (task) => after(task)), 201);
+    // 每用户每日试穿上限（D64）：预热、缓存命中也计一次；校验类错误退回。
+    return json(await withQuota(userId, "tryon", () => createTryon(userId, input, (task) => after(task))), 201);
   });
 }
