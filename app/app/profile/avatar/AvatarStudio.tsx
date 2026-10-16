@@ -47,20 +47,15 @@ async function readError(res: Response | null, fallback: string) {
   return body?.error ?? fallback;
 }
 
-const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("zh-CN", { month: "long", day: "numeric" });
 
 function remoteText(state: JobView["remotePurge"], name: string): { text: string; bad: boolean } | null {
-  if (state === "sent") return { text: `第三方副本删除请求已发送（${name}）`, bad: false };
   if (state === "failed") return { text: `第三方副本删除请求失败（${name}），已记录，清理任务会重试`, bad: true };
-  if (state === "pending") return { text: `${name} 的任务尚未结束，删除请求已记录，清理任务会重试`, bad: false };
   return null;
 }
 
 function summaryText(r: RemoteSummary): string {
   const parts: string[] = [];
-  if (r.sent) parts.push(`第三方副本删除请求已发送 ${r.sent} 个`);
   if (r.failed) parts.push(`${r.failed} 个删除请求失败，已记录，清理任务会重试`);
-  if (r.pending) parts.push(`${r.pending} 个任务尚未结束，稍后重试删除`);
   return parts.length ? `；${parts.join("，")}` : "";
 }
 
@@ -151,7 +146,6 @@ function PhotoTile({
       {photo ? (
         <span className={s.hint}>
           {photo.width}×{photo.height}
-          {photo.expiresAt ? ` · ${fmtDate(photo.expiresAt)}自动删除` : ""}
         </span>
       ) : (
         <span className={s.hint}>{tip}</span>
@@ -183,7 +177,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
   const mock = state.provider.isMock;
   // 真实服务按位置区分视角（front/left/back），侧面必填；示意模式正面 + 侧面或背面任一即可。
   const sideRequired = !mock;
-  const modeBadges = mock ? ["非本人示意模型", "合身：未验证"] : ["AI 生成 3D 形象 · 还原度未验证", "合身：未验证"];
+  const modeBadges = mock ? ["演示模型"] : [];
   const active = job?.status === "queued" || job?.status === "processing";
   const remoteName = offer?.name ?? "fal.ai（Tripo 3D）";
 
@@ -316,37 +310,10 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
       {/* 同意卡 */}
       <section className="sc-glass card stack sc-rise">
         <div className="spread">
-          <h2 className="section-title">照片怎么用</h2>
+          <h2 className="section-title">开始之前</h2>
           {consented && !editing ? <span className="sc-badge">已同意</span> : null}
         </div>
-        <ul className={s.consentList}>
-          <li>
-            <strong>用途</strong>：只用来生成你的 3D 形象，在本站 360° 查看。它是外观预览，合身未验证；穿搭试穿尚未接入。
-          </li>
-          <li>
-            <strong>收哪些</strong>：只收正面、侧面、背面三张全身照，不收面部特写或其他照片。
-          </li>
-          <li>
-            <strong>谁处理</strong>：
-            {offer
-              ? `默认只在本站处理，生成的是通用示意人台；只有你单独勾选第二项，三张全身照才会发送给 ${offer.name}（第三方服务，位于境外）生成本人形象。`
-              : "本站服务器。照片只保存在本站私有存储，不发送给任何第三方 AI 服务；生成结果是通用示意人台，不是你本人。"}
-          </li>
-          <li>
-            <strong>保存期</strong>：原始照片在 3D 形象生成成功 {state.retentionDays} 天后删除，日期显示在照片下方。由每天的清理任务执行（需运营方配置定时任务）；未配置时，在你下次打开本页时删除。3D 形象保留到你删除为止。
-          </li>
-          <li>
-            <strong>可删除</strong>：可随时删除单个形象，或一键删除全部照片与形象，本站存储里的文件同时清除
-            {offer ? `；用过 ${offer.name} 时，会同时请求它删除该次任务的数据，并在这里显示请求是否发送成功。` : "。"}
-          </li>
-          <li>
-            <strong>不用于训练</strong>：本站不会把你的照片或形象用于训练任何模型
-            {offer ? "；调用第三方时已请求对方不保存本次输入输出，完成后再请求删除，对方是否仍留有无法删除的副本尚未核实。" : "。"}
-          </li>
-          <li>
-            <strong>隐私</strong>：照片仅你本人可见；上传前在你的设备上压缩，服务器再剥离一次拍摄位置（GPS）等附加信息后才保存。
-          </li>
-        </ul>
+        <p className="serif-note">照片仅用于生成你的 3D 形象，私密保存、仅你可见，可随时删除。</p>
 
         {showConsentForm ? (
           <>
@@ -356,8 +323,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
               <label className={s.option}>
                 <input type="checkbox" checked={agreeStore} onChange={(e) => setAgreeStore(e.target.checked)} />
                 <span>
-                  我同意本站上传并存储我的照片，用于生成 3D 形象（必选）
-                  <small>只存本站私有存储，按上方期限删除</small>
+                  我同意上传照片，用于生成我的 3D 形象
                 </span>
               </label>
             ) : null}
@@ -365,8 +331,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
               <label className={s.option}>
                 <input type="checkbox" checked={agreeThird} onChange={(e) => setAgreeThird(e.target.checked)} />
                 <span>
-                  我同意把三张全身照发送给 {offer.name} 处理（可选）
-                  <small>不勾选也能继续，但只能生成非本人的示意模型</small>
+                  由 {offer.name} 根据照片生成更真实的本人形象
                 </span>
               </label>
             ) : null}
@@ -471,13 +436,6 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
         </div>
         {/* 有结果时徽章由查看器常驻显示，这里不重复 */}
         {job?.status === "succeeded" && job.glbUrl ? null : <Badges items={job && !active ? job.badges : modeBadges} />}
-        {mock ? (
-          <p className="sc-meta">
-            {offer && consented
-              ? `当前为示意模式：未同意发送给 ${offer.name}，生成结果是通用人台，不是你本人。`
-              : "当前为示意模式：生成结果是通用人台，不是根据你的照片生成的本人形象。"}
-          </p>
-        ) : null}
 
         {active ? (
           <div className="stack" style={{ gap: 8 }}>
@@ -502,7 +460,6 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
         {job?.status === "succeeded" && job.glbUrl ? (
           <div className="stack" style={{ gap: 8 }}>
             <AvatarViewer src={job.glbUrl} badges={job.badges} />
-            {job.fidelityNote ? <p className="sc-meta">{job.fidelityNote}</p> : null}
             <div className={s.actions}>
               <button type="button" className={s.small} style={{ marginRight: 0, paddingLeft: 0 }} onClick={deleteAvatar} disabled={busy === "result"}>
                 {busy === "result" ? "删除中…" : "删除这个形象（保留照片）"}
@@ -550,8 +507,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
           {hasAny ? (
             <>
               <p className="sc-meta">
-                删除全部照片与生成的 3D 形象，本站存储文件一并清除
-                {offer ? `，并请求 ${offer.name} 删除相关任务数据` : ""}；之后再上传需要重新同意。
+                删除全部照片与 3D 形象。
               </p>
               <button type="button" className="link-btn" style={{ justifySelf: "start" }} onClick={deleteEverything} disabled={busy === "delete"}>
                 {busy === "delete" ? "删除中…" : "一键删除全部照片与形象"}

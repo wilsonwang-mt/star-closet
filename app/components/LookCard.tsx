@@ -5,7 +5,7 @@ import { useState } from "react";
 import ItemThumb from "./ItemThumb";
 import type { Look } from "@/lib/looks";
 
-const MODE_LABEL: Record<string, string> = { original: "主理人原搭配", ai: "AI 改编", offline: "规则改编 · 非 AI" };
+const MODE_LABEL: Record<string, string> = { original: "主理人原搭配", ai: "AI 改编", offline: "为你改编" };
 
 export default function LookCard({ look }: { look: Look }) {
   const router = useRouter();

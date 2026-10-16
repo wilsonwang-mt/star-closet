@@ -119,12 +119,9 @@ function TagPicker({
 export default function ProfileForm({
   initial,
   fallbackName,
-  avatarIsMock,
 }: {
   initial: Profile;
   fallbackName: string;
-  /** 3D 形象当前是否为示意模式（服务端判断后传入） */
-  avatarIsMock: boolean;
 }) {
   const [f, setF] = useState<Form>(() => toForm(initial, fallbackName));
   const [saving, setSaving] = useState(false);
@@ -140,8 +137,8 @@ export default function ProfileForm({
   async function save(e: React.FormEvent) {
     e.preventDefault();
     const nums = {
-      heightCm: f.bodyDataConsent ? parseInt0(f.heightCm) : null,
-      weightKg: f.bodyDataConsent ? parseInt0(f.weightKg) : null,
+      heightCm: parseInt0(f.heightCm),
+      weightKg: parseInt0(f.weightKg),
       budgetMin: parseInt0(f.budgetMin),
       budgetMax: parseInt0(f.budgetMax),
     };
@@ -167,7 +164,7 @@ export default function ProfileForm({
         sizeTop: f.sizeTop,
         sizeBottom: f.sizeBottom,
         sizeShoe: f.sizeShoe,
-        bodyDataConsent: f.bodyDataConsent,
+        bodyDataConsent: nums.heightCm != null || nums.weightKg != null,
         ...nums,
       }),
     }).catch(() => null);
@@ -184,7 +181,7 @@ export default function ProfileForm({
   }
 
   async function clearBody() {
-    if (!confirm("确定清空身高、体重并撤回同意吗？")) return;
+    if (!confirm("确定清空身高和体重吗？")) return;
     const res = await fetch("/api/profile/body-data", { method: "DELETE" }).catch(() => null);
     if (!res || !res.ok) {
       setMsg({ ok: false, text: "清空失败，请稍后再试" });
@@ -250,24 +247,9 @@ export default function ProfileForm({
       <section className="sc-glass card stack sc-rise">
         <div className="spread">
           <h2 className="section-title">身体数据</h2>
-          <span className="sc-badge">可选</span>
+          <span className="sc-badge">仅你可见</span>
         </div>
-        <p className="serif-note">
-          身高、体重仅你本人可见，先为后续的个性化与合身参考保存，比赛版暂未使用；可随时一键删除，不会用于训练任何模型。不填也能正常使用。
-        </p>
-        <label className="row check-row" style={{ flexWrap: "nowrap", alignItems: "flex-start", fontSize: 13, color: "var(--sc-ink)" }}>
-          <input
-            type="checkbox"
-            checked={f.bodyDataConsent}
-            onChange={(e) => {
-              const on = e.target.checked;
-              setF((prev) => ({ ...prev, bodyDataConsent: on, ...(on ? {} : { heightCm: "", weightKg: "" }) }));
-              setMsg(null);
-            }}
-          />
-          <span>我同意保存我的身高、体重，供后续个性化使用（当前未使用）</span>
-        </label>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, opacity: f.bodyDataConsent ? 1 : 0.5 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
           <label>
             身高（cm）
             <input
@@ -275,7 +257,6 @@ export default function ProfileForm({
               inputMode="numeric"
               value={f.heightCm}
               maxLength={3}
-              disabled={!f.bodyDataConsent}
               onChange={(e) => set("heightCm", e.target.value)}
             />
           </label>
@@ -286,15 +267,13 @@ export default function ProfileForm({
               inputMode="numeric"
               value={f.weightKg}
               maxLength={3}
-              disabled={!f.bodyDataConsent}
               onChange={(e) => set("weightKg", e.target.value)}
             />
           </label>
         </div>
-        {!f.bodyDataConsent && hasSavedBody ? <p className="sc-meta">取消同意后保存，已存的身高、体重会被清空。</p> : null}
         {hasSavedBody ? (
           <button type="button" className="link-btn" style={{ justifySelf: "start" }} onClick={clearBody}>
-            清空我的身体数据
+            清空身高与体重
           </button>
         ) : null}
       </section>
@@ -302,8 +281,7 @@ export default function ProfileForm({
       <section className="sc-glass card stack sc-rise">
         <span className="sc-kicker">3D Avatar</span>
         <h2 className="section-title">我的 3D 形象</h2>
-        <p className="serif-note">上传三张全身照，生成可 360° 查看的 3D 外观预览（合身未验证）；穿搭试穿尚未接入。</p>
-        {avatarIsMock ? <p className="sc-meta">当前为示意模式：生成的是通用人台，不是你本人。</p> : null}
+        <p className="serif-note">上传三张全身照，AI 为你生成可 360° 查看的 3D 形象。</p>
         <Link href="/profile/avatar" className="sc-cta sc-cta--ghost">
           生成我的 3D 形象
         </Link>

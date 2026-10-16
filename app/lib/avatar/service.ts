@@ -103,7 +103,7 @@ export class AvatarError extends Error {
 const fileUrl = (key: string) => `/api/avatar/files/${key}`;
 
 export function badgesFor(isMock: boolean): string[] {
-  return isMock ? ["非本人示意模型", "合身：未验证"] : ["AI 生成 3D 形象 · 还原度未验证", "合身：未验证"];
+  return isMock ? ["演示模型"] : [];
 }
 
 function parseError(e: string | null): JobView["error"] {

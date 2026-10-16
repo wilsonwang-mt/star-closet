@@ -10,12 +10,12 @@ export const dynamic = "force-dynamic";
 function LifeScene() {
   return (
     <figure className="sc-glass card sc-rise" style={{ margin: 0, padding: 10 }}>
-      <div role="img" aria-label="AI 生成的咖啡馆生活场景示意" style={{ borderRadius: 16, overflow: "hidden" }}>
+      <div role="img" aria-label="穿着这一身，出现在周五的咖啡馆" style={{ borderRadius: 16, overflow: "hidden" }}>
         <AutoVideo className="life-video" src="/scenes/life-cafe-web.mp4" poster="/scenes/life-cafe.jpg" />
       </div>
       <figcaption className="row" style={{ justifyContent: "space-between", padding: "10px 6px 2px" }}>
-        <span className="sc-meta">生活场景 · 即将上线</span>
-        <span className="sc-badge">AI 生成场景示意 · 合身未验证</span>
+        <span className="sc-kicker">In Your Life</span>
+        <span className="sc-meta">穿着这一身，出现在周五的咖啡馆</span>
       </figcaption>
     </figure>
   );

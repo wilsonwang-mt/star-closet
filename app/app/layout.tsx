@@ -38,9 +38,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body>
         <SiteNav initialTheme={pref} />
         <main className="container">{children}</main>
-        <footer className="footer sc-meta">
-          比赛演示版 · 商品与主理人均为占位数据，图片为 AI 生成示意，不代表任何品牌或合作 · 价格以商家页面为准
-        </footer>
       </body>
     </html>
   );

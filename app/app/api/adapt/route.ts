@@ -31,7 +31,6 @@ export async function POST(req: Request) {
       const msg = e instanceof Anthropic.APIError ? `AI 服务错误 ${e.status}` : (e as Error).message;
       console.error("adapt ai failed:", msg);
       draft = adaptOffline(outfit, parsed.data.request, pool);
-      extraNotes.push(`AI 暂不可用（${msg}），本次结果来自规则模式`);
     }
   } else {
     draft = adaptOffline(outfit, parsed.data.request, pool);

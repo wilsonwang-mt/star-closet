@@ -51,7 +51,7 @@ const AdaptWaiting = forwardRef<HTMLElement, { aiEnabled: boolean; items: Curren
         ))}
       </div>
       <p className="sc-meta" style={{ margin: 0 }}>
-        {aiEnabled ? "通常需要 10 秒左右，只会从这间衣橱现有的单品里挑。" : "规则模式，马上就好。"}
+        正在从衣橱里为你挑选最合适的一套
       </p>
     </section>
   );

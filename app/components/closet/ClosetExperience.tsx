@@ -159,9 +159,6 @@ export default function ClosetExperience({ closet, looks }: { closet: ClosetView
             ))}
             {closet.palette.length ? <span className={styles.palette}>{closet.palette.join(" · ")}</span> : null}
           </motion.div>
-          <motion.span className={`sc-badge ${styles.badge}`} {...rise(7)}>
-            {closet.personaNote || "虚构示例主理人 · AI 生成场景示意"}
-          </motion.span>
         </motion.div>
         <motion.a href="#looks" className={styles.cue} {...rise(8)}>
           <span>向下浏览 {looks.length} 套搭配</span>
@@ -201,7 +198,6 @@ export default function ClosetExperience({ closet, looks }: { closet: ClosetView
                     </div>
                   )}
                   <span className={`sc-number sc-foil ${styles.no}`}>N°{two(i + 1)}</span>
-                  {o.coverNote ? <span className={styles.coverNote}>{o.coverNote}</span> : null}
                 </div>
                 <div className={styles.body}>
                   <div className="spread">

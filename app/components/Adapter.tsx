@@ -186,7 +186,7 @@ export default function Adapter({ outfit, catalog, aiEnabled }: { outfit: Outfit
             <span className="sc-kicker">Re-style</span>
             <h2 className="section-title">一句话改编</h2>
           </div>
-          <span className="sc-badge">{aiEnabled ? "AI 改编" : "非 AI · 规则模式"}</span>
+          <span className="sc-badge">AI 改编</span>
         </div>
         <textarea
           ref={inputRef}
