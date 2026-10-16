@@ -24,7 +24,13 @@ export function isTryonEnabled(): boolean {
   return !!process.env.FAL_KEY;
 }
 
-export type FashnInput = { modelImage: string; garmentImage: string; category: FashnCategory };
+/**
+ * 生成模式：逐件试穿用 quality（针织纹理、领口更清楚，单件约 30–45 秒）；
+ * 旧的整套叠加一次请求最多调用 3 次，用 quality 会超过 120 秒的服务端上限，保持 balanced。
+ */
+export type FashnMode = "balanced" | "quality";
+
+export type FashnInput = { modelImage: string; garmentImage: string; category: FashnCategory; mode?: FashnMode };
 
 /** 调用一次 FASHN，返回结果图地址（https URL 或 data URI）。 */
 export async function runFashn(input: FashnInput, signal?: AbortSignal): Promise<string> {
@@ -44,7 +50,7 @@ export async function runFashn(input: FashnInput, signal?: AbortSignal): Promise
         model_image: input.modelImage,
         garment_image: input.garmentImage,
         category: input.category,
-        mode: "balanced",
+        mode: input.mode ?? "balanced",
         garment_photo_type: "flat-lay",
         output_format: "png",
       }),

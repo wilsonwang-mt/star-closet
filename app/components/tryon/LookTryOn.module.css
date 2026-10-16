@@ -1,0 +1,174 @@
+/* 试衣间逐件试穿（视觉规范 §6 玻璃、§7.1 动效：运动只动 transform / opacity；减弱动态时只淡入淡出）。
+ * 面板的遮罩、玻璃、舞台、上传、同意与大图沿用 TryOn.module.css。 */
+
+/* ---------- 卡片单品行：label 用 display: contents，缩略图与价格跨两行，试穿操作在名称下方 ---------- */
+.lookRow { align-items: center; }
+.lookRowAction { grid-template-rows: auto auto; row-gap: 2px; }
+.rowThumb { grid-column: 1; grid-row: 1 / -1; align-self: center; }
+.rowText { grid-column: 2; grid-row: 1; min-width: 0; }
+.lookRowAction .rowText { align-self: end; }
+.rowEnd { grid-column: 3; grid-row: 1 / -1; }
+.rowActionCell { grid-column: 2; grid-row: 2; justify-self: start; align-self: start; min-width: 0; }
+
+/* 试穿这件：轻量胶囊，热区 ≥ 36px；按下微缩由 transform 完成 */
+.rowAction {
+  position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 32px; margin-left: -8px; padding: 0 10px 0 8px;
+  border: 0; border-radius: var(--sc-radius-pill); background: none; cursor: pointer;
+  font: inherit; font-size: 12px; letter-spacing: .12em; color: var(--sc-champ-text);
+  transition: transform var(--spring-dur, .5s) var(--spring, ease), background-color .2s ease, opacity .2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.rowAction::after { content: ""; position: absolute; inset: -4px -2px; }
+.rowAction svg { flex: none; }
+.rowAction:not(:disabled):active { transform: scale(.95); transition-duration: .12s, .2s, .2s; }
+.rowAction:disabled { color: var(--sc-ink-3); cursor: default; }
+.rowAction:focus-visible { outline: 1px solid var(--sc-champ); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .rowAction:not(:disabled):hover { background: color-mix(in srgb, var(--sc-champ) 14%, transparent); }
+}
+.rowBusy { color: var(--sc-ink); }
+.rowWorn { color: var(--sc-ink-2); gap: 8px; }
+
+/* 呼吸的小圆点：正在穿 */
+.pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--sc-champ); flex: none; animation: tryon-pulse 1.6s ease-in-out infinite; }
+@keyframes tryon-pulse { 0%, 100% { opacity: .35; transform: scale(.8); } 50% { opacity: 1; transform: scale(1); } }
+
+/* 缩略图上的“已穿上” */
+.thumbWrap { position: relative; display: block; width: fit-content; flex: none; }
+.worn {
+  position: absolute; left: 50%; bottom: -6px; z-index: 2; translate: -50% 0;
+  white-space: nowrap; pointer-events: none;
+  padding: 2px 7px; border-radius: var(--sc-radius-pill);
+  font-size: 10px; line-height: 1.45; letter-spacing: .14em;
+  color: #1a150d; background: linear-gradient(180deg, #ecd3a0, #c9a96e);
+  box-shadow: 0 4px 12px rgba(110, 80, 35, .3), inset 0 0 0 .5px rgba(255, 255, 255, .55);
+}
+
+/* ---------- 卡片上的“穿搭进度”入口 ---------- */
+.peek {
+  display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center;
+  width: 100%; padding: 8px 16px 8px 8px; border: 0; cursor: pointer; text-align: left; color: var(--sc-ink);
+  font: inherit; transition: transform var(--spring-dur, .5s) var(--spring, ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.peek:active { transform: scale(.985); transition-duration: .12s; }
+.peek > svg { color: var(--sc-ink-2); }
+.peekImg {
+  position: relative; display: block; width: 40px; aspect-ratio: 2 / 3; border-radius: 9px; overflow: hidden;
+  background: var(--sc-bg-raised); box-shadow: inset 0 0 0 .5px var(--sc-glass-edge-2);
+}
+.peekImg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.peekText { display: grid; gap: 1px; min-width: 0; }
+.peekTitle { font-size: 13px; letter-spacing: .04em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- 面板 ---------- */
+/* 面板贴住上方一个固定位置（不随内容高度重新居中）：同意、报错出现或消失时只往下延伸，画面不跳 */
+.overlay { place-items: start center; }
+.panel {
+  --top: clamp(0px, calc((100dvh - 32px - 700px) / 2), 120px);
+  width: min(860px, 100%); margin-top: var(--top); max-height: calc(100% - var(--top));
+}
+.body { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 639px) { .body { grid-template-columns: minmax(0, 1fr); gap: 16px; } }
+
+.stageCol { display: grid; gap: 10px; min-width: 0; }
+.stage { width: 100%; margin-inline: auto; isolation: isolate; }
+@media (max-width: 639px) { .stage { width: min(100%, calc(46dvh * 2 / 3)); } }
+.frame { will-change: opacity, transform; }
+.stageUpload { position: absolute; inset: 0; aspect-ratio: auto; border-radius: inherit; }
+.zoomHit { position: absolute; inset: 0; z-index: 2; border: 0; padding: 0; background: none; cursor: zoom-in; }
+
+.stageBar { display: grid; gap: 2px; min-height: 58px; align-content: start; }
+.stageActions { display: flex; flex-wrap: wrap; gap: 0 18px; min-height: 36px; }
+
+/* 生成中：底图的虚化副本（静态滤镜）+ 压暗 + 香槟光束；整层只做 opacity 进出 */
+.wait { position: absolute; inset: 0; z-index: 3; overflow: hidden; border-radius: inherit; }
+.waitBlur { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: blur(10px) saturate(.75) brightness(.62); transform: scale(1.08); }
+.wait::before { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 80% at 50% 45%, rgba(11, 13, 16, .28), rgba(11, 13, 16, .62)); }
+.wait .waitBeam { position: absolute; inset: 0; border-radius: 0; }
+.waitCopy {
+  position: absolute; inset: 0; z-index: 3; display: grid; place-content: center; justify-items: center; gap: 8px;
+  padding: 20px; text-align: center; color: #f4f2ed; text-shadow: 0 1px 14px rgba(0, 0, 0, .55);
+}
+.waitGarment { width: 64px; height: 64px; object-fit: contain; margin-bottom: 6px; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .45)); }
+.waitKicker { margin: 0; font-family: var(--sc-font-serif); font-size: 13px; line-height: 1.7; letter-spacing: .14em; }
+.waitName { display: block; font-size: 15px; letter-spacing: .08em; color: #f8ead0; }
+.waitTime { margin: 4px 0 0; font-family: var(--sc-font-didone); font-style: italic; font-size: 14px; letter-spacing: .1em; font-variant-numeric: tabular-nums lining-nums; opacity: .85; }
+.waitNote { margin: 0; font-size: 11px; letter-spacing: .12em; opacity: .8; }
+
+/* 侧栏 */
+.side { display: grid; gap: 18px; min-width: 0; align-content: start; }
+.block { display: grid; gap: 10px; min-width: 0; }
+
+/* 穿搭进度：正面照 → 第 1 件 → 第 2 件……，横向滚动，细线串起 */
+.strip {
+  position: relative; list-style: none; margin: 0; padding: 4px 2px 6px; display: flex; gap: 14px; overflow-x: auto; overscroll-behavior-x: contain;
+  scrollbar-width: none; scroll-snap-type: x proximity;
+}
+.strip::-webkit-scrollbar { display: none; }
+.stripItem { position: relative; flex: none; scroll-snap-align: end; }
+.stripItem + .stripItem::before {
+  content: ""; position: absolute; left: -12px; top: 39px; width: 10px; height: 1px;
+  background: color-mix(in srgb, var(--sc-champ) 55%, transparent);
+}
+.frameBtn {
+  display: grid; justify-items: center; gap: 6px; padding: 0; border: 0; background: none; cursor: pointer; color: var(--sc-ink-2);
+  font: inherit; -webkit-tap-highlight-color: transparent;
+  transition: transform var(--spring-dur, .5s) var(--spring, ease);
+}
+.frameBtn:disabled { cursor: default; }
+.frameBtn:not(:disabled):active { transform: scale(.95); transition-duration: .12s; }
+.frameBtn:focus-visible { outline: none; }
+.frameBtn:focus-visible .frameImg { box-shadow: 0 0 0 2px var(--sc-champ); }
+.frameImg {
+  position: relative; display: block; width: 52px; aspect-ratio: 2 / 3; border-radius: 10px; overflow: hidden;
+  background: var(--sc-bg-raised); box-shadow: inset 0 0 0 .5px var(--sc-glass-edge-2);
+  transition: box-shadow .25s ease, opacity .25s ease;
+}
+.frameShot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.frameBtn[aria-pressed="true"] { color: var(--sc-champ-text); }
+.frameBtn[aria-pressed="true"] .frameImg { box-shadow: 0 0 0 1.5px var(--sc-champ), 0 8px 18px rgba(0, 0, 0, .28); }
+.frameBtn[aria-pressed="false"]:disabled .frameImg { opacity: .55; }
+.frameCap { font-size: 10px; letter-spacing: .12em; white-space: nowrap; }
+.frameGarment {
+  position: absolute; right: 3px; top: 3px; width: 18px; height: 18px; padding: 2px; border-radius: 50%; object-fit: contain;
+  background: rgba(255, 250, 240, .92); box-shadow: 0 2px 6px rgba(0, 0, 0, .25);
+}
+.framePlaceholder { position: absolute; inset: 0; display: grid; place-items: center; font-size: 18px; color: var(--sc-ink-3); border: 1px dashed color-mix(in srgb, var(--sc-champ) 50%, transparent); border-radius: inherit; }
+.framePending { display: grid; place-items: center; }
+.framePendingGarment { width: 30px; height: 30px; object-fit: contain; opacity: .8; }
+
+/* 手机上待开始（补照片 / 同意 / 再试一次）时，主按钮吸在面板底部，滚动时也随手可点 */
+@media (max-width: 639px) {
+  .actionsBar {
+    position: sticky; bottom: 0; z-index: 4; margin: 0 -20px -20px; padding: 14px 20px 20px;
+    background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--sc-bg) 88%, transparent) 28%);
+  }
+}
+
+/* 这一套 */
+.pieces { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.piece { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 8px 10px 8px 8px; transition: box-shadow .3s ease; }
+.piece :global(.thumb) { width: 48px; height: 48px; }
+.pieceText { display: grid; gap: 2px; min-width: 0; }
+.pieceText :global(.item-name) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pieceQueued { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sc-champ) 80%, transparent), inset 0 1px 0 var(--sc-glass-edge); }
+.pieceBtn {
+  position: relative; min-height: 34px; padding: 0 14px; border: 0; border-radius: var(--sc-radius-pill); cursor: pointer;
+  font: inherit; font-size: 12px; letter-spacing: .16em; color: var(--sc-ink);
+  background: color-mix(in srgb, var(--sc-bg) 30%, transparent); box-shadow: inset 0 0 0 .5px var(--sc-rule);
+  transition: transform var(--spring-dur, .5s) var(--spring, ease), opacity .2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.pieceBtn::after { content: ""; position: absolute; inset: -5px -4px; }
+.pieceBtn:not(:disabled):active { transform: scale(.95); transition-duration: .12s, .2s; }
+.pieceBtn:disabled { opacity: .45; cursor: default; }
+.pieceBusy { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; letter-spacing: .12em; color: var(--sc-ink); padding-right: 6px; }
+.pieceDone { display: grid; place-items: center; width: 26px; height: 26px; margin-right: 6px; border-radius: 50%; color: #1a150d; background: linear-gradient(180deg, #ecd3a0, #c9a96e); }
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse { animation: none; opacity: .9; }
+  .rowAction, .peek, .frameBtn, .pieceBtn { transition: background-color .2s ease, opacity .2s ease; }
+  .rowAction:not(:disabled):active, .peek:active, .frameBtn:not(:disabled):active, .pieceBtn:not(:disabled):active { transform: none; }
+  .waitBlur { transform: none; }
+}

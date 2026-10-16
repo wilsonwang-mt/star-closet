@@ -4,7 +4,7 @@ import LookCard from "@/components/LookCard";
 import Scene from "@/components/Scene";
 import { getCurrentUser } from "@/lib/auth";
 import { listLooks } from "@/lib/looks";
-import { getTryonContext } from "@/lib/tryon/service";
+import { getTryonContext, listLookTryons } from "@/lib/tryon/service";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +42,8 @@ export default async function FittingRoom() {
     );
   }
   const [looks, tryon] = await Promise.all([listLooks(user.id), getTryonContext(user.id)]);
+  // 逐件试穿的“穿搭进度”：一次查出本人在这些搭配上的试穿结果，按搭配分组交给每张卡片。
+  const tryons = tryon.enabled ? await listLookTryons(user.id, looks.map((l) => l.id)) : {};
   return (
     <>
       <Scene dim />
@@ -49,12 +51,14 @@ export default async function FittingRoom() {
         <span className="sc-kicker">The Fitting Room</span>
         <h1 className="sc-display" style={{ margin: "6px 0 8px" }}>个人试衣间</h1>
         <p className="serif-note">
-          {looks.length ? `${looks.length} 套搭配。勾选想买的单品，生成购物清单。` : "还是空的，去衣橱里挑一套吧。"}
+          {looks.length
+            ? `${looks.length} 套搭配。${tryon.enabled ? "一件一件穿到你身上，" : ""}勾选想买的单品，生成购物清单。`
+            : "还是空的，去衣橱里挑一套吧。"}
         </p>
       </section>
       <div className="stack">
         {looks.map((l) => (
-          <LookCard key={l.id} look={l} tryon={tryon} />
+          <LookCard key={l.id} look={l} tryon={tryon} tryons={tryons[l.id]} />
         ))}
         <LifeScene />
       </div>

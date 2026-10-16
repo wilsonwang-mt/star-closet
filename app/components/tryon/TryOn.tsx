@@ -9,9 +9,11 @@ import ItemThumb from "@/components/ItemThumb";
 import { reducedFade, springs } from "@/lib/motion";
 import { planTryon } from "@/lib/tryon/plan";
 import type { TryonContext, TryonView } from "@/lib/tryon/service";
+import { cleanName, CloseIcon, compress, HangerIcon, preload, readError } from "./shared";
 import s from "./TryOn.module.css";
 
-// “穿在我身上”：把这一整套依次换到用户自己的正面全身照上（FASHN on fal.ai）。
+// “穿在我身上”（整套）：把这一整套依次换到用户自己的正面全身照上（FASHN on fal.ai）。
+// 搭配页改编结果卡在用；试衣间改为逐件试穿（LookTryOn.tsx）。
 // 没有配置试穿服务时不渲染入口（服务端传入 ctx.enabled = false），不访问网络。
 // 流程：准备（正面照 + 首次同意）→ 生成（光束扫过）→ 结果（淡入 + 轻微推近，与原搭配并排，可放大）。
 
@@ -28,54 +30,7 @@ export type TryOnItem = {
 type Source = { lookId: string } | { outfitId: string };
 type Phase = "prep" | "running" | "done" | "error";
 
-const MAX_EDGE = 1600;
 const MIN_WAIT_MS = 900;
-
-// 在本机压缩到最长边 1600px 并重新编码为 JPEG（顺带去掉 EXIF），服务端还会再剥离一次。
-async function compress(file: File): Promise<Blob> {
-  const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
-  const scale = Math.min(1, MAX_EDGE / Math.max(bmp.width, bmp.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(bmp.width * scale));
-  canvas.height = Math.max(1, Math.round(bmp.height * scale));
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("no canvas");
-  ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
-  bmp.close();
-  const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.9));
-  if (!blob) throw new Error("encode failed");
-  return blob;
-}
-
-async function readError(res: Response | null, fallback: string) {
-  if (!res) return "网络异常，请稍后再试";
-  const body = (await res.json().catch(() => null)) as { error?: string } | null;
-  return body?.error ?? fallback;
-}
-
-function preload(src: string) {
-  return new Promise<void>((resolve) => {
-    const img = new Image();
-    img.onload = img.onerror = () => resolve();
-    img.src = src;
-  });
-}
-
-const cleanName = (n: string) => n.replace(/^占位：/, "");
-
-function HangerIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path
-        d="M8 5.2V4.6a1.6 1.6 0 1 1 1.6-1.6M8 5.2 1.8 10.4c-.5.4-.2 1.1.4 1.1h11.6c.6 0 .9-.7.4-1.1L8 5.2Z"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 export default function TryOn({
   ctx,
@@ -282,9 +237,7 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
             </h2>
           </div>
           <button type="button" className={s.close} onClick={onClose} aria-label="关闭">
-            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-              <path d="M1 1l10 10M11 1 1 11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-            </svg>
+            <CloseIcon />
           </button>
         </div>
 
