@@ -1,0 +1,154 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import LookGallery from "@/components/item/LookGallery";
+import LinkPending from "@/components/LinkPending";
+import Scene from "@/components/Scene";
+import { getCurrentUser } from "@/lib/auth";
+import { demoScenesFor, readDemoManifest } from "@/lib/scene/scenes";
+import { getSceneState } from "@/lib/scene/service";
+import { getItemDetail } from "./data";
+import s from "./page.module.css";
+
+export const dynamic = "force-dynamic";
+
+type Props = { params: Promise<{ id: string }> };
+
+const clean = (n: string) => n.replace(/^占位：/, "");
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const d = await getItemDetail(id).catch(() => null);
+  return { title: d ? `${clean(d.item.name)} · Star Closet` : "Star Closet" };
+}
+
+// 商品详情页（T3）：首屏商品大图与信息、购买按钮；“上身效果”画廊（本人 / 演示模特）；这件出现在哪些搭配里。
+export default async function ItemPage({ params }: Props) {
+  const { id } = await params;
+  const [detail, user] = await Promise.all([getItemDetail(id), getCurrentUser()]);
+  if (!detail) notFound();
+  const { item, curator, outfits } = detail;
+  // 上身效果查询失败（如数据库还没有执行迁移 0004）时不影响页面：退回演示模特画廊，不显示生成入口。
+  const sceneFallback = { enabled: false, signedIn: !!user, hasFrontPhoto: false, consented: false, renders: [] };
+  const [sceneState, demo, manifest] = await Promise.all([
+    getSceneState(user?.id ?? null, item.id).catch((e: unknown) => {
+      console.error("[scene]", e instanceof Error ? e.message : "unknown error");
+      return sceneFallback;
+    }),
+    demoScenesFor(item.id),
+    readDemoManifest(),
+  ]);
+  const demoModel = manifest?.items?.[item.id]?.model;
+  const name = clean(item.name);
+  const facts: [string, string][] = [
+    ["颜色", item.color],
+    ...(item.material ? ([["材质", item.material]] as [string, string][]) : []),
+    ...(item.sizes.length ? ([["尺码", item.sizes.join(" / ")]] as [string, string][]) : []),
+    ...(item.fit ? ([["版型", item.fit]] as [string, string][]) : []),
+    ...(item.season ? ([["季节", item.season]] as [string, string][]) : []),
+  ];
+
+  return (
+    <>
+      <Scene dim cover={curator?.cover ?? null} />
+      <div className={s.page}>
+        {curator ? (
+          <Link href={`/closet/${curator.id}`} className="back-link sc-rise">
+            <svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true">
+              <path d="M13 5H2M5.5 1.5 2 5l3.5 3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            {clean(curator.closetName)}
+            <LinkPending />
+          </Link>
+        ) : null}
+
+        <section className={`${s.hero} sc-rise`} aria-labelledby="item-title">
+          <div className={`sc-glass ${s.stage}`}>
+            <span className={s.spot} aria-hidden="true" />
+            {item.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className={s.product} src={item.image} alt={name} fetchPriority="high" decoding="async" />
+            ) : (
+              <div className={s.swatch}>{item.color}</div>
+            )}
+          </div>
+
+          <div className={`sc-glass ${s.info}`}>
+            <span className="sc-kicker">{item.subcategory ?? item.displayCategory ?? item.category}</span>
+            <h1 id="item-title" className={s.name}>
+              {name}
+            </h1>
+            <div className={s.priceRow}>
+              <span className={`sc-number sc-foil ${s.price}`}>¥{item.price}</span>
+              {item.priceNote ? <span className="sc-meta">参考价</span> : null}
+            </div>
+            <dl className={s.facts}>
+              {facts.map(([k, v]) => (
+                <div key={k} className={s.fact}>
+                  <dt>{k}</dt>
+                  <dd>{v}</dd>
+                </div>
+              ))}
+              {curator ? (
+                <div className={s.fact}>
+                  <dt>衣橱</dt>
+                  <dd>
+                    <Link href={`/closet/${curator.id}`} className={s.closetLink}>
+                      {clean(curator.closetName)} · {curator.displayName}
+                    </Link>
+                  </dd>
+                </div>
+              ) : null}
+            </dl>
+            {item.sizeNote ? <p className="sc-meta">{item.sizeNote}</p> : null}
+            <a className={`sc-cta ${s.buy}`} href={item.buyUrl} target="_blank" rel="noopener noreferrer">
+              {item.buyLabel ?? "去商家页面购买"}
+            </a>
+          </div>
+        </section>
+
+        <div className={s.block}>
+          <LookGallery
+            itemId={item.id}
+            itemName={name}
+            initial={sceneState}
+            demo={demo}
+            demoModelLabel={demoModel ? `演示模特 · 由 AI 生成的虚构人物` : "演示模特"}
+          />
+        </div>
+
+        {outfits.length ? (
+          <section className={s.block} aria-labelledby="item-outfits">
+            <span className="sc-kicker">In The Looks</span>
+            <h2 id="item-outfits" className={s.blockTitle}>
+              这件出现在哪些搭配里
+            </h2>
+            <ul className={s.looks}>
+              {outfits.map((o) => (
+                <li key={o.id}>
+                  <Link href={`/outfit/${o.id}`} className={`sc-glass ${s.look}`}>
+                    {o.cover ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img className={s.lookCover} src={o.cover} alt="" loading="lazy" decoding="async" />
+                    ) : (
+                      <span className={s.lookCover} aria-hidden="true" />
+                    )}
+                    <span className={s.lookText}>
+                      <span className="sc-meta">
+                        {o.closetName}
+                        {o.number ? ` · N°${String(o.number).padStart(2, "0")}` : ""}
+                      </span>
+                      <span className={s.lookName}>{o.name}</span>
+                      <span className="sc-meta">整套 ¥{o.total}</span>
+                    </span>
+                    <LinkPending />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+      </div>
+    </>
+  );
+}
