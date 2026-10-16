@@ -81,6 +81,10 @@ test("生产环境快速失败：Vercel 缺三个变量逐个报出；本地 nex
   assert.deepEqual(missingDeployEnv(env({ NODE_ENV: "development" })), []);
   assert.deepEqual(missingDeployEnv(env({ VERCEL: "1", NEXT_PHASE: "phase-production-build" })), []);
   assert.throws(() => assertDeployEnv(env({ VERCEL: "1", DATABASE_URL: "x" })), /SUPABASE_URL、SUPABASE_SERVICE_ROLE_KEY/);
+  // 分开检查：缺存储变量时数据库检查照常通过（页面不 500），只有用到存储时才报错
+  assert.deepEqual(missingDeployEnv(env({ VERCEL: "1", DATABASE_URL: "x" }), "db"), []);
+  assert.deepEqual(missingDeployEnv(env({ VERCEL: "1", DATABASE_URL: "x" }), "storage"), ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]);
+  assert.deepEqual(missingDeployEnv(env({ VERCEL: "1" }), "db"), ["DATABASE_URL"]);
 });
 
 test("私有文件：Supabase 驱动 302 到短时签名链接（有效期限定 60–300 秒、不缓存），本地驱动交回路由", async () => {
