@@ -27,6 +27,8 @@ const IMAGE_MODEL = "fal-ai/nano-banana-pro/edit";
 /** 整个生成（含分析与重试）的上限；路由 maxDuration 为 120 秒。 */
 const TOTAL_BUDGET_MS = 110_000;
 const ANALYSIS_TIMEOUT_MS = 30_000;
+/** 分析结果最多等这么久再开始生成（赶上了就写进提示词）。 */
+const ANALYSIS_PROMPT_WAIT_MS = 12_000;
 /** 第一次失败后，剩余时间不少于这么多才重试。 */
 const RETRY_MIN_LEFT_MS = 40_000;
 
@@ -455,10 +457,11 @@ export async function generateTwin(userId: string, input: { gender?: unknown }, 
       updatedAt: now,
     });
 
-    // 1. 分析（只在单独同意且配置了 key 时）
-    let analysis: ReturnType<typeof normalizeTraits> | null = null;
-    let glasses: boolean | null = null;
-    if (consent.bodyAnalysis && process.env.ANTHROPIC_API_KEY) {
+    // 1. 分析（只在单独同意且配置了 key 时）与生成并行：分析最多先等 ANALYSIS_PROMPT_WAIT_MS，
+    //    赶上了就把眼镜与外观描述写进提示词；没赶上就先生成（实测提示词不依赖分析也能还原本人），概括与标签等分析结束后再写入。
+    type Analysis = { analysis: ReturnType<typeof normalizeTraits> | null; glasses: boolean | null };
+    const analysisP: Promise<Analysis> = (async () => {
+      if (!(consent.bodyAnalysis && process.env.ANTHROPIC_API_KEY)) return { analysis: null, glasses: null };
       try {
         const storage = getStorage();
         const images: TwinImage[] = [];
@@ -472,30 +475,45 @@ export async function generateTwin(userId: string, input: { gender?: unknown }, 
           call({ images, heightCm }),
           new Promise<null>((r) => setTimeout(() => r(null), ANALYSIS_TIMEOUT_MS)),
         ]);
-        if (out) {
-          analysis = normalizeTraits(out);
-          glasses = !!out.glasses;
-        } else console.warn(`[avatar] ${BODY_ANALYSIS_NAME} 分析未返回结果，跳过`);
+        if (out) return { analysis: normalizeTraits(out), glasses: !!out.glasses };
+        console.warn(`[avatar] ${BODY_ANALYSIS_NAME} 分析未返回结果，跳过`);
       } catch (e) {
         // 只记错误类型，不记响应内容。
         console.warn(`[avatar] 形象分析失败，跳过：${e instanceof Error ? e.name : "unknown"}`);
       }
-    }
-    const gender: TwinGender | null = isGender(input.gender) ? input.gender : (analysis?.gender ?? null);
+      return { analysis: null, glasses: null };
+    })();
+    const imageUrlsP = Promise.all(ordered.map((p) => referenceDataUri(p.storageKey, p.mime)));
+
+    let gender: TwinGender | null = isGender(input.gender) ? input.gender : null;
+    const early = gender
+      ? await Promise.race([analysisP, new Promise<null>((r) => setTimeout(() => r(null), ANALYSIS_PROMPT_WAIT_MS))])
+      : await analysisP; // 没选性别时只能等分析推断
+    if (!gender) gender = early?.analysis?.gender ?? null;
     if (!gender) throw new AvatarError(400, "请先选择形象性别");
+    const g2: TwinGender = gender;
 
     // 2. 三张并行生成
-    const imageUrls = await Promise.all(ordered.map((p) => referenceDataUri(p.storageKey, p.mime)));
+    const imageUrls = await imageUrlsP;
     const slots = ordered.map((p) => p.slot);
     const signal = AbortSignal.timeout(Math.max(10_000, deadline - Date.now()));
     const results = await Promise.allSettled(
-      TWIN_ANGLES.map((angle) => generateWithRetry(twinPrompt(angle, gender, { descriptor: analysis?.descriptor, glasses, slots }), imageUrls, signal, deadline)),
+      TWIN_ANGLES.map((angle) =>
+        generateWithRetry(twinPrompt(angle, g2, { descriptor: early?.analysis?.descriptor, glasses: early?.glasses ?? null, slots }), imageUrls, signal, deadline),
+      ),
     );
+    for (const [i, r] of results.entries()) {
+      if (r.status === "rejected") {
+        const e = r.reason;
+        console.warn(`[avatar] twin ${jobId} ${TWIN_ANGLES[i]} 生成失败：${e instanceof GenError || e instanceof AvatarError ? `${e.status} ${e.message}` : e instanceof Error ? e.name : "unknown"}`);
+      }
+    }
     const front = results[0];
     if (front.status === "rejected") {
       const e = front.reason;
       throw e instanceof GenError || e instanceof AvatarError ? new AvatarError(e.status, e.message) : new AvatarError(502, "生成失败，请稍后再试");
     }
+    const { analysis } = await analysisP;
 
     // 3. 存储
     const storage = getStorage();
