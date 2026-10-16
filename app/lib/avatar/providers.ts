@@ -80,21 +80,36 @@ const INFO: Record<ProviderId, ProviderInfo> = {
 };
 
 // ---------- 同意版本 ----------
-// consent_version 同时记录两项：
+// consent_version 同时记录各项：
 //   avatar-consent-v2:store            只同意本站保存照片（只能生成示意模型）
 //   avatar-consent-v2:store+tripo_fal  另外单独同意把照片发送给 fal.ai（Tripo 3D）
+//   avatar-consent-v2:store+metaperson            单独同意由 MetaPerson 生成本人形象
+//   avatar-consent-v2:store+metaperson+anthropic  另外单独同意由 Anthropic（Claude）分析全身照、参考照片调整体型（D56）
 // 同意卡文案改动时提升版本号，旧版本的同意随之失效、需要重新确认。
 export const CONSENT_BASE = "avatar-consent-v2";
 
-export function consentVersionFor(thirdParty: ProviderId | null): string {
+/** bodyAnalysis 只在第三方为 MetaPerson 时生效（体型分析的结果只用于 MetaPerson 形象）。 */
+export function consentVersionFor(thirdParty: ProviderId | null, bodyAnalysis = false): string {
+  if (thirdParty === "metaperson" && bodyAnalysis) return `${CONSENT_BASE}:store+metaperson+${BODY_ANALYSIS_ID}`;
   return thirdParty && thirdParty !== "mock" ? `${CONSENT_BASE}:store+${thirdParty}` : `${CONSENT_BASE}:store`;
 }
 
-export function parseConsentVersion(v: string | null | undefined): { thirdParty: ProviderId | null } | null {
-  if (v === `${CONSENT_BASE}:store`) return { thirdParty: null };
-  if (v === `${CONSENT_BASE}:store+tripo_fal`) return { thirdParty: "tripo_fal" };
-  if (v === `${CONSENT_BASE}:store+metaperson`) return { thirdParty: "metaperson" };
+export function parseConsentVersion(v: string | null | undefined): { thirdParty: ProviderId | null; bodyAnalysis: boolean } | null {
+  if (v === `${CONSENT_BASE}:store`) return { thirdParty: null, bodyAnalysis: false };
+  if (v === `${CONSENT_BASE}:store+tripo_fal`) return { thirdParty: "tripo_fal", bodyAnalysis: false };
+  if (v === `${CONSENT_BASE}:store+metaperson`) return { thirdParty: "metaperson", bodyAnalysis: false };
+  if (v === `${CONSENT_BASE}:store+metaperson+${BODY_ANALYSIS_ID}`) return { thirdParty: "metaperson", bodyAnalysis: true };
   return null;
+}
+
+// ---------- 体型分析（D56） ----------
+// 第三个第三方处理方：Anthropic（Claude）读取全身正面/侧面照与身高体重，给出 8 个身体比例参数与一句体型概括。
+// 只在 MetaPerson 模式且配置了 ANTHROPIC_API_KEY 时出现在同意卡上，且须用户单独勾选；否则只按身高体重粗略设定。
+export const BODY_ANALYSIS_ID = "anthropic";
+export const BODY_ANALYSIS_NAME = "Anthropic（Claude）";
+
+export function bodyAnalysisOffered(): boolean {
+  return metapersonEnabled() && !!process.env.ANTHROPIC_API_KEY;
 }
 
 /** 配置了真实服务 key 时返回该服务；否则 null（同意卡不显示第二项）。 */
@@ -105,7 +120,7 @@ export function thirdPartyInfo(): ProviderInfo | null {
 
 /** 用户看到的同意卡版本：第二项是否出现、写的是哪家服务。提交同意时用来确认卡片没有过期。 */
 export function offerVersion(): string {
-  return `${CONSENT_BASE}:offer:${thirdPartyInfo()?.id ?? "none"}`;
+  return `${CONSENT_BASE}:offer:${thirdPartyInfo()?.id ?? "none"}${bodyAnalysisOffered() ? `+${BODY_ANALYSIS_ID}` : ""}`;
 }
 
 /** 按用户的同意决定实际使用的服务：只有单独同意了第三方、且该服务仍已配置，才用真实服务。 */

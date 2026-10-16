@@ -1,6 +1,7 @@
 import { and, eq, inArray, isNotNull, isNull, like, lt, or, type SQL } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { getStorage } from "@/lib/storage";
+import { scrubDeletedBodyAnalysis } from "./body";
 import { purgeRemoteRequest, type RemotePurge } from "./providers";
 
 // 保留与删除（D47）：
@@ -110,7 +111,10 @@ export async function purgeExpiredPhotos(opts: { userId?: string; now?: Date } =
         lt(schema.avatarPhoto.expiresAt, now),
       ),
     );
-  if (!expired.length) return { photos: 0 };
+  if (!expired.length) {
+    await scrubDeletedBodyAnalysis(opts.userId);
+    return { photos: 0 };
+  }
   const storage = getStorage();
   for (let i = 0; i < expired.length; i += 100) {
     const batch = expired.slice(i, i + 100);
@@ -121,6 +125,8 @@ export async function purgeExpiredPhotos(opts: { userId?: string; now?: Date } =
       .set({ deletedAt: now })
       .where(inArray(schema.avatarPhoto.id, batch.map((r) => r.id)));
   }
+  // 体型分析是照片的派生数据（D56）：照片删除后一并抹掉。
+  await scrubDeletedBodyAnalysis(opts.userId);
   return { photos: expired.length };
 }
 

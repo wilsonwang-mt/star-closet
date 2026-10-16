@@ -3,6 +3,8 @@ import { db, schema } from "@/lib/db";
 import { avatarKey, getStorage, photoKey } from "@/lib/storage";
 import { MAX_PHOTO_BYTES, QUALITY_HINTS, qualityFlags, sniffImage, type QualityFlags } from "./image";
 import {
+  BODY_ANALYSIS_NAME,
+  bodyAnalysisOffered,
   consentVersionFor,
   getProvider,
   hasRequiredSlots,
@@ -27,6 +29,7 @@ import {
   setPhotoExpiry,
 } from "./purge";
 import { checkAvatarCode, downloadExport, metapersonEnabled } from "./metaperson";
+import { currentBodyAnalysis, type BodyAnalysisView } from "./body";
 import { stripMetadata } from "./strip";
 import { deleteAllTryons } from "@/lib/tryon/service";
 
@@ -89,14 +92,16 @@ export type AvatarState = {
   /** photos：上传三张全身照由服务端生成（mock / tripo_fal）；metaperson：在嵌入的 MetaPerson 创建器里用自拍生成。 */
   mode: "photos" | "metaperson";
   /** 同意卡：offerVersion 用来确认用户看到的卡片没有过期；thirdParty 为 null 时不显示第二项。 */
-  offer: { version: string; thirdParty: ProviderView | null };
+  offer: { version: string; thirdParty: ProviderView | null; bodyAnalysis: { name: string } | null };
   /** 按用户同意实际使用的服务 */
   provider: ProviderView;
-  consent: { version: string; at: string; current: boolean; thirdParty: ProviderId | null } | null;
+  consent: { version: string; at: string; current: boolean; thirdParty: ProviderId | null; bodyAnalysis: boolean } | null;
   photos: PhotoView[];
   job: JobView | null;
   canGenerate: boolean;
   retentionDays: number;
+  /** 当前全身照的体型分析（D56）；照片换了或没有分析为 null */
+  bodyAnalysis: BodyAnalysisView | null;
 };
 
 export type RemoteSummary = { sent: number; failed: number; pending: number };
@@ -192,12 +197,18 @@ function consentOf(jobs: JobRow[]): AvatarState["consent"] {
   const j = jobs.find((x) => x.consentVersion && x.consentAt);
   if (!j || !j.consentVersion || !j.consentAt) return null;
   const parsed = parseConsentVersion(j.consentVersion);
-  return { version: j.consentVersion, at: j.consentAt.toISOString(), current: !!parsed, thirdParty: parsed?.thirdParty ?? null };
+  return {
+    version: j.consentVersion,
+    at: j.consentAt.toISOString(),
+    current: !!parsed,
+    thirdParty: parsed?.thirdParty ?? null,
+    bodyAnalysis: parsed?.bodyAnalysis ?? false,
+  };
 }
 
 function offer(): AvatarState["offer"] {
   const tp = thirdPartyInfo();
-  return { version: offerVersion(), thirdParty: tp ? view(tp) : null };
+  return { version: offerVersion(), thirdParty: tp ? view(tp) : null, bodyAnalysis: bodyAnalysisOffered() ? { name: BODY_ANALYSIS_NAME } : null };
 }
 
 export async function getAvatarState(userId: string): Promise<AvatarState> {
@@ -216,6 +227,7 @@ export async function getAvatarState(userId: string): Promise<AvatarState> {
     job: job ? toJobView(job) : null,
     canGenerate: !!consent?.current && provider.id !== "metaperson" && hasRequiredSlots(provider.id, photos),
     retentionDays: PHOTO_RETENTION_DAYS,
+    bodyAnalysis: currentBodyAnalysis(photos),
   };
 }
 
@@ -230,12 +242,16 @@ async function requireConsent(userId: string) {
  * 记录同意。store（保存照片）必选；thirdParty（发送给第三方服务）只有在配置了真实服务时才可勾选。
  * offerVersion 必须与当前同意卡一致，防止用户看到的是旧的“谁处理”说明。
  */
-export async function recordConsent(userId: string, input: { store: boolean; thirdParty: boolean; offerVersion: unknown }) {
+export async function recordConsent(
+  userId: string,
+  input: { store: boolean; thirdParty: boolean; offerVersion: unknown; bodyAnalysis?: boolean },
+) {
   if (!input.store) throw new AvatarError(400, "需要勾选同意保存照片");
   if (input.offerVersion !== offerVersion()) throw new AvatarError(409, "处理方已变更，请刷新页面重新阅读说明");
   const tp = thirdPartyInfo();
   if (input.thirdParty && !tp) throw new AvatarError(409, "第三方生成服务未启用，请刷新页面");
-  const version = consentVersionFor(input.thirdParty && tp ? tp.id : null);
+  if (input.bodyAnalysis && !bodyAnalysisOffered()) throw new AvatarError(409, "体型分析未启用，请刷新页面");
+  const version = consentVersionFor(input.thirdParty && tp ? tp.id : null, !!input.bodyAnalysis);
   const provider = providerForConsent(input.thirdParty && tp ? tp.id : null);
   const now = new Date();
   const [draft] = await db

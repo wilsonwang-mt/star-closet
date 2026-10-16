@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import type { BodyAnalysisView } from "@/lib/avatar/body";
 import type { FlowPhase } from "@/lib/avatar/metaperson-flow";
 import { MP_FACE_MAX_EDGE, type MpGender } from "@/lib/avatar/metaperson-protocol";
 import type { AvatarState, Slot } from "@/lib/avatar/service";
@@ -11,6 +12,24 @@ import s from "./AvatarStudio.module.css";
 
 // MetaPerson 模式的上传与生成（D56）：本站极简上传界面收三张照片，创建器在后台隐藏预加载；
 // 点“生成我的 3D 形象”后把正脸照交给创建器生成，生成完成前一直显示本站的等待态。
+// 生成前先请求体型分析（/api/avatar/body-analysis）：用户单独同意时由 Claude 参考全身照给出 8 个身体比例参数与一句体型概括，
+// 否则服务端只按身高体重粗略设定；结果作为 generate_avatar 的 blends。MetaPerson 只用正脸照建脸，全身照只能微调体型。
+
+/** 体型分析最长等多久；超时就不带体型参数继续生成。 */
+const ANALYSIS_TIMEOUT_MS = 100_000;
+
+async function fetchAnalysis(): Promise<BodyAnalysisView | null> {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), ANALYSIS_TIMEOUT_MS);
+  try {
+    const res = await fetch("/api/avatar/body-analysis", { method: "POST", signal: ctl.signal });
+    return res.ok ? ((await res.json()) as BodyAnalysisView) : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
 
 const SLOT_META: { slot: Slot; label: string; tip: string; required: Requirement; icon: ReactNode }[] = [
   { slot: "face", label: "正脸自拍", tip: "正对镜头，五官清晰", required: "必传", icon: <FaceSilhouette /> },
@@ -41,7 +60,7 @@ export default function MetaPersonStudio({
   onImported: (next: AvatarState) => void;
   footer?: ReactNode;
 }) {
-  const [gender, setGender] = useState<MpGender | null>(null);
+  const [gender, setGender] = useState<MpGender | null>(state.bodyAnalysis?.gender ?? null);
   const [request, setRequest] = useState<CreatorRequest | null>(null);
   const [phase, setPhase] = useState<FlowPhase>("standby");
   const [engine, setEngine] = useState<EngineState>("loading");
@@ -50,6 +69,11 @@ export default function MetaPersonStudio({
   const photo = (slot: Slot) => state.photos.find((p) => p.slot === slot);
   const face = photo("face");
   const front = photo("front");
+  const photoKey = `${front?.id ?? ""}|${photo("side")?.id ?? ""}`;
+  // 本次分析的概括只对同一组全身照有效；没有时用页面带来的上次结果。
+  const [last, setLast] = useState<{ key: string; summary: string | null } | null>(null);
+  const summary = last && last.key === photoKey ? last.summary : (state.bodyAnalysis?.summary ?? null);
+  const bodyOn = !!state.consent?.bodyAnalysis && !!state.offer.bodyAnalysis;
   const generating = phase === "generating";
   const ready = !!face && !!front && !!gender;
 
@@ -59,8 +83,9 @@ export default function MetaPersonStudio({
     const id = Date.now();
     setRequest({ id, payload: null });
     try {
-      const image = await photoToBase64(face.url, MP_FACE_MAX_EDGE);
-      setRequest({ id, payload: { gender, image, blends: null } });
+      const [analysis, image] = await Promise.all([fetchAnalysis(), photoToBase64(face.url, MP_FACE_MAX_EDGE)]);
+      setLast({ key: photoKey, summary: analysis?.summary ?? null });
+      setRequest({ id, payload: { gender, image, blends: analysis?.blends ?? null } });
     } catch {
       setRequest(null);
       setGenError("无法读取正脸照片，请重新上传");
@@ -72,7 +97,11 @@ export default function MetaPersonStudio({
   return (
     <section className="sc-glass card stack sc-rise">
       <h2 className="section-title">生成你的 3D 形象</h2>
-      <p className="serif-note">正脸自拍用来塑造你的形象，全身正面照同时用于 2D 试穿。</p>
+      <p className="serif-note">
+        {bodyOn
+          ? "正脸自拍用来塑造你的形象，全身照用来参考你的体型；全身正面照同时用于 2D 试穿。"
+          : "正脸自拍用来塑造你的形象，全身正面照同时用于 2D 试穿。"}
+      </p>
 
       <div className={s.grid}>
         {SLOT_META.map((m) => {
@@ -137,7 +166,7 @@ export default function MetaPersonStudio({
       <MetaPersonCreator
         request={request}
         stillUrl={front?.url ?? face?.url ?? null}
-        summary={null}
+        summary={summary}
         onPhase={(p, e) => {
           setPhase(p);
           setEngine(e);

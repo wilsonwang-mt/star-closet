@@ -59,6 +59,9 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
   const offer = state.offer.thirdParty;
   const [agreeStore, setAgreeStore] = useState(false);
   const [agreeThird, setAgreeThird] = useState(!!initial.consent?.thirdParty);
+  // D56：由 Anthropic（Claude）分析全身照，单独一项、可不勾；只在 MetaPerson 模式且服务端配置了 key 时出现。
+  const bodyOffer = state.mode === "metaperson" ? state.offer.bodyAnalysis : null;
+  const [agreeBody, setAgreeBody] = useState(!!initial.consent?.bodyAnalysis);
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   // 提示就近显示：at 为照片格（slot 或照片 id）、consent、job、delete。
@@ -112,7 +115,12 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
     const res = await fetch("/api/avatar/consent", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ store: true, thirdParty: !!offer && agreeThird, offerVersion: state.offer.version }),
+      body: JSON.stringify({
+        store: true,
+        thirdParty: !!offer && agreeThird,
+        bodyAnalysis: !!bodyOffer && !!offer && agreeThird && agreeBody,
+        offerVersion: state.offer.version,
+      }),
     }).catch(() => null);
     setBusy(null);
     if (!res || !res.ok) return setMsg({ at: "consent", ok: false, text: await readError(res, "记录同意失败") });
@@ -120,6 +128,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
     setState(next);
     setEditing(false);
     setAgreeThird(!!next.consent?.thirdParty);
+    setAgreeBody(!!next.consent?.bodyAnalysis);
   }
 
   async function upload(slot: Slot, file: File) {
@@ -196,6 +205,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
     setState(body);
     setAgreeStore(false);
     setAgreeThird(false);
+    setAgreeBody(false);
     setMsg({ at: "delete", ok: body.remotePurge.failed === 0, text: `已删除全部照片与 3D 形象${summaryText(body.remotePurge)}` });
   }
 
@@ -232,6 +242,12 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
                 <span>{mp ? `由 ${offer.name} 根据你的自拍生成本人形象` : `由 ${offer.name} 根据照片生成更真实的本人形象`}</span>
               </label>
             ) : null}
+            {offer && bodyOffer ? (
+              <label className={s.option}>
+                <input type="checkbox" checked={agreeBody} onChange={(e) => setAgreeBody(e.target.checked)} />
+                <span>由 Anthropic（Claude）分析我的全身照，参考我的照片调整 3D 形象的体型</span>
+              </label>
+            ) : null}
             <div className={s.actions}>
               <button
                 type="button"
@@ -248,6 +264,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
                   onClick={() => {
                     setEditing(false);
                     setAgreeThird(!!state.consent?.thirdParty);
+                    setAgreeBody(!!state.consent?.bodyAnalysis);
                   }}
                 >
                   取消
@@ -263,6 +280,11 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
             {offer ? (
               <span className={s.pill} data-on={state.consent?.thirdParty ? true : undefined}>
                 {state.consent?.thirdParty ? "✓" : "—"} 发送给 {offer.name}
+              </span>
+            ) : null}
+            {offer && bodyOffer ? (
+              <span className={s.pill} data-on={state.consent?.bodyAnalysis ? true : undefined}>
+                {state.consent?.bodyAnalysis ? "✓" : "—"} {bodyOffer.name} 体型分析
               </span>
             ) : null}
             <span className={s.hint}>{new Date(state.consent!.at).toLocaleString("zh-CN")}</span>
@@ -281,6 +303,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
           <h2 className="section-title">你的形象</h2>
           <div className="stack" style={{ gap: 12 }}>
             <AvatarViewer src={job.glbUrl} badges={job.badges} height={520} label="我的 3D 形象，可拖动 360° 旋转" />
+            {state.bodyAnalysis?.summary ? <p className="sc-meta">参考你的照片：{state.bodyAnalysis.summary}</p> : null}
             <div className={s.actions}>
               <button type="button" className="sc-cta sc-cta--ghost" onClick={() => setRegenerating(true)} disabled={!mpReady}>
                 重新生成

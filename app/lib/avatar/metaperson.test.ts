@@ -135,7 +135,7 @@ test("metapersonEnabled：三项 env 都有才启用，同意卡第二项变为 
   assert.equal(m.mp.metapersonEnabled(), false);
   assert.equal(m.providers.thirdPartyInfo(), null);
   process.env.AVATARSDK_CLIENT_SECRET = saved;
-  assert.deepEqual(m.providers.parseConsentVersion("avatar-consent-v2:store+metaperson"), { thirdParty: "metaperson" });
+  assert.deepEqual(m.providers.parseConsentVersion("avatar-consent-v2:store+metaperson"), { thirdParty: "metaperson", bodyAnalysis: false });
 });
 
 test("getAccessToken：Basic auth + client_credentials，结果缓存", async () => {
