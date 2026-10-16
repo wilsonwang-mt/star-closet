@@ -28,6 +28,7 @@
 - 密钥：正式环境的 key 由发起用户本人生成并录入 Vercel 环境变量（Production 与 Preview 分开，标记 Sensitive），母本存 1Password。agent 不读取、不复述、不代填 key 的值。正式环境使用新生成的 `BETTER_AUTH_SECRET` 与设了花费上限的 Anthropic key；fal、Avatar SDK 同样使用正式环境专用的 key。
 - 上线前删除或改密测试账号 `demo@star-closet.test` 与 `fable-audit-20261016@example.com`（前者的密码出现在会话记录中）。
 - 仍不允许：不受保护的公开上线；绑定自定义域名（需另行确认）；真实收款。B 档事项（隐私政策与敏感个人信息单独同意、跨境传输、AI 生成内容标识、中国大陆访问、邮件找回密码、Supabase 备份与升级、错误监控）完成前不得公开上线。
+- **2026-10-17 约 03:30 更新（比赛期间临时公开）**：发起用户在 Claude Code 会话中说“vercel暂时关掉访问保护”，以便比赛组委会无需登录访问演示。已关闭 Vercel 项目 `seen-star-closet` 的 Vercel Authentication（此前作用于全部部署，未设密码保护），https://seen-star-closet.vercel.app 现在公开可访问。这是临时状态：比赛结束或用户要求时恢复保护；B 档事项仍未完成，不视为正式公开上线；自定义域名与真实收款仍需另行确认。
 
 ### 2026-10-16 数据库与账号补充（Supabase）
 
