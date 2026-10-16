@@ -1,13 +1,17 @@
 import { getStorage } from "@/lib/storage";
 import { buildMannequinGlb, isGlb } from "./mannequin";
+import { deleteRemoteAvatar, metapersonEnabled } from "./metaperson";
 
 // 3D 形象生成服务适配。全部在服务端调用，浏览器永远拿不到任何 key。
 // - mock（默认）：不访问任何外部网络，几秒后返回程序生成的通用人台，标注“非本人示意模型”。
 // - tripo_fal：fal.ai 托管的 Tripo H3.1 Multiview-to-3D。只有 AVATAR3D_PROVIDER=tripo_fal 且设置了 FAL_KEY 才可用，
 //   并且用户必须在同意卡上单独勾选“同意发送给 fal.ai（Tripo 3D）”（D47）；否则一律走 mock，不发起任何外部请求。
+// - metaperson：Avatar SDK 的 MetaPerson Creator。用户在本站嵌入的创建器里上传自拍、生成形象，导出后由服务端下载转存
+//   （见 metaperson.ts、POST /api/avatar/metaperson/import）。不走 submit/poll；AVATAR3D_PROVIDER=metaperson 且
+//   AVATARSDK_CLIENT_ID、AVATARSDK_CLIENT_SECRET 都存在才启用，同样要求用户单独勾选第三方处理（D47）。
 // Meshy 备选适配器比赛版未实现。
 
-export type ProviderId = "mock" | "tripo_fal";
+export type ProviderId = "mock" | "tripo_fal" | "metaperson";
 
 export type ProviderInfo = {
   id: ProviderId;
@@ -66,6 +70,13 @@ const INFO: Record<ProviderId, ProviderInfo> = {
     processor: "fal.ai 托管的 Tripo 3D 生成模型（第三方服务，位于境外）：只发送正面、侧面、背面三张全身照",
     fidelityNote: "AI 根据你的照片生成的 3D 形象预览：还原外观轮廓，还原度未验证，不代表精确本人外貌或身体尺寸。合身未验证。",
   },
+  metaperson: {
+    id: "metaperson",
+    isMock: false,
+    name: "MetaPerson",
+    processor: "Avatar SDK 的 MetaPerson 创建器（第三方服务，位于境外）：自拍在创建器内上传并由其生成形象，本站只保存导出的 3D 形象",
+    fidelityNote: "MetaPerson 根据你的自拍生成的 3D 形象。",
+  },
 };
 
 // ---------- 同意版本 ----------
@@ -82,11 +93,13 @@ export function consentVersionFor(thirdParty: ProviderId | null): string {
 export function parseConsentVersion(v: string | null | undefined): { thirdParty: ProviderId | null } | null {
   if (v === `${CONSENT_BASE}:store`) return { thirdParty: null };
   if (v === `${CONSENT_BASE}:store+tripo_fal`) return { thirdParty: "tripo_fal" };
+  if (v === `${CONSENT_BASE}:store+metaperson`) return { thirdParty: "metaperson" };
   return null;
 }
 
 /** 配置了真实服务 key 时返回该服务；否则 null（同意卡不显示第二项）。 */
 export function thirdPartyInfo(): ProviderInfo | null {
+  if (metapersonEnabled()) return INFO.metaperson;
   return process.env.AVATAR3D_PROVIDER === "tripo_fal" && process.env.FAL_KEY ? INFO.tripo_fal : null;
 }
 
@@ -123,7 +136,7 @@ export function maxPollSeconds() {
 }
 
 export function providerInfo(id: string): ProviderInfo | null {
-  return id === "mock" || id === "tripo_fal" ? INFO[id] : null;
+  return id === "mock" || id === "tripo_fal" || id === "metaperson" ? INFO[id] : null;
 }
 
 export function getProvider(id: string): Avatar3DProvider {
@@ -131,6 +144,7 @@ export function getProvider(id: string): Avatar3DProvider {
     if (!process.env.FAL_KEY) throw new ProviderError("NO_KEY", "生成服务未配置，请稍后重试");
     return tripoFal;
   }
+  if (id === "metaperson") return metaperson;
   return mock;
 }
 
@@ -146,6 +160,19 @@ const mock: Avatar3DProvider = {
   async poll(_jobId, _handle, startedAt) {
     if (Date.now() - startedAt.getTime() < MOCK_SECONDS * 1000) return { state: "processing" };
     return { state: "succeeded", glb: buildMannequinGlb() };
+  },
+  async cancel() {},
+};
+
+// ---------- metaperson ----------
+// 形象由浏览器里的创建器生成、经导入接口直接写成 succeeded 作业，不存在需要提交或轮询的服务端任务。
+const metaperson: Avatar3DProvider = {
+  info: INFO.metaperson,
+  async submit() {
+    throw new ProviderError("BAD_INPUT", "请在 MetaPerson 创建器中生成形象");
+  },
+  async poll() {
+    return { state: "failed", code: "BAD_INPUT", message: "请在 MetaPerson 创建器中生成形象" };
   },
   async cancel() {},
 };
@@ -287,6 +314,8 @@ const tripoFal: Avatar3DProvider = {
  * 只传签名 URL（Supabase）或内联 data URI（本地开发）。
  */
 export async function purgeRemoteRequest(providerId: string, taskId: string | null): Promise<RemotePurge> {
+  // MetaPerson：taskId 即 avatarCode。删除接口对创建器生成的形象是否生效未实测；失败只记日志。
+  if (providerId === "metaperson" && taskId) return (await deleteRemoteAvatar(taskId)) ? "sent" : "failed";
   if (providerId !== "tripo_fal" || !taskId) return "skipped";
   if (!UUID_RE.test(taskId)) return "failed";
   if (!process.env.FAL_KEY) {

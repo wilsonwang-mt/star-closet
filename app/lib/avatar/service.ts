@@ -26,6 +26,7 @@ import {
   remoteState,
   setPhotoExpiry,
 } from "./purge";
+import { checkAvatarCode, downloadExport, metapersonEnabled } from "./metaperson";
 import { stripMetadata } from "./strip";
 
 // 3D 形象：同意 → 上传照片 → 生成（draft → queued → processing → succeeded / failed，可 canceled）→ 查看 → 删除。
@@ -78,6 +79,8 @@ export type JobView = {
 export type ProviderView = { id: ProviderId; isMock: boolean; name: string; processor: string };
 
 export type AvatarState = {
+  /** photos：上传三张全身照由服务端生成（mock / tripo_fal）；metaperson：在嵌入的 MetaPerson 创建器里用自拍生成。 */
+  mode: "photos" | "metaperson";
   /** 同意卡：offerVersion 用来确认用户看到的卡片没有过期；thirdParty 为 null 时不显示第二项。 */
   offer: { version: string; thirdParty: ProviderView | null };
   /** 按用户同意实际使用的服务 */
@@ -136,7 +139,8 @@ function toJobView(j: JobRow): JobView {
     fidelityNote: j.fidelityNote,
     badges: badgesFor(isMock),
     error: j.status === "failed" ? parseError(j.error) : null,
-    remotePurge: isMock ? null : remoteState(j.providerStatusUrl),
+    // MetaPerson 的远端删除接口未实测，结果只记日志，不在界面显示。
+    remotePurge: isMock || j.provider === "metaperson" ? null : remoteState(j.providerStatusUrl),
     elapsedSeconds: Math.max(0, Math.round(((terminal ? j.updatedAt.getTime() : Date.now()) - j.createdAt.getTime()) / 1000)),
     createdAt: j.createdAt.toISOString(),
     updatedAt: j.updatedAt.toISOString(),
@@ -197,12 +201,13 @@ export async function getAvatarState(userId: string): Promise<AvatarState> {
   const provider = providerForConsent(consent?.current ? consent.thirdParty : null);
   const job = jobs.find((j) => j.status !== "draft");
   return {
+    mode: metapersonEnabled() ? "metaperson" : "photos",
     offer: offer(),
     provider: view(provider),
     consent,
     photos: photos.map(toPhotoView),
     job: job ? toJobView(job) : null,
-    canGenerate: !!consent?.current && hasRequiredSlots(provider.id, photos),
+    canGenerate: !!consent?.current && provider.id !== "metaperson" && hasRequiredSlots(provider.id, photos),
     retentionDays: PHOTO_RETENTION_DAYS,
   };
 }
@@ -259,7 +264,8 @@ export async function addPhoto(userId: string, slot: string, file: File) {
   }
   if (file.size > MAX_PHOTO_BYTES) throw new AvatarError(413, "单张照片不能超过 8MB");
   if (file.size === 0) throw new AvatarError(400, "照片是空文件");
-  await requireConsent(userId);
+  const { provider: using } = await requireConsent(userId);
+  if (using.id === "metaperson") throw new AvatarError(400, "请在 MetaPerson 创建器中上传自拍");
 
   const raw = new Uint8Array(await file.arrayBuffer());
   if (raw.byteLength > MAX_PHOTO_BYTES) throw new AvatarError(413, "单张照片不能超过 8MB");
@@ -320,6 +326,7 @@ export async function deletePhoto(userId: string, id: string) {
 
 export async function createJob(userId: string): Promise<JobView> {
   const { jobs, consent, provider } = await requireConsent(userId);
+  if (provider.id === "metaperson") throw new AvatarError(400, "请在 MetaPerson 创建器中生成形象");
   const active = jobs.find((j) => j.status === "queued" || j.status === "processing");
   if (active) throw new AvatarError(409, "已有一个正在生成的任务");
   const photos = (await livePhotos(userId)).filter((p) => (UPLOAD_SLOTS as readonly string[]).includes(p.slot));
@@ -515,7 +522,8 @@ export async function deleteResult(userId: string, jobId: string): Promise<{ job
     .update(schema.avatarJob)
     .set({ resultGlbKey: null, resultPreviewKey: null, updatedAt: new Date() })
     .where(eq(schema.avatarJob.id, job.id));
-  const remotePurge = await purgeRemoteForJob(job);
+  const purged = await purgeRemoteForJob(job);
+  const remotePurge = job.provider === "metaperson" ? "skipped" : purged;
   return { job: toJobView((await getOwnJob(userId, jobId))!), remotePurge };
 }
 
@@ -537,7 +545,52 @@ export async function deleteAll(userId: string): Promise<AvatarState & { remoteP
   const summary: RemoteSummary = { sent: 0, failed: 0, pending: 0 };
   for (const j of jobs) {
     const s = await purgeRemoteForJob(j);
-    if (s !== "skipped") summary[s]++;
+    // MetaPerson 远端删除失败只记日志（接口未实测），不计入界面提示。
+    if (s !== "skipped" && j.provider !== "metaperson") summary[s]++;
   }
   return { ...(await getAvatarState(userId)), remotePurge: summary };
+}
+
+/** MetaPerson 模式下的同意检查：必须已单独同意发送给 MetaPerson，且服务仍已配置。 */
+export async function requireMetapersonConsent(userId: string) {
+  if (!metapersonEnabled()) throw new AvatarError(409, "MetaPerson 未启用，请刷新页面");
+  const r = await requireConsent(userId);
+  if (r.consent.thirdParty !== "metaperson") throw new AvatarError(403, "请先勾选同意由 MetaPerson 生成形象");
+  return r;
+}
+
+/**
+ * 导入 MetaPerson 导出的形象：服务端立即下载（https + 主机白名单 + 100MB + GLB 头校验），
+ * 存入 <userId>/avatars/<jobId>.glb，写入 succeeded 作业（provider metaperson，provider_task_id = avatarCode），
+ * 然后清理本人旧的 GLB。
+ */
+export async function importMetaperson(userId: string, input: { url: unknown; avatarCode: unknown }): Promise<AvatarState> {
+  const { consent } = await requireMetapersonConsent(userId);
+  const avatarCode = checkAvatarCode(input.avatarCode);
+  const glb = await downloadExport(input.url);
+  const id = crypto.randomUUID();
+  const key = avatarKey(userId, id);
+  const storage = getStorage();
+  await storage.put(key, glb, "model/gltf-binary");
+  const now = new Date();
+  try {
+    await db.insert(schema.avatarJob).values({
+      id,
+      userId,
+      status: "succeeded",
+      provider: "metaperson",
+      consentVersion: consent.version,
+      consentAt: new Date(consent.at),
+      resultGlbKey: key,
+      fidelityNote: providerInfo("metaperson")!.fidelityNote,
+      providerTaskId: avatarCode,
+      createdAt: now,
+      updatedAt: now,
+    });
+  } catch (e) {
+    await storage.remove([key]).catch(() => {});
+    throw e;
+  }
+  await removeOlderResults(userId, id);
+  return getAvatarState(userId);
 }

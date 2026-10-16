@@ -170,10 +170,73 @@
 
 .actions { display: flex; flex-wrap: wrap; gap: var(--sc-space-2) var(--sc-space-4); align-items: center; }
 
+/* MetaPerson 创建器：玻璃卡内的一块“舞台”，手机 70dvh、桌面 640px；加载中显示人形骨架。 */
+.creator {
+  position: relative;
+  height: 70dvh;
+  min-height: 480px;
+  overflow: hidden;
+  border-radius: var(--sc-radius-thumb);
+  background:
+    radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--sc-champ) 10%, transparent), transparent 60%),
+    color-mix(in srgb, var(--sc-bg) 40%, transparent);
+  box-shadow: inset 0 0 0 .5px color-mix(in srgb, var(--sc-champ) 45%, transparent);
+  isolation: isolate;
+}
+.creatorFrame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  opacity: 1;
+  transition: opacity .5s var(--sc-ease-rise);
+}
+.creator[data-loading] .creatorFrame { opacity: 0; }
+
+.creatorSkeleton,
+.creatorBusy {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--sc-space-4);
+  text-align: center;
+}
+.creatorBusy {
+  background: color-mix(in srgb, var(--sc-bg) 62%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: tile-in .4s var(--sc-ease-rise) both;
+}
+/* 抽象人形剪影：头 + 躯干，脉动表示加载中 */
+.creatorFigure {
+  position: relative;
+  width: 120px;
+  height: 220px;
+  animation: figure-pulse 1.8s ease-in-out infinite;
+}
+@keyframes figure-pulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+.creatorFigure::before,
+.creatorFigure::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  background: color-mix(in srgb, var(--sc-ink) 12%, transparent);
+}
+.creatorFigure::before { top: 0; width: 56px; height: 56px; border-radius: 50%; }
+.creatorFigure::after { top: 68px; width: 120px; height: 152px; border-radius: 60px 60px 18px 18px; }
+
 @media (min-width: 768px) {
   .grid { gap: var(--sc-space-4); }
+  .creator { height: 640px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .frame, .frame img { transition: none; animation: none; }
+  .creatorFrame, .creatorBusy, .creatorFigure { transition: none; animation: none; }
 }
