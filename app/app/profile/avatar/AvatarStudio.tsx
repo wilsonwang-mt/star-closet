@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import AvatarViewer from "@/components/AvatarViewer";
 import MetaPersonStudio from "./MetaPersonStudio";
+import TwinStudio from "./TwinStudio";
 import PhotoTile from "./PhotoTile";
 import { compressImage } from "./image-client";
 import { MP_PRIVACY_URL } from "@/lib/avatar/metaperson-protocol";
@@ -71,7 +72,8 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
   const [agreeStore, setAgreeStore] = useState(false);
   const [agreeThird, setAgreeThird] = useState(!!initial.consent?.thirdParty);
   // D56：由 Anthropic（Claude）分析全身照，单独一项、可不勾；只在 MetaPerson 模式且服务端配置了 key 时出现。
-  const bodyOffer = state.mode === "metaperson" ? state.offer.bodyAnalysis : null;
+  // 数字分身模式（D63）同样提供这一项：分析体型、发型与脸部特征，让形象照更像本人。
+  const bodyOffer = state.mode === "metaperson" || state.mode === "twin" ? state.offer.bodyAnalysis : null;
   const [agreeBody, setAgreeBody] = useState(!!initial.consent?.bodyAnalysis);
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -84,8 +86,13 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
   // MetaPerson 模式：照片在本站上传，正脸照交给嵌入的创建器生成（D56）；必须单独同意由 MetaPerson 处理才能上传、打开创建器。
   const mp = state.mode === "metaperson";
   const mpReady = mp && consented && state.consent?.thirdParty === "metaperson";
+  // 数字分身模式（D63）：须单独同意由 fal.ai 上的 AI 图像模型生成形象才能上传与生成。
+  const tw = state.mode === "twin";
+  const twReady = tw && consented && state.consent?.thirdParty === "twin";
+  // MetaPerson 与数字分身都必须勾选第三方处理才能开始。
+  const needThird = mp || tw;
   const [regenerating, setRegenerating] = useState(false);
-  const showConsentForm = !consented || editing || (mp && !mpReady);
+  const showConsentForm = !consented || editing || (mp && !mpReady) || (tw && !twReady);
   const mock = state.provider.isMock;
   // 真实服务按位置区分视角（front/left/back），侧面必填；示意模式正面 + 侧面或背面任一即可。
   const sideRequired = !mock;
@@ -211,7 +218,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
   }
 
   async function deleteEverything() {
-    if (!confirm("确定删除全部照片与 3D 形象吗？存储里的文件会一并删除，无法恢复。")) return;
+    if (!confirm(`确定删除全部照片与${tw ? "" : " 3D "}形象吗？存储里的文件会一并删除，无法恢复。`)) return;
     setBusy("delete");
     setMsg(null);
     const res = await fetch("/api/avatar", { method: "DELETE" }).catch(() => null);
@@ -223,12 +230,12 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
     setAgreeStore(false);
     setAgreeThird(false);
     setAgreeBody(false);
-    setMsg({ at: "delete", ok: body.remotePurge.failed === 0, text: `已删除全部照片与 3D 形象${summaryText(body.remotePurge)}` });
+    setMsg({ at: "delete", ok: body.remotePurge.failed === 0, text: `已删除全部照片与${tw ? "" : " 3D "}形象${summaryText(body.remotePurge)}` });
   }
 
   const photosBySlot = (slot: Slot) => state.photos.filter((p) => p.slot === slot);
   const legacy = state.photos.filter((p) => p.slot === "face" || p.slot === "extra");
-  const hasAny = state.photos.length > 0 || (job && job.status !== "canceled");
+  const hasAny = state.photos.length > 0 || (job && job.status !== "canceled") || !!state.twin;
   const remote = job ? remoteText(job.remotePurge, remoteName) : null;
 
   return (
@@ -240,7 +247,9 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
           {consented && !editing ? <span className="sc-badge">已同意</span> : null}
         </div>
         <p className="serif-note">
-          照片仅用于生成你的 3D 形象，私密保存、仅你可见，可随时删除。
+          {tw
+            ? `照片仅用于生成你的形象，私密保存、仅你可见；原图 ${state.retentionDays} 天后自动删除，可随时一键删除。`
+            : "照片仅用于生成你的 3D 形象，私密保存、仅你可见，可随时删除。"}
         </p>
 
         {showConsentForm ? (
@@ -254,14 +263,24 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
             {!consented ? (
               <label className={s.option}>
                 <input type="checkbox" checked={agreeStore} onChange={(e) => setAgreeStore(e.target.checked)} />
-                <span>{mp ? "我同意保存我的照片与 3D 形象，仅自己可见" : "我同意上传照片，用于生成我的 3D 形象"}</span>
+                <span>
+                  {tw
+                    ? "保存我的照片与形象，仅自己可见"
+                    : mp
+                      ? "我同意保存我的照片与 3D 形象，仅自己可见"
+                      : "我同意上传照片，用于生成我的 3D 形象"}
+                </span>
               </label>
             ) : null}
             {offer ? (
               <label className={s.option}>
                 <input type="checkbox" checked={agreeThird} onChange={(e) => setAgreeThird(e.target.checked)} />
                 <span>
-                  {mp ? `由 ${offer.name} 根据你的自拍生成本人形象` : `由 ${offer.name} 根据照片生成更真实的本人形象`}
+                  {tw
+                    ? "由 fal.ai 上的 AI 图像模型根据我的照片生成我的形象"
+                    : mp
+                      ? `由 ${offer.name} 根据你的自拍生成本人形象`
+                      : `由 ${offer.name} 根据照片生成更真实的本人形象`}
                   {mp ? (
                     <>
                       {" · "}
@@ -277,17 +296,21 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
             {offer && bodyOffer ? (
               <label className={s.option}>
                 <input type="checkbox" checked={agreeBody} onChange={(e) => setAgreeBody(e.target.checked)} />
-                <span>由 Anthropic（Claude）分析我的全身照，参考我的照片调整 3D 形象的体型</span>
+                <span>
+                  {tw
+                    ? "由 Anthropic（Claude）分析我的照片，理解身材、发型与脸部特征"
+                    : "由 Anthropic（Claude）分析我的全身照，参考我的照片调整 3D 形象的体型"}
+                </span>
               </label>
             ) : null}
             <div className={s.actions}>
               <button
                 type="button"
                 className="sc-cta"
-                disabled={(!consented && !agreeStore) || (mp && !agreeThird) || busy === "consent"}
+                disabled={(!consented && !agreeStore) || (needThird && !agreeThird) || busy === "consent"}
                 onClick={giveConsent}
               >
-                {busy === "consent" ? "记录中…" : consented ? "保存授权" : mp ? "同意并开始" : "同意并开始上传"}
+                {busy === "consent" ? "记录中…" : consented ? "保存授权" : needThird ? "同意并开始" : "同意并开始上传"}
               </button>
               {editing ? (
                 <button
@@ -307,16 +330,16 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
         ) : (
           <div className={s.granted}>
             <span className={s.pill} data-on>
-              ✓ {mp ? "保存照片与形象" : "存储照片"}
+              ✓ {needThird ? "保存照片与形象" : "存储照片"}
             </span>
             {offer ? (
               <span className={s.pill} data-on={state.consent?.thirdParty ? true : undefined}>
-                {state.consent?.thirdParty ? "✓" : "—"} 发送给 {offer.name}
+                {state.consent?.thirdParty ? "✓" : "—"} {tw ? `${offer.name} 生成形象` : `发送给 ${offer.name}`}
               </span>
             ) : null}
             {offer && bodyOffer ? (
               <span className={s.pill} data-on={state.consent?.bodyAnalysis ? true : undefined}>
-                {state.consent?.bodyAnalysis ? "✓" : "—"} {bodyOffer.name} 体型分析
+                {state.consent?.bodyAnalysis ? "✓" : "—"} {bodyOffer.name} {tw ? "照片分析" : "体型分析"}
               </span>
             ) : null}
             <span className={s.hint}>{new Date(state.consent!.at).toLocaleString("zh-CN")}</span>
@@ -328,6 +351,24 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
           </div>
         )}
       </section>
+
+      {/* 数字分身（D63）：上传照片 → 生成标准形象照 → 画廊。不加载 MetaPerson 创建器。 */}
+      {twReady ? (
+        <TwinStudio
+          state={state}
+          busy={busy}
+          errorAt={(at) => noteAt(at)?.text}
+          onUpload={upload}
+          onRemove={removePhoto}
+          onState={setState}
+          onNote={(text) => setMsg({ at: "sr", ok: true, text })}
+        />
+      ) : tw ? (
+        <section className="sc-glass card stack sc-rise">
+          <h2 className="section-title">生成你的形象</h2>
+          <p className="sc-meta">先在上方勾选同意。</p>
+        </section>
+      ) : null}
 
       {/* MetaPerson：上传照片（创建器在后台预加载）→ 生成 → 保存 → 查看器 */}
       {mp && job?.status === "succeeded" && job.glbUrl && !regenerating ? (
@@ -396,7 +437,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
       ) : null}
 
       {/* 照片 */}
-      {!mp ? (
+      {state.mode === "photos" ? (
       <section className="sc-glass card stack sc-rise">
         <h2 className="section-title">上传全身照</h2>
         <p className="serif-note">
@@ -448,7 +489,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
       ) : null}
 
       {/* 生成与结果 */}
-      {!mp ? (
+      {state.mode === "photos" ? (
       <section className="sc-glass card stack sc-rise">
         <div className="spread" style={{ alignItems: "flex-start" }}>
           <h2 className="section-title">生成</h2>
@@ -530,7 +571,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
           {hasAny ? (
             <>
               <p className="sc-meta">
-                删除全部照片与 3D 形象。
+                {tw ? "删除全部照片与形象照。" : "删除全部照片与 3D 形象。"}
               </p>
               <button type="button" className="link-btn" style={{ justifySelf: "start" }} onClick={deleteEverything} disabled={busy === "delete"}>
                 {busy === "delete" ? "删除中…" : "一键删除全部照片与形象"}

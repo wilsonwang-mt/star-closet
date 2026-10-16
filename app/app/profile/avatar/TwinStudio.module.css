@@ -1,0 +1,120 @@
+/* 数字分身（D63）：上传格、等待态与形象照画廊。只动 transform 与 opacity。 */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sc-space-3);
+}
+@media (min-width: 640px) {
+  .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 900px) {
+  .grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--sc-space-4); }
+}
+
+/* 等待态：沿用 MetaPerson 等待舞台的照片 + 香槟扫光，这里是普通文档流 */
+.wait {
+  display: grid;
+  justify-items: center;
+  gap: var(--sc-space-6);
+  padding: var(--sc-space-6) 0 var(--sc-space-4);
+  text-align: center;
+}
+.phase { animation: phase-in .7s var(--sc-ease-rise) both; }
+@keyframes phase-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* 画廊 */
+.gallery { display: grid; gap: var(--sc-space-3); justify-items: center; }
+.stage {
+  position: relative;
+  width: min(100%, 440px);
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--sc-champ) 8%, transparent);
+  box-shadow:
+    inset 0 0 0 .5px color-mix(in srgb, var(--sc-champ) 45%, transparent),
+    0 30px 80px color-mix(in srgb, var(--sc-champ) 12%, transparent);
+  touch-action: pan-y;
+  cursor: grab;
+  user-select: none;
+}
+.stage[data-dragging] { cursor: grabbing; }
+.stage:focus-visible { outline: 1px solid var(--sc-champ); outline-offset: 3px; }
+.shot {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: translate3d(0, 0, 0) scale(1.03);
+  transition:
+    opacity .9s var(--sc-ease-rise),
+    transform 1.3s var(--sc-ease-rise);
+  will-change: opacity, transform;
+  pointer-events: none;
+}
+.shot[data-state="on"] { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+.shot[data-state="next"] { transform: translate3d(6%, 0, 0) scale(1.03); }
+.shot[data-state="prev"] { transform: translate3d(-6%, 0, 0) scale(1.03); }
+.angle {
+  position: absolute;
+  left: 50%;
+  bottom: var(--sc-space-3);
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: var(--sc-fs-caption);
+  letter-spacing: .18em;
+  color: #2b2620;
+  background: rgba(255, 252, 246, .72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.dots { display: flex; gap: 6px; }
+.dots button {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--sc-ink) 28%, transparent);
+  cursor: pointer;
+  transition: transform .4s var(--sc-ease-rise), opacity .4s;
+}
+/* 加大点击区 */
+.dots button::after { content: ""; position: absolute; inset: -10px -6px; }
+.dots button[aria-current="true"] { background: var(--sc-champ); transform: scale(1.35); }
+.dots button:focus-visible { outline: 1px solid var(--sc-champ); outline-offset: 3px; }
+
+.summary { text-align: center; margin: 0; }
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tags li {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: var(--sc-fs-caption);
+  letter-spacing: .06em;
+  color: var(--sc-ink-2);
+  box-shadow: inset 0 0 0 .5px color-mix(in srgb, var(--sc-champ) 55%, transparent);
+}
+
+/* 减弱动态：只淡入淡出 */
+@media (prefers-reduced-motion: reduce) {
+  .shot,
+  .shot[data-state] { transform: none !important; transition: opacity .4s ease-out; }
+  .phase { animation: none; }
+  .dots button { transition: none; }
+}
