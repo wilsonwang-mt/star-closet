@@ -79,6 +79,7 @@
 .step { margin: 0; }
 .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .main { min-height: 52px; }
+.saveRow { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
 .consent { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--sc-ink-2); letter-spacing: 0; cursor: pointer; }
 .consent input { margin-top: 3px; flex: none; }
 

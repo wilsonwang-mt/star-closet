@@ -243,6 +243,7 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
       if (!enabled || busy.current) return;
       setOpen(true);
       setError(null);
+      setChainReady(null);
       if (canAutoStart) void run(itemId);
       else setQueued(itemId);
     },
@@ -343,6 +344,7 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
   }, [enabled]);
   const close = useCallback(() => {
     setOpen(false);
+    setChainReady(null);
     if (!busy.current) {
       setQueued(null);
       setError(null);

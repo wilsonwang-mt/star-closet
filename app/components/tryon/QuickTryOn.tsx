@@ -241,6 +241,20 @@ function Panel({
         transition: { opacity: { duration: 0.7, ease: [0.22, 0.61, 0.2, 1] as const }, scale: springs.roll },
       };
 
+  // 不生成也能把这件单独加入试衣间（D67：单品直接加入个人试衣间）。
+  const saveRow = (
+    <div className={s.saveRow}>
+      <button type="button" className="link-btn" disabled={saved !== "idle"} onClick={() => void save()}>
+        {saved === "done" ? "已加入试衣间" : "先把这件加入试衣间"}
+      </button>
+      {saved === "done" ? (
+        <Link href="/fitting-room" className="link-btn fade-in">
+          去试衣间
+        </Link>
+      ) : null}
+    </div>
+  );
+
   let title: string;
   let body: ReactNode;
   if (!hasBase) {
@@ -256,6 +270,7 @@ function Panel({
         <Link href="/profile/avatar" className={`sc-cta ${s.main}`}>
           建立我的数字分身
         </Link>
+        {saveRow}
       </>
     );
   } else if (q.running) {
@@ -313,6 +328,7 @@ function Panel({
             看完整详情
           </Link>
         </div>
+        {saveRow}
       </>
     );
   }
