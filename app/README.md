@@ -182,7 +182,7 @@ npm run dev                  # http://localhost:3000
 目录 v0.2、个人档案与 3D 形象之后，据各开发会话的记录，以下步骤都还没有在发起用户的 Supabase 上执行过（这些会话只用本地 PGlite，没有连接用户的 Supabase）：
 
 1. `.env.local` 设置 `DATABASE_URL`（transaction pooler 即可）；迁移需要会话模式连接，可另设 `DATABASE_MIGRATE_URL`（5432 端口）。
-2. 运行 `npm run db:setup`：按顺序执行尚未执行的迁移——0001（profile / avatar_photo / avatar_job）、0002（目录 v0.2 字段、`avatar_photo.expires_at`、外部任务字段）、0003（2D 试穿 `tryon` / `tryon_consent`）、0004（上身效果 `scene_render`）、0005（数字分身 `avatar_job.result_images`），再写入目录 v0.2。MetaPerson 不需要新表（沿用 `avatar_job`，provider 为 `metaperson`）。衣橱、搭配、单品都做 upsert，搭配与单品的对应关系整体重写；不删除旧行（试衣间引用单品编号），所以 v0.1 中编号不再使用的旧单品会留在库里。
+2. 运行 `npm run db:setup`：按顺序执行尚未执行的迁移——0001（profile / avatar_photo / avatar_job）、0002（目录 v0.2 字段、`avatar_photo.expires_at`、外部任务字段）、0003（2D 试穿 `tryon` / `tryon_consent`）、0004（上身效果 `scene_render`）、0005（数字分身 `avatar_job.result_images`）、0006（每日限次 `usage_counter`，D64），再写入目录 v0.2。MetaPerson 不需要新表（沿用 `avatar_job`，provider 为 `metaperson`）。衣橱、搭配、单品都做 upsert，搭配与单品的对应关系整体重写；不删除旧行（试衣间引用单品编号），所以 v0.1 中编号不再使用的旧单品会留在库里。
 3. 在 SQL Editor 再执行一次 `supabase/rls.sql`，为新表开启 RLS 并收回 Data API 权限。
 4. 如需把照片和 GLB 存到 Supabase：在 SQL Editor 执行 `supabase/storage.sql` 建私有桶 `avatar-private`，并在 `.env.local` 设置 `SUPABASE_URL` 与 `SUPABASE_SERVICE_ROLE_KEY`（只在服务端使用）。两项都有才启用，否则仍写本地 `.data/uploads/`。
 5. 每天运行一次 `npm run avatar:purge` 的定时任务（见上文“30 天删除”）。
@@ -197,6 +197,60 @@ npm run dev                  # http://localhost:3000
 - AI 改编（`claude-opus-5-5`，effort `low`）单次耗时约 10–13 秒。发起用户 2026-10-16 决定保持模型与速度，只加等待动画（`components/AdaptWaiting.tsx`）。
 
 连接串注意：把 `[YOUR-PASSWORD]` 整体（含方括号）换成密码；密码含 `@ # / ? %` 等字符需先做百分号编码。
+
+## 部署到 Vercel（受保护演示）
+
+授权范围见仓库根目录 AGENTS.md「2026-10-17 部署授权（受保护演示，D64）」：只允许开启 Deployment Protection 的演示部署，不公开上线、不绑自定义域名、不收款。部署、Vercel 账号与环境变量录入由发起用户本人操作；本节只写步骤与变量名，不写任何值。
+
+### 项目设置
+
+- Root Directory：`app`（Framework 自动识别为 Next.js；构建命令 `npm run build`，安装命令 `npm install`）。
+- 函数区域：`app/vercel.json` 已写 `"regions": ["sin1"]`，与 Supabase 新加坡区同地。
+- 函数时长：数字分身 `/api/avatar/twin` 300 秒、上身效果 `/api/scene` 120 秒、试穿 `/api/tryon*` 与改编、体型分析 60 秒（路由内 `maxDuration`），Pro 套餐都在上限内。
+- **Deployment Protection 必须开启，并覆盖所有部署（含 Production）**：优先 Password Protection（Pro 加购项）；未购买时用 Vercel Authentication + Shareable Links。部署后先确认未登录 Vercel、无密码时打不开页面。
+
+### 环境变量（只列名字；Production 与 Preview 分开录入，标记 Sensitive）
+
+必填（Vercel 上缺前三项任何一个，接口会直接报错并写明缺哪个，不会退回本地 PGlite 或本地文件，见 `lib/env.ts`）：
+
+- `DATABASE_URL`（Supabase transaction pooler，6543 端口）
+- `SUPABASE_URL`、`SUPABASE_SERVICE_ROLE_KEY`（私有桶 `avatar-private`；service role key 只在服务端使用，不能加 `NEXT_PUBLIC_` 前缀）
+- `BETTER_AUTH_SECRET`（正式环境新生成）
+- `BETTER_AUTH_URL`（线上地址，如 `https://<项目名>.vercel.app`；本次部署的 `https://$VERCEL_URL` 会自动加入 trustedOrigins，https 下 cookie 自动 Secure）
+
+按需：
+
+- `ANTHROPIC_API_KEY`（改编、体型分析；建议设花费上限的正式 key）
+- `FAL_KEY`、`TRYON_PROVIDER`、`AVATAR3D_PROVIDER`、`AVATAR3D_MAX_POLL_SECONDS`、`TWIN_QUEUE_POLL_MS`
+- `AVATARSDK_CLIENT_ID`、`AVATARSDK_CLIENT_SECRET`、`AVATARSDK_EXPORT_HOSTS`（MetaPerson，已停用）
+- 每日上限覆盖（正整数，不填用默认）：`QUOTA_ADAPT`（100）、`QUOTA_TRYON`（60，试衣间与一键试穿共用）、`QUOTA_SCENE`（30）、`QUOTA_TWIN`（10）、`QUOTA_BODY_ANALYSIS`（20）
+
+不要在 Vercel 上设置：`PGLITE_DIR`、`UPLOADS_DIR`（本地专用）；`DATABASE_MIGRATE_URL` 只在本机跑迁移时用。
+
+### 部署前在 Supabase 上执行（本机，不在 Vercel 构建时跑）
+
+1. 本机 `.env.local` 设置 `DATABASE_URL` 与 `DATABASE_MIGRATE_URL`（5432 会话模式），运行 `npm run db:setup`：执行到 0006（`usage_counter`）并写入目录。
+2. SQL Editor 整份执行 `supabase/rls.sql`（为 `usage_counter` 等新表开启 RLS、收回 anon / authenticated 权限）；未建桶时再执行 `supabase/storage.sql`。
+3. 用 Supabase 安全顾问（Security Advisor）复查：应只剩“已开 RLS 但无策略”的 INFO。
+4. 删除或改密测试账号（见 AGENTS.md D64 节）。
+
+### 私有文件与响应大小
+
+Vercel 函数响应上限 4.5 MB。`/api/avatar/files/*`（照片、试穿图、GLB）与 `/api/scene/video/<id>`（Live 视频）在校验登录与归属后，Supabase 存储时 302 跳到 60–300 秒有效的签名链接（`Cache-Control: private, no-store`），不经函数转发；本地存储时照旧直接返回字节。
+
+### 部署后冒烟检查
+
+- [ ] 不带密码 / 未登录 Vercel 打开站点与任意 `/api/*`：被 Deployment Protection 拦下。
+- [ ] 注册新账号、退出、再登录；刷新后仍保持登录（cookie 为 Secure）。
+- [ ] 未登录点“改编这一套”跳到登录页；登录后改编成功（AI 或规则兜底）。
+- [ ] 改编结果“加入试衣间”，试衣间页能读回。
+- [ ] 个人页建数字分身：作业进入生成中，结束后三张形象图能显示（图片地址经 302 到 Supabase 签名链接）。
+- [ ] 商品详情页一键试穿：先出快图，随后自动换成清晰版。
+- [ ] 上身效果：场景图出现，Live 视频能播放（含 iPhone Safari）。
+- [ ] Vercel 运行日志（Runtime Logs）没有“缺少环境变量”、5xx 或函数超时；区域显示 sin1。
+- [ ] 当日超过上限时返回中文提示（可临时把某个 `QUOTA_*` 设为 1 验证后改回）。
+
+照片 30 天删除（`npm run avatar:purge`）目前没有配置 Vercel Cron，演示期间由本机定时执行或手动执行。
 
 ## 说明
 
