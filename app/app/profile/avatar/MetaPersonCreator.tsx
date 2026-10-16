@@ -8,6 +8,8 @@ import {
   exportMessage,
   fallbackUiMessage,
   generateAvatarMessage,
+  idleExportParamsMessage,
+  mpGenderOf,
   parseMpMessage,
   setupMessages,
   type MpGender,
@@ -45,6 +47,21 @@ function clock(ms: number) {
 }
 
 type Box = { top: number; left: number; width: number; height: number };
+
+/** 把舞台（含上方主按钮）滚进视口：放得下就居中，放不下就顶部对齐（留出悬浮导航的高度）。返回取消函数。 */
+function revealStage(el: HTMLElement | null): () => void {
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let raf = requestAnimationFrame(() => {
+    raf = requestAnimationFrame(() => {
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const behavior: ScrollBehavior = reduce ? "auto" : "smooth";
+      if (r.height <= window.innerHeight - 96) el.scrollIntoView({ behavior, block: "center" });
+      else window.scrollTo({ top: window.scrollY + r.top - 80, behavior });
+    });
+  });
+  return () => cancelAnimationFrame(raf);
+}
 type Target = { win: MessageEventSource; origin: string } | null;
 
 /** 只回发给创建器自己的来源。 */
@@ -69,6 +86,8 @@ export default function MetaPersonCreator({
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
   const dock = useRef<HTMLDivElement>(null);
+  // 主按钮 + 舞台的外层：滚动定位以它为准，让“保存”按钮与创建器同屏可见。
+  const stageWrap = useRef<HTMLDivElement>(null);
   const [src, setSrc] = useState<{ url: string; mobile: boolean } | null>(null);
   const [flow, dispatch] = useReducer(flowReducer, initialFlow);
   const [engineError, setEngineError] = useState(false);
@@ -88,6 +107,8 @@ export default function MetaPersonCreator({
   const exportTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const importedUrl = useRef<string | null>(null);
   const graceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 形象性别：发出 generate_avatar 时取请求里的，model_generated 带回的为准（用户可能在创建器里改）。用于选待机动画。
+  const gender = useRef<MpGender | null>(null);
   const onImportedRef = useRef(onImported);
   onImportedRef.current = onImported;
   const onPhaseRef = useRef(onPhase);
@@ -167,10 +188,14 @@ export default function MetaPersonCreator({
           if (graceTimer.current) clearTimeout(graceTimer.current);
           dispatch(e.isAuthenticated ? { type: "engine_ready" } : { type: "auth_failed" });
           break;
-        case "model_generated":
+        case "model_generated": {
           dispatch({ type: "model_generated" });
+          gender.current = mpGenderOf(e.gender) ?? gender.current;
+          // 桌面版：知道性别后把导出参数换成带待机动画的版本，导出的 GLB 是自然站姿而不是 T 字。
+          postTo(target.current, idleExportParamsMessage(gender.current, chosen.mobile));
           if (!sawAvailability.current) setCanExport(true);
           break;
+        }
         case "action_availability_changed":
           if (e.actionName === "avatar_export") {
             sawAvailability.current = true;
@@ -200,12 +225,13 @@ export default function MetaPersonCreator({
     setRequestedAt(Date.now());
     setNow(Date.now());
     if (!sawAvailability.current) setCanExport(false);
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let raf = requestAnimationFrame(() => {
-      raf = requestAnimationFrame(() => dock.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" }));
-    });
-    return () => cancelAnimationFrame(raf);
+    return revealStage(stageWrap.current);
   }, [requestId]);
+
+  // 创建器显示出来时（保存按钮出现在舞台上方）再对齐一次，桌面 1440×900 首屏同时看到按钮与创建器。
+  useEffect(() => {
+    if (shown) return revealStage(stageWrap.current);
+  }, [shown]);
 
   // 请求被父组件撤回（读取照片失败等）：还没发出就回到上传。
   const withdrawn = request === null;
@@ -217,6 +243,7 @@ export default function MetaPersonCreator({
   const payload = request?.payload ?? null;
   useEffect(() => {
     if (!payload || !src || !shouldSend(flow)) return;
+    gender.current = payload.gender;
     postTo(target.current, generateAvatarMessage({ ...payload, mobile: src.mobile }));
     dispatch({ type: "sent", at: Date.now() });
   }, [flow, payload, src]);
@@ -282,7 +309,7 @@ export default function MetaPersonCreator({
         setError("导出没有响应，请重试");
         return;
       }
-      (t.win as Window).postMessage(exportMessage(), t.origin);
+      (t.win as Window).postMessage(exportMessage({ gender: gender.current, mobile: src?.mobile ?? true }), t.origin);
       exportTimer.current = setTimeout(send, 8_000);
     };
     if (exportTimer.current) clearTimeout(exportTimer.current);
@@ -309,6 +336,16 @@ export default function MetaPersonCreator({
 
       {fallback ? <p className="serif-note">请在下方直接选择你的正脸照片</p> : null}
 
+      <div ref={stageWrap} className="stack" style={{ gap: 12 }}>
+      {/* 创建器是跨域 iframe，鼠标停在上面时滚轮被它接走：主按钮放在舞台上方，不需要滚过创建器才能保存。 */}
+      {shown ? (
+        <div className={s.actions}>
+          <button type="button" className="sc-cta" disabled={!canExport || busy !== null} onClick={save}>
+            {busy === "exporting" ? "正在导出…" : busy === "importing" ? "保存中…" : "保存为我的 3D 形象"}
+          </button>
+          {flow.phase === "revealed" ? <span className="sc-meta">可在下方调整发型与服装</span> : null}
+        </div>
+      ) : null}
       <div ref={dock} className={s.dock} data-open={open || undefined}>
         {open ? (
           <div className={s.waitStage} data-on={flow.phase === "generating" || undefined} aria-hidden={shown || undefined}>
@@ -330,6 +367,7 @@ export default function MetaPersonCreator({
           </div>
         ) : null}
       </div>
+      </div>
 
       {error ? (
         <p className="error" role="alert">
@@ -337,17 +375,7 @@ export default function MetaPersonCreator({
         </p>
       ) : null}
 
-      {shown ? (
-        <div className="stack" style={{ gap: 8 }}>
-          {summary && flow.phase === "revealed" ? <p className="sc-meta">参考你的照片：{summary}</p> : null}
-          <div className={s.actions}>
-            <button type="button" className="sc-cta" disabled={!canExport || busy !== null} onClick={save}>
-              {busy === "exporting" ? "正在导出…" : busy === "importing" ? "保存中…" : "保存为我的 3D 形象"}
-            </button>
-            {flow.phase === "revealed" ? <span className="sc-meta">可在上方调整发型与服装</span> : null}
-          </div>
-        </div>
-      ) : null}
+      {shown && summary && flow.phase === "revealed" ? <p className="sc-meta">参考你的照片：{summary}</p> : null}
 
       {src
         ? createPortal(

@@ -67,3 +67,18 @@ export function wearableInOrder<T extends PlanItem>(items: T[]): { item: T; step
     .sort((a, b) => ORDER[a.step.label] - ORDER[b.step.label] || a.i - b.i)
     .map(({ item, step }) => ({ item, step }));
 }
+
+/**
+ * 这一套里没有穿到结果图上的单品，按展示类别去重、保持原顺序，例如 ["鞋", "包"]。
+ * 鞋、包、配饰本来就不能上身；连衣裙之外的内搭、第二件上装等也可能没叠加上。用于结果下方如实列出“未上身”。
+ */
+export function notWornLabels(items: PlanItem[], appliedIds: readonly string[]): string[] {
+  const worn = new Set(appliedIds);
+  const out: string[] = [];
+  for (const i of items) {
+    if (worn.has(i.id)) continue;
+    const label = i.displayCategory || i.category;
+    if (label && !out.includes(label)) out.push(label);
+  }
+  return out;
+}

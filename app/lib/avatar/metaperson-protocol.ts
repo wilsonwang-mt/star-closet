@@ -8,6 +8,8 @@ export const MP_MOBILE_URL = "https://mobile.metaperson.avatarsdk.com/generator"
 /** 视口宽度小于此值时使用手机版生成器。 */
 export const MP_MOBILE_BREAKPOINT = 768;
 export const MP_SOURCE = "metaperson_creator";
+/** Avatar SDK（Itseez3D）隐私政策：手机版创建器上传前的 “Accept and continue” 指向的就是这一页。 */
+export const MP_PRIVACY_URL = "https://avatarsdk.com/privacy-policy/";
 
 /** 只接受这两个来源的消息，并把消息只回发给对应来源。 */
 export const MP_ORIGINS = [new URL(MP_DESKTOP_URL).origin, new URL(MP_MOBILE_URL).origin] as const;
@@ -109,8 +111,36 @@ export function setupMessages(accessToken: string, mobile: boolean): Record<stri
   ];
 }
 
-export function exportMessage(): Record<string, unknown> {
-  return { eventName: "export_avatar", ...MP_EXPORT };
+// ---------- 待机姿势 ----------
+// 默认导出的是 T 字姿势（双臂平举）。官方 JS API 的导出参数（桌面版才支持，手机版忽略）：
+// animationName 选一段随模型一起导出的动画；animationAsBindPose: true 用动画第一帧代替 T-Pose 作为绑定姿势，
+// 所以即使不播放动画，模型也是自然站姿。动画名按性别区分：Female_Animation_Idle / Male_Animation_Idle。
+// 查看器（components/avatar-viewer/Viewer.tsx）发现 GLB 带动画时循环播放。
+
+/** 创建器 / 事件里的性别字符串归一为 male | female；认不出时返回 null。 */
+export function mpGenderOf(v: unknown): MpGender | null {
+  if (typeof v !== "string") return null;
+  const g = v.trim().toLowerCase();
+  if (g.startsWith("female") || g === "f" || g === "woman") return "female";
+  if (g.startsWith("male") || g === "m" || g === "man") return "male";
+  return null;
+}
+
+/** 桌面版导出时附带的待机动画参数；手机版不支持这两个字段，返回空对象。 */
+export function idlePoseParams(gender: MpGender | null, mobile: boolean): Record<string, unknown> {
+  if (mobile || !gender) return {};
+  return { animationName: gender === "male" ? "Male_Animation_Idle" : "Female_Animation_Idle", animationAsBindPose: true };
+}
+
+/** 生成完成、知道性别后重发一次导出参数（桌面版带上待机动画）；手机版没有可加的字段，返回 null。 */
+export function idleExportParamsMessage(gender: MpGender | null, mobile: boolean): Record<string, unknown> | null {
+  const extra = idlePoseParams(gender, mobile);
+  if (!Object.keys(extra).length) return null;
+  return { eventName: "set_export_parameters", ...MP_EXPORT, ...extra };
+}
+
+export function exportMessage(opts: { gender?: MpGender | null; mobile?: boolean } = {}): Record<string, unknown> {
+  return { eventName: "export_avatar", ...MP_EXPORT, ...idlePoseParams(opts.gender ?? null, opts.mobile ?? true) };
 }
 
 // ---------- generate_avatar ----------

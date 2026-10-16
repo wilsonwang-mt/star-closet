@@ -3,9 +3,10 @@
 // 数字滚动（视觉规范 §7.1）。两种形态：
 // - RollingDigits：里程表式，每一位是一条 0–9 的竖排数字，弹簧滚到目标位；用于轮播位置“01 / 10”与 N° 编号。
 // - CountTo：数值弹簧过渡后按整数写成文字（不做位移），可以套金箔渐变（background-clip: text 穿不透带 transform 的子元素）；用于总价。
+//   滚动中的文字画在 ::after 里，页面文字只有 sr-only 那一份。
 // 两者都可被打断：新值到来时从当前位置与速度继续。读屏只读最终数值。
-import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
-import { useEffect, useRef } from "react";
+import { animate, motion, useMotionValue, useReducedMotion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import { springs } from "@/lib/motion";
 import styles from "./RollingNumber.module.css";
 
@@ -62,8 +63,22 @@ export function CountTo({
 }) {
   const reduced = useReducedMotion();
   const mv = useMotionValue(from ?? value);
-  const text = useTransform(mv, (v) => format(v));
+  const face = useRef<HTMLSpanElement>(null);
   const fromRef = useRef(from);
+  const formatRef = useRef(format);
+  // 首帧（含服务端渲染）显示的值只算一次；之后由 motion value 直接写 DOM，React 重渲染不覆盖滚动中的数字。
+  const [initialText] = useState(() => format(from ?? value));
+  formatRef.current = format;
+
+  // 滚动中的数字写进装饰层的 data-v，由 CSS ::after 画出来：伪元素文字不进 innerText，
+  // 复制、读屏与页面文字里只有一份最终数值（sr-only），不会出现“¥2214 ¥2214”。
+  useEffect(() => {
+    const paint = (v: number) => {
+      if (face.current) face.current.dataset.v = formatRef.current(v);
+    };
+    paint(mv.get());
+    return mv.on("change", paint);
+  }, [mv]);
 
   useEffect(() => {
     // 还停在起始值（首次出现；开发模式 StrictMode 第二次执行也算）时才等待 delay
@@ -79,9 +94,7 @@ export function CountTo({
   return (
     <span className={className}>
       <span className="sr-only">{format(value)}</span>
-      <motion.span aria-hidden="true" className={styles.tabular}>
-        {text}
-      </motion.span>
+      <span ref={face} aria-hidden="true" className={`${styles.tabular} ${styles.face}`} data-v={initialText} />
     </span>
   );
 }
