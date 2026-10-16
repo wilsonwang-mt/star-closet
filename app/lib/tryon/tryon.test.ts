@@ -1,3 +1,4 @@
+process.env.TRYON_BASE_WAIT_MS = "50";
 import assert from "node:assert/strict";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -343,6 +344,23 @@ test("在上一张（细化中）继续穿：底图用当前最好的一张", as
   assert.deepEqual(v2.appliedItemIds, ["T1", "O1"]);
   assert.deepEqual(v2.applied, ["上装", "外套"]);
   await clearTryons();
+});
+
+test("整套链式：下一步早于上一步写入时，等底图写好再继续，而不是 404", async () => {
+  process.env.FAL_KEY = "test-key";
+  plans = [["COMPLETED"], ["IN_PROGRESS"]];
+  const v1 = await m.svc.createTryon("u1", { lookId: "L1", itemIds: ["T1"] });
+  process.env.TRYON_BASE_WAIT_MS = "5000";
+  try {
+    // 上一步还在处理中（首图尚未写入）：先发下一步，稍后才轮询写入
+    setTimeout(() => void m.svc.pollTryon("u1", v1.id), 300);
+    const v2 = await m.svc.createTryon("u1", { lookId: "L1", itemIds: ["O1"], baseTryonId: v1.id });
+    assert.equal(v2.baseTryonId, v1.id);
+    assert.deepEqual(v2.appliedItemIds, ["T1", "O1"]);
+  } finally {
+    process.env.TRYON_BASE_WAIT_MS = "50";
+    await clearTryons();
+  }
 });
 
 test("失败与降级：细化失败保留快速的一张；快速失败等细化；两段都失败才算失败", async () => {

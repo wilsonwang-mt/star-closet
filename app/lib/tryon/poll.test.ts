@@ -1,3 +1,4 @@
+process.env.TRYON_BASE_WAIT_MS = "50";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { pollDelay, waitFirst } from "@/components/tryon/shared";

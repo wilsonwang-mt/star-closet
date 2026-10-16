@@ -1,3 +1,4 @@
+process.env.TRYON_BASE_WAIT_MS = "50";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";

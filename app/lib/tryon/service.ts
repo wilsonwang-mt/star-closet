@@ -333,6 +333,28 @@ async function loadBase(load: () => Promise<string | null>): Promise<string> {
 
 const BASE_NOT_FOUND = "没有找到这张试穿图";
 
+/**
+ * 链式底图：本人的一张试穿记录，等到它成功且结果图已写入为止。
+ * 第一段结果会先以内嵌图片随轮询返回给浏览器，写入存储与更新记录在 after() 里稍后完成；
+ * 整套试穿的下一步可能比写入早到，所以对仍在处理中的本人记录最多等 TRYON_BASE_WAIT_MS（默认 30 秒），而不是立刻 404。
+ */
+const baseWaitMs = () => Number(process.env.TRYON_BASE_WAIT_MS ?? 30_000);
+async function readyBase(userId: string, baseTryonId: string): Promise<Row | null> {
+  const deadline = Date.now() + baseWaitMs();
+  for (;;) {
+    const rows = await db
+      .select()
+      .from(schema.tryon)
+      .where(and(eq(schema.tryon.id, baseTryonId), eq(schema.tryon.userId, userId)))
+      .limit(1);
+    const row = rows[0] ?? null;
+    if (!row || row.status === "failed") return null;
+    if (row.status === "succeeded" && row.resultKey) return row;
+    if (Date.now() >= deadline) return null;
+    await new Promise((r) => setTimeout(r, 800));
+  }
+}
+
 /** 底图试穿的结果图（当前最好的一张）；已随一键删除被清掉时连同记录清理（与 getTryon 一致）。 */
 async function baseImage(base: Row): Promise<string> {
   const image = base.resultKey ? await storedImage(base.resultKey) : null;
@@ -682,13 +704,8 @@ async function createItemTryon(userId: string, input: TryonInput, defer?: Defer,
   let worn: WornPiece[] = [];
   let ref: Awaited<ReturnType<typeof resolveBaseRef>> = null;
   if (input.baseTryonId) {
-    const rows = await db
-      .select()
-      .from(schema.tryon)
-      .where(and(eq(schema.tryon.id, input.baseTryonId), eq(schema.tryon.userId, userId)))
-      .limit(1);
-    base = rows[0] ?? null;
-    if (!base || base.status !== "succeeded" || !base.resultKey) throw new TryonError(404, BASE_NOT_FOUND);
+    base = await readyBase(userId, input.baseTryonId);
+    if (!base) throw new TryonError(404, BASE_NOT_FOUND);
     const labels = base.appliedCategories as TryonLabel[];
     worn = base.itemIds.flatMap((id, i) => (labels[i] ? [{ itemId: id, label: labels[i] }] : []));
   } else {
