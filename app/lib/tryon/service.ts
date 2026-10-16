@@ -41,7 +41,8 @@ import { planTryon, stepFor, wearOn, type FashnCategory, type TryonLabel, type W
 // - 同意（D47）：首次试穿（含预热）前单独勾选“同意把我的形象照片发送给 fal.ai 上的 AI 模型生成试穿图”，记录在 tryon_consent，
 //   版本 tryon-consent-v2:fal；旧版本（tryon-consent-v1:fashn_fal）需要重新同意。
 // - 结果：存 `<userId>/avatars/tryon-<id>.jpg`（细化后另存 `tryon-<id>-hq.jpg`，两张都随记录删除），
-//   浏览器经 /api/avatar/files/<key> 读取（他人 404）；刚生成的一张直接以 data URI 随轮询响应返回。
+//   浏览器经 /api/avatar/files/<key> 读取（他人 404）；刚生成的一张在 data URI 不超过 inlineLimit（3.5MB，Vercel 函数响应上限 4.5MB）时
+//   直接随轮询响应返回、写桶放到响应之后；更大的先写桶，响应里只给存储地址（deliver）。写桶完成之前同一记录同一阶段不再重复取结果、重复写桶（storing）。
 // - 不新增数据库字段：生成信息放在 outfit_snapshot 末尾的一条 { kind: "step" | "chain", ... } 记录里。
 
 export { TryonError } from "./fashn";
@@ -418,16 +419,90 @@ async function settle(job: FashnJob): Promise<Settled> {
 
 const hasJob = (s: Stage): s is Stage & FashnJob => !!s.statusUrl && !!s.responseUrl;
 
-/** 逐件：把取回的结果图写入私有存储并更新记录（放在响应之后）。细化先到时快速结果不再覆盖 resultKey。 */
-async function storeStep(userId: string, id: string, got: Extract<Settled, { kind: "image" }>, which: "fast" | "hq") {
+type Got = Extract<Settled, { kind: "image" }>;
+type StoreWhich = "fast" | "hq" | "chain";
+
+/**
+ * 正在写桶的结果：`<记录 id>:<阶段>` → 开始时间。从“fal 已完成、取回结果”到“记录里写上 done”这段时间，
+ * 每次轮询都会再取一遍结果、再写一次桶（x-upsert 覆盖同一个 key）；有标记时这几次轮询只回报“还在处理”，不再碰 fal 和存储。
+ * 进程内的标记：Vercel 上多个实例之间不互斥，换到另一个实例的轮询仍可能重复写一次（覆盖同一 key，只多花时间与流量）。
+ * 超过 STORING_TTL_MS 的标记视为失效（after() 的任务没跑完就被丢弃时不会永远卡住）。
+ */
+const storing = new Map<string, number>();
+const STORING_TTL_MS = 90_000;
+const storingKey = (id: string, which: StoreWhich) => `${id}:${which}`;
+function isStoring(id: string, which: StoreWhich): boolean {
+  const at = storing.get(storingKey(id, which));
+  if (at === undefined) return false;
+  if (Date.now() - at < STORING_TTL_MS) return true;
+  storing.delete(storingKey(id, which));
+  return false;
+}
+
+/** 随轮询响应内联返回的结果图上限（data URI 的字符数）。Vercel 函数响应体上限 4.5MB，留出 JSON 其余部分的余量。 */
+const DEFAULT_INLINE_LIMIT = 3_500_000;
+let inlineLimit = DEFAULT_INLINE_LIMIT;
+
+/** 仅供单元测试调低内联上限；传 null 恢复默认值。 */
+export function __setInlineLimitForTests(limit: number | null) {
+  inlineLimit = limit ?? DEFAULT_INLINE_LIMIT;
+}
+
+/** 内联：结果图随这次响应返回、写桶放到响应之后；stored：太大放不进响应，已先写桶，row 是写好的记录，null 表示写桶没成功（下次轮询再取）。 */
+type Delivery = { inline: true } | { inline: false; row: Row | null };
+
+/**
+ * 把取回的结果图交出去。data URI 不超过 inlineLimit 时随响应返回、写桶放到响应之后（首图不等写桶）；
+ * 超过时（nano-banana 的 2K PNG 有 6.7–7.1MB，data URI 8.9–9.5MB）先写桶，响应里只给存储地址。
+ * 写完之前同一记录同一阶段打上标记，见 storing。
+ */
+async function deliver(defer: Defer | undefined, id: string, which: StoreWhich, got: Got, store: () => Promise<Row | null>): Promise<Delivery> {
+  const mark = storingKey(id, which);
+  storing.set(mark, Date.now());
+  const run = () => store().finally(() => storing.delete(mark));
+  if (got.dataUrl.length <= inlineLimit) {
+    await later(defer, async () => void (await run()));
+    return { inline: true };
+  }
+  try {
+    return { inline: false, row: await run() };
+  } catch (e) {
+    console.error("[tryon]", e instanceof Error ? e.message : "unknown error");
+    return { inline: false, row: null };
+  }
+}
+
+async function rowOf(id: string): Promise<Row | null> {
+  const rows = await db.select().from(schema.tryon).where(eq(schema.tryon.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+/**
+ * 逐件：把取回的结果图写入私有存储并更新记录。细化先到时快速结果不再覆盖 resultKey。
+ * 写之前再读一次记录：已经有人写过这个阶段（另一个实例）就不再写；记录已被删除就不写，免得留下无主文件。返回写好的记录。
+ */
+async function storeStep(userId: string, id: string, got: Got, which: "fast" | "hq"): Promise<Row | null> {
+  const cur = await rowOf(id);
+  if (!cur) return null;
+  const m = stepMetaOf(cur);
+  if (which === "hq" ? m?.hqKey : m?.fastKey) return cur;
   const key = avatarKey(userId, which === "hq" ? `tryon-${id}-hq` : `tryon-${id}`, got.ext);
   await getStorage().put(key, got.bytes, got.mime);
   if (which === "hq") {
-    await patchMeta(id, { hqKey: key, "fine.done": "ok" }, { status: "succeeded", resultKey: key, error: null });
-    return;
+    return patchMeta(id, { hqKey: key, "fine.done": "ok" }, { status: "succeeded", resultKey: key, error: null });
   }
   const updated = await patchMeta(id, { fastKey: key, "fast.done": "ok" }, { status: "succeeded", resultKey: key }, isNull(schema.tryon.resultKey));
-  if (!updated) await patchMeta(id, { fastKey: key, "fast.done": "ok" });
+  return updated ?? (await patchMeta(id, { fastKey: key, "fast.done": "ok" }));
+}
+
+/** 整套最后一步：同 storeStep，记录已经是 succeeded 时不再写。 */
+async function storeChain(userId: string, id: string, got: Got): Promise<Row | null> {
+  const cur = await rowOf(id);
+  if (!cur) return null;
+  if (cur.status === "succeeded") return cur;
+  const key = avatarKey(userId, `tryon-${id}`, got.ext);
+  await getStorage().put(key, got.bytes, got.mime);
+  return patchMeta(id, { "job.done": "ok" }, { status: "succeeded", resultKey: key });
 }
 
 /** 逐件的一次轮询：细化好了直接用细化的一张；否则看快速出图；两段都失败才算失败。 */
@@ -436,7 +511,10 @@ async function advanceStep(userId: string, row: Row, meta: StepMeta, defer?: Def
   let fineLive: Partial<TryonView> | null = null;
   const fine = meta.fine;
   if (isLive(fine)) {
-    if (!hasJob(fine)) {
+    if (isStoring(row.id, "hq")) {
+      // 结果已取回、正在写桶：不再查 fal、不再重复写。
+      fineLive = liveFrom(null);
+    } else if (!hasJob(fine)) {
       if (now - fine.submittedAt > FINE_SUBMIT_GRACE_MS) row = (await patchMeta(row.id, { "fine.done": "failed" })) ?? row;
     } else if (now - fine.submittedAt > stageDeadline(fine.model, FINE_DEADLINE_MS)) {
       void cancelFashn(fine);
@@ -444,10 +522,11 @@ async function advanceStep(userId: string, row: Row, meta: StepMeta, defer?: Def
     } else {
       const got = await settle(fine);
       if (got.kind === "image") {
-        await later(defer, () => storeStep(userId, row.id, got, "hq"));
-        return toView(row, { status: "succeeded", resultUrl: got.dataUrl, stage: "done", refining: false, mode: "quality", error: null });
-      }
-      if (got.kind === "failed") row = (await patchMeta(row.id, { "fine.done": "failed", "fine.error": got.message })) ?? row;
+        const sent = await deliver(defer, row.id, "hq", got, () => storeStep(userId, row.id, got, "hq"));
+        if (sent.inline) return toView(row, { status: "succeeded", resultUrl: got.dataUrl, stage: "done", refining: false, mode: "quality", error: null });
+        if (sent.row) return toView(sent.row);
+        fineLive = liveFrom(null);
+      } else if (got.kind === "failed") row = (await patchMeta(row.id, { "fine.done": "failed", "fine.error": got.message })) ?? row;
       else fineLive = liveFrom(got.status);
     }
   }
@@ -457,17 +536,22 @@ async function advanceStep(userId: string, row: Row, meta: StepMeta, defer?: Def
   const fast = meta.fast;
   let live: Partial<TryonView> = {};
   if (isLive(fast) && hasJob(fast)) {
-    if (now - fast.submittedAt > stageDeadline(fast.model, FAST_DEADLINE_MS)) {
+    if (isStoring(row.id, "fast")) {
+      live = liveFrom(null);
+    } else if (now - fast.submittedAt > stageDeadline(fast.model, FAST_DEADLINE_MS)) {
       void cancelFashn(fast);
       row = (await patchMeta(row.id, { "fast.done": "failed", "fast.error": TIMEOUT_MESSAGE })) ?? row;
     } else {
       const got = await settle(fast);
       if (got.kind === "image") {
-        await later(defer, () => storeStep(userId, row.id, got, "fast"));
-        const refining = isLive(stepMetaOf(row)?.fine);
-        return toView(row, { status: "succeeded", resultUrl: got.dataUrl, stage: refining ? "refining" : "done", refining, mode: "performance" });
-      }
-      if (got.kind === "failed") row = (await patchMeta(row.id, { "fast.done": "failed", "fast.error": got.message })) ?? row;
+        const sent = await deliver(defer, row.id, "fast", got, () => storeStep(userId, row.id, got, "fast"));
+        if (sent.inline) {
+          const refining = isLive(stepMetaOf(row)?.fine);
+          return toView(row, { status: "succeeded", resultUrl: got.dataUrl, stage: refining ? "refining" : "done", refining, mode: "performance" });
+        }
+        if (sent.row) return toView(sent.row);
+        live = liveFrom(null);
+      } else if (got.kind === "failed") row = (await patchMeta(row.id, { "fast.done": "failed", "fast.error": got.message })) ?? row;
       else live = liveFrom(got.status);
     }
   }
@@ -496,15 +580,13 @@ async function advanceChain(userId: string, row: Row, meta: ChainMeta, defer?: D
   if (!job || !hasJob(job) || job.done) return toView(row, { stage: "generating" });
   const last = meta.index >= total - 1;
   if (last) {
+    if (isStoring(row.id, "chain")) return toView(row, { stage: "generating" });
     const got = await settle(job);
     if (got.kind === "failed") return failRow(row, got.message);
     if (got.kind === "pending") return toView(row, liveFrom(got.status));
-    await later(defer, async () => {
-      const key = avatarKey(userId, `tryon-${row.id}`, got.ext);
-      await getStorage().put(key, got.bytes, got.mime);
-      await patchMeta(row.id, { "job.done": "ok" }, { status: "succeeded", resultKey: key });
-    });
-    return toView(row, { status: "succeeded", resultUrl: got.dataUrl, stage: "done" });
+    const sent = await deliver(defer, row.id, "chain", got, () => storeChain(userId, row.id, got));
+    if (sent.inline) return toView(row, { status: "succeeded", resultUrl: got.dataUrl, stage: "done" });
+    return toView(sent.row ?? row, sent.row ? {} : { stage: "generating" });
   }
   let url: string;
   try {
