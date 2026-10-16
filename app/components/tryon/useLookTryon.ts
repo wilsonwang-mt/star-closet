@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { wearableInOrder, type PlanItem } from "@/lib/tryon/plan";
 import type { TryonContext, TryonStage, TryonView } from "@/lib/tryon/service";
-import { compress, fetchView, preload, readError, sleep, waitFirst } from "./shared";
+import { compress, fetchView, pollDelay, preload, readError, sleep, waitFirst } from "./shared";
 
 // 试衣间一套搭配的逐件试穿状态。放在 LookCard 里（而不是面板里）：生成途中关掉面板也不丢，
 // 穿好后卡片上的单品直接标“已穿上”。
@@ -70,11 +70,14 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
     refiningIds.current.add(id);
     void (async () => {
       let misses = 0;
+      let lastMs = 0;
       try {
         while (alive.current) {
-          await sleep(REFINE_POLL_MS);
+          await sleep(pollDelay(REFINE_POLL_MS, lastMs));
           if (!alive.current) return;
+          const startedAt = Date.now();
           const r = await fetchView(id);
+          lastMs = Date.now() - startedAt;
           if (r.kind === "gone") {
             setFrames((f) => f.filter((x) => x.id !== id));
             return;

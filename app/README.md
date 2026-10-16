@@ -108,6 +108,7 @@ API：`GET /api/avatar/metaperson/token`、`POST /api/avatar/metaperson/import`�
 - 结果：快速一段存 `<userId>/avatars/tryon-<id>.jpg`，细化后另存 `tryon-<id>-hq.jpg` 并把 `result_key` 指过去（两张都随记录删除；快速那张保留到删除，避免正在读它的请求读空；整套为 `tryon-<id>.jpg`；改造前的旧结果为 `.png`），经 `GET /api/avatar/files/<key>` 读取，他人 404。删除时尽力取消还在跑的 fal 请求。3D 形象的“一键删除”同时调用 `deleteAllTryons()`：删除该用户全部 `tryon` 记录、结果图与 `tryon_consent`（之后再试穿需重新同意），再清空用户存储前缀；单独清空存储前缀时，残留的 `tryon` 记录在下次读取或被用作底图时发现文件不存在即删除。
 - 表：`tryon`（id、user_id、source_look_id、source_outfit_id、outfit_snapshot、item_ids、applied_categories、status、result_key、error、created_at）、`tryon_consent`（user_id、consent_version、consent_at），迁移 `drizzle/0003_tryon.sql`；Supabase 上执行 `npm run db:setup` 后再执行一次 `supabase/rls.sql`。
 - 测试：`lib/tryon/tryon.test.ts`，fetch 模拟 fal 队列（提交 → 状态 → 结果）：品类映射与逐件叠加规则；两段式依次报排队 → 出图并细化中 → 换成清晰的一张，两张都存、都删；缓存命中不发请求、另一套复制结果；预热只跑 performance、不进穿搭进度、认领时补提交 quality 且不重复；细化中继续穿时底图用快速的一张；细化失败保留快速、快速失败等细化、两段都失败才失败；改造前遗留的处理中记录判为失败；`baseTryonId` 属于他人 / 失败 / 处理中 / 不存在 / 文件已删一律 404 且不调用 FASHN；鞋包配饰 422、不在这套里 404；整套逐步推进、中间步骤把结果地址交给下一步；过期正面照不再使用；试穿面板上传的正面照写入 30 天 `expires_at` 并清掉没用上的预热结果；无 key 与未同意（含预热）不发请求；清空存储后记录清理；3D 形象一键删除同时删除试穿记录与同意。
+- 前端轮询（`components/tryon/shared.tsx`）：间隔按两次请求的开始时间计（`pollDelay()`，最少 150 ms），链路慢时不会在每次响应之后再整段等待；测试 `lib/tryon/poll.test.ts`（模拟 fetch）。
 
 ## 界面提示（D48）
 
