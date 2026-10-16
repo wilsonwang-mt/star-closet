@@ -227,7 +227,7 @@ export async function getAvatarState(userId: string): Promise<AvatarState> {
     job: job ? toJobView(job) : null,
     canGenerate: !!consent?.current && provider.id !== "metaperson" && hasRequiredSlots(provider.id, photos),
     retentionDays: PHOTO_RETENTION_DAYS,
-    bodyAnalysis: currentBodyAnalysis(photos),
+    bodyAnalysis: consent?.current && consent.bodyAnalysis ? currentBodyAnalysis(photos) : null,
   };
 }
 

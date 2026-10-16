@@ -12,8 +12,9 @@ import { BODY_BLENDS, clampBlend, normalizeBlends, type BodyBlends, type MpGende
 // - 用户在同意卡上单独勾选“由 Anthropic（Claude）分析我的全身照……”且配置了 ANTHROPIC_API_KEY 时调用 Claude；
 // - 否则、或调用失败/拒绝时，只按身高体重的 BMI 粗略设定 Body / Waist / Hips（其余为 0），不报错。
 // MetaPerson 用一张正脸照建脸，身体只是 8 个比例参数：这里只能“参考照片微调体型”，不是还原身材。
-// 结果挂在当前全身正面照的 avatar_photo.quality_flags.bodyAnalysis 上（不改表结构）：照片换了自然失效；
-// 照片删除后由 scrubDeletedBodyAnalysis 抹掉。
+// 只有 Claude 的结果会存：挂在当前全身正面照的 avatar_photo.quality_flags.bodyAnalysis 上（不改表结构），照片换了自然失效；
+// 照片删除后由 scrubDeletedBodyAnalysis 抹掉；撤回体型分析同意后下次分析时删除。身高体重的估算是纯算术，每次重算、不存，
+// 因而档案里清空身高体重后不会在别处留下副本。
 
 const MODEL = "claude-opus-5-5";
 const SUMMARY_MAX = 30;
@@ -27,8 +28,6 @@ export type BodyAnalysis = {
   summary: string | null;
   /** 分析时用的全身正面、侧面照片 id（侧面可缺） */
   photoIds: string[];
-  heightCm: number | null;
-  weightKg: number | null;
   at: string;
 };
 
@@ -168,8 +167,6 @@ function storedOf(row: PhotoRow | undefined): BodyAnalysis | null {
     blends: normalizeBlends(a.blends as Record<string, unknown> | undefined),
     summary: cleanSummary(a.summary),
     photoIds: a.photoIds.filter((x): x is string => typeof x === "string"),
-    heightCm: typeof a.heightCm === "number" ? a.heightCm : null,
-    weightKg: typeof a.weightKg === "number" ? a.weightKg : null,
     at: typeof a.at === "string" ? a.at : "",
   };
 }
@@ -191,7 +188,7 @@ export function currentBodyAnalysis(photos: PhotoRow[]): BodyAnalysisView | null
 
 /**
  * POST /api/avatar/body-analysis 的实现。调用方须已确认登录与 MetaPerson 同意；consented 为用户是否单独同意体型分析。
- * 同一组照片（与身高体重）已有同类结果时直接返回，不重复调用 Claude。
+ * 同一组照片已有 Claude 结果时直接返回，不重复调用；未同意时删除已存的 Claude 结果，只按身高体重估算。
  */
 export async function runBodyAnalysis(userId: string, opts: { consented: boolean }, call: ModelCall = callClaude): Promise<BodyAnalysisView> {
   const now = new Date();
@@ -214,11 +211,18 @@ export async function runBodyAnalysis(userId: string, opts: { consented: boolean
   const allowClaude = opts.consented && hasBodyAnalysisKey() && !!front;
 
   const stored = storedOf(front);
-  if (stored && sameIds(stored.photoIds, photoIds)) {
-    const wanted = allowClaude ? "claude" : bmiBlends(heightCm, weightKg).source;
-    const sameBody = stored.heightCm === heightCm && stored.weightKg === weightKg;
-    if (stored.source === wanted && (wanted === "claude" || sameBody)) return toView(stored);
-  }
+  if (allowClaude && stored?.source === "claude" && sameIds(stored.photoIds, photoIds)) return toView(stored);
+  const saveOnFront = async (bodyAnalysis: BodyAnalysis | null) => {
+    if (!front) return;
+    const { bodyAnalysis: _old, ...flags } = (front.qualityFlags ?? {}) as Record<string, unknown>;
+    void _old;
+    await db
+      .update(schema.avatarPhoto)
+      .set({ qualityFlags: bodyAnalysis ? { ...flags, bodyAnalysis } : flags })
+      .where(and(eq(schema.avatarPhoto.id, front.id), eq(schema.avatarPhoto.userId, userId), isNull(schema.avatarPhoto.deletedAt)));
+  };
+  // 撤回了体型分析同意：删掉以前存的 Claude 结果。
+  if (!opts.consented && stored) await saveOnFront(null);
 
   const images: BodyImage[] = [];
   if (allowClaude) {
@@ -233,14 +237,8 @@ export async function runBodyAnalysis(userId: string, opts: { consented: boolean
     }
   }
   const result = await analyzeBody({ images, heightCm, weightKg, allowClaude: allowClaude && images.length > 0 }, call);
-  const full: BodyAnalysis = { ...result, photoIds, heightCm, weightKg, at: now.toISOString() };
-  if (front) {
-    const flags = (front.qualityFlags ?? {}) as Record<string, unknown>;
-    await db
-      .update(schema.avatarPhoto)
-      .set({ qualityFlags: { ...flags, bodyAnalysis: full } })
-      .where(and(eq(schema.avatarPhoto.id, front.id), eq(schema.avatarPhoto.userId, userId), isNull(schema.avatarPhoto.deletedAt)));
-  }
+  const full: BodyAnalysis = { ...result, photoIds, at: now.toISOString() };
+  if (result.source === "claude") await saveOnFront(full);
   return toView(full);
 }
 

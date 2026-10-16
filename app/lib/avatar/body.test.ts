@@ -222,47 +222,67 @@ test("runBodyAnalysis：同意后读取本人全身正面+侧面照与身高体�
   assert.equal((await m.service.getAvatarState("b2")).bodyAnalysis, null);
   await m.body.runBodyAnalysis("b2", { consented: true }, model.fn);
   assert.equal(model.calls.length, 2);
+
+  // 删除正面照：软删除的记录上不再保留体型分析（D47：派生数据随照片删除）
+  st = await m.service.getAvatarState("b2");
+  assert.ok(st.bodyAnalysis);
+  const frontId = st.photos.find((p) => p.slot === "front")!.id;
+  st = await m.service.deletePhoto("b2", frontId);
+  const [row] = await db.select().from(schema.avatarPhoto).where(eq(schema.avatarPhoto.id, frontId));
+  assert.ok(row.deletedAt);
+  assert.equal((row.qualityFlags as Record<string, unknown>).bodyAnalysis, undefined);
+  assert.equal((row.qualityFlags as Record<string, unknown>).lowResolution, false);
+  assert.equal(st.bodyAnalysis, null);
   assert.equal(fetchCalls, 0);
 });
 
-test("runBodyAnalysis：未单独同意或没有 key 时不调用 Claude，只按身高体重；删除照片后分析一并抹掉", async () => {
+test("runBodyAnalysis：未单独同意或没有 key 时不调用 Claude，只按身高体重且不存；撤回同意后删除已存的结果", async () => {
   const { db, schema } = m.db;
   await db.insert(schema.user).values({ id: "b3", name: "测试", email: "b3@example.test" });
   await db.insert(schema.profile).values({ userId: "b3", heightCm: 160, weightKg: 80 });
-  await consent("b3", false);
+  await consent("b3", true);
   await m.service.addPhoto("b3", "face", png(600, 600));
-  let st = await m.service.addPhoto("b3", "front", png());
+  const st = await m.service.addPhoto("b3", "front", png());
+  const frontId = st.photos.find((p) => p.slot === "front")!.id;
+  const storedOnFront = async () => {
+    const [row] = await db.select().from(schema.avatarPhoto).where(eq(schema.avatarPhoto.id, frontId));
+    return (row.qualityFlags as Record<string, unknown>).bodyAnalysis;
+  };
 
   const model = fakeModel(MODEL_OUT);
+  await m.body.runBodyAnalysis("b3", { consented: true }, model.fn);
+  assert.equal(model.calls.length, 1);
+  assert.ok(await storedOnFront());
+
+  // 撤回体型分析同意
+  await consent("b3", false);
+  assert.equal((await m.service.getAvatarState("b3")).bodyAnalysis, null);
   const r = await m.body.runBodyAnalysis("b3", { consented: false }, model.fn);
-  assert.equal(model.calls.length, 0);
+  assert.equal(model.calls.length, 1);
   assert.equal(r.source, "bmi");
   assert.equal(r.blends.Body, 1);
   assert.equal(r.summary, null);
+  assert.equal(await storedOnFront(), undefined, "撤回同意后不再保留 Claude 结果，身高体重估算也不存");
 
   const saved = process.env.ANTHROPIC_API_KEY;
   delete process.env.ANTHROPIC_API_KEY;
   try {
     const r2 = await m.body.runBodyAnalysis("b3", { consented: true }, model.fn);
-    assert.equal(model.calls.length, 0);
+    assert.equal(model.calls.length, 1);
     assert.equal(r2.source, "bmi");
+    assert.equal(await storedOnFront(), undefined);
   } finally {
     process.env.ANTHROPIC_API_KEY = saved;
   }
 
-  // 身高体重变了：重新估算
+  // 身高体重变了：重新估算；清空后全部为 0
   await db.update(schema.profile).set({ weightKg: 64 }).where(eq(schema.profile.userId, "b3"));
   const r3 = await m.body.runBodyAnalysis("b3", { consented: false }, model.fn);
   assert.ok(r3.blends.Body < 1);
-
-  // 删除正面照：软删除的记录上不再保留体型分析
-  const front = st.photos.find((p) => p.slot === "front")!;
-  st = await m.service.deletePhoto("b3", front.id);
-  const [row] = await db.select().from(schema.avatarPhoto).where(eq(schema.avatarPhoto.id, front.id));
-  assert.ok(row.deletedAt);
-  assert.equal((row.qualityFlags as Record<string, unknown>).bodyAnalysis, undefined);
-  assert.equal((row.qualityFlags as Record<string, unknown>).lowResolution, false);
-  assert.equal(st.bodyAnalysis, null);
+  await db.update(schema.profile).set({ heightCm: null, weightKg: null }).where(eq(schema.profile.userId, "b3"));
+  const r4 = await m.body.runBodyAnalysis("b3", { consented: false }, model.fn);
+  assert.equal(r4.source, "none");
+  assert.ok(Object.values(r4.blends).every((v) => v === 0));
   assert.equal(fetchCalls, 0);
 });
 
