@@ -25,6 +25,15 @@ export async function compress(file: File): Promise<Blob> {
 
 export const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
+/** 两次轮询之间至少留这么久。 */
+const MIN_POLL_GAP_MS = 150;
+
+/**
+ * 轮询间隔按两次请求的开始时间计：一次轮询本身就要 1–1.5 秒时（本机连 Supabase 实测），
+ * 不再在响应之后整段再等，否则实际间隔被拉长到 2 秒以上，出图后要晚一两秒才看到。
+ */
+export const pollDelay = (intervalMs: number, lastRequestMs: number) => Math.max(MIN_POLL_GAP_MS, intervalMs - lastRequestMs);
+
 export type Polled = { kind: "ok"; view: TryonView } | { kind: "gone" } | { kind: "error" };
 
 /** 轮询一次试穿进度：404 视为已不存在；网络错误与其他状态交给调用方重试。 */
@@ -41,10 +50,13 @@ export async function waitFirst(view: TryonView, opts: { alive: () => boolean; o
   let v = view;
   let misses = 0;
   let first = true;
+  let lastMs = 0;
   while (opts.alive() && v.status === "processing" && !v.resultUrl) {
-    await sleep(first ? 400 : (opts.pollMs ?? 800));
+    await sleep(first ? 400 : pollDelay(opts.pollMs ?? 800, lastMs));
     first = false;
+    const startedAt = Date.now();
     const r = await fetchView(v.id);
+    lastMs = Date.now() - startedAt;
     if (r.kind === "gone") return { ...v, status: "failed", stage: "failed" as const, error: "没有找到这次试穿，请再试一次" };
     if (r.kind === "error") {
       if (++misses >= 8) return { ...v, status: "failed", stage: "failed" as const, error: "网络异常，请稍后再试" };
