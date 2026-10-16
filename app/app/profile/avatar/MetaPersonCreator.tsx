@@ -8,6 +8,8 @@ import {
   exportMessage,
   fallbackUiMessage,
   generateAvatarMessage,
+  idleExportParamsMessage,
+  mpGenderOf,
   parseMpMessage,
   setupMessages,
   type MpGender,
@@ -88,6 +90,8 @@ export default function MetaPersonCreator({
   const exportTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const importedUrl = useRef<string | null>(null);
   const graceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 形象性别：发出 generate_avatar 时取请求里的，model_generated 带回的为准（用户可能在创建器里改）。用于选待机动画。
+  const gender = useRef<MpGender | null>(null);
   const onImportedRef = useRef(onImported);
   onImportedRef.current = onImported;
   const onPhaseRef = useRef(onPhase);
@@ -167,10 +171,14 @@ export default function MetaPersonCreator({
           if (graceTimer.current) clearTimeout(graceTimer.current);
           dispatch(e.isAuthenticated ? { type: "engine_ready" } : { type: "auth_failed" });
           break;
-        case "model_generated":
+        case "model_generated": {
           dispatch({ type: "model_generated" });
+          gender.current = mpGenderOf(e.gender) ?? gender.current;
+          // 桌面版：知道性别后把导出参数换成带待机动画的版本，导出的 GLB 是自然站姿而不是 T 字。
+          postTo(target.current, idleExportParamsMessage(gender.current, chosen.mobile));
           if (!sawAvailability.current) setCanExport(true);
           break;
+        }
         case "action_availability_changed":
           if (e.actionName === "avatar_export") {
             sawAvailability.current = true;
@@ -217,6 +225,7 @@ export default function MetaPersonCreator({
   const payload = request?.payload ?? null;
   useEffect(() => {
     if (!payload || !src || !shouldSend(flow)) return;
+    gender.current = payload.gender;
     postTo(target.current, generateAvatarMessage({ ...payload, mobile: src.mobile }));
     dispatch({ type: "sent", at: Date.now() });
   }, [flow, payload, src]);
@@ -282,7 +291,7 @@ export default function MetaPersonCreator({
         setError("导出没有响应，请重试");
         return;
       }
-      (t.win as Window).postMessage(exportMessage(), t.origin);
+      (t.win as Window).postMessage(exportMessage({ gender: gender.current, mobile: src?.mobile ?? true }), t.origin);
       exportTimer.current = setTimeout(send, 8_000);
     };
     if (exportTimer.current) clearTimeout(exportTimer.current);

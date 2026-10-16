@@ -125,6 +125,27 @@ test("setupMessages / creatorUrl：只发 accessToken；隐藏创建器自带的
   assert.equal(exportMessage().eventName, "export_avatar");
 });
 
+test("待机姿势：桌面版导出带性别对应的 Idle 动画并以首帧为绑定姿势；手机版不带", () => {
+  const { exportMessage, idleExportParamsMessage, mpGenderOf } = m.proto;
+  assert.deepEqual(exportMessage({ gender: "female", mobile: false }), {
+    eventName: "export_avatar",
+    format: "glb",
+    lod: 2,
+    textureProfile: "1K.jpg",
+    useZip: false,
+    animationName: "Female_Animation_Idle",
+    animationAsBindPose: true,
+  });
+  assert.equal(exportMessage({ gender: "male", mobile: false }).animationName, "Male_Animation_Idle");
+  assert.equal(exportMessage({ gender: "male", mobile: true }).animationName, undefined);
+  assert.equal(exportMessage({ gender: null, mobile: false }).animationName, undefined);
+  assert.equal(idleExportParamsMessage("female", true), null);
+  assert.equal(idleExportParamsMessage("male", false)?.eventName, "set_export_parameters");
+  assert.equal(mpGenderOf("Female"), "female");
+  assert.equal(mpGenderOf("male"), "male");
+  assert.equal(mpGenderOf("unknown"), null);
+});
+
 // ---------- 启用条件与令牌 ----------
 
 test("metapersonEnabled：三项 env 都有才启用，同意卡第二项变为 MetaPerson", () => {
