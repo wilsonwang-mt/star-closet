@@ -29,11 +29,26 @@
 
 尚未接入：单品可旋转 GLB、打赏、站内支付。场景视频（`public/scenes/*-web.mp4`）只加载并播放当前显示的那一段，减弱动态时只显示首帧。试衣间里的咖啡馆生活场景只是标注了“AI 生成场景示意 · 合身未验证”的示意图。
 
-## 3D 形象
+## 数字分身（原 3D 形象）
 
-入口 `/profile/avatar`（登录后，档案页底部也有入口）。流程：同意卡 → 上传照片 → 生成 → 查看 → 删除（MetaPerson 模式见下一小节）。存储与第三方处理规则见 AGENTS.md「2026-10-16 个人影像存储决定」（D47）。
+入口 `/profile/avatar`（登录后，档案页底部也有入口）。存储与第三方处理规则见 AGENTS.md「2026-10-16 个人影像存储决定」（D47）；方案与边界见决策记录 D63。
 
-### MetaPerson 模式（比赛版推荐，未实测）
+### 数字分身模式（D63，比赛版现行，未用真实 key 实测）
+
+不做 3D：用户上传 3–5 张照片，得到一组照片级“标准形象照”（正面、四分之三侧面、背面），在页面左右滑动查看，代替 3D 旋转；之后试穿用这组照片作底图。
+
+- 启用：`FAL_KEY` 存在，且 `AVATAR3D_PROVIDER` 未设或为 `twin`（`lib/avatar/providers.ts` 的 `twinEnabled()`）。此模式不加载 MetaPerson 创建器。配置 `ANTHROPIC_API_KEY` 时同意卡多一项照片分析。
+- 同意卡（D47，三项各自勾选）：保存我的照片与形象，仅自己可见（必选）；由 fal.ai 上的 AI 图像模型根据我的照片生成我的形象（必选才能上传）；由 Anthropic（Claude）分析我的照片（可选）。`consent_version = avatar-consent-v2:store+twin` 或 `…:store+twin+anthropic`。
+- 上传卡：正脸（`face`，必传）、全身正面（`front`，必传，同时是试穿底图）、侧脸（`extra`）、全身侧面（`side`）、半身或其他（`back`），每格一张，至少 2 张、最多 5 张；浏览器压缩为 JPEG，服务端再剥元数据，存私有存储，照片自上传起 30 天到期。形象性别在上传区自选。
+- 生成 `POST /api/avatar/twin { gender }`（`lib/avatar/twin.ts` 的 `generateTwin`，同步，`maxDuration = 120`）：需登录与同意；先（同意且有 key 时）用 `claude-opus-5-5` 分析全部照片，得到一句不超过 30 字的概括、特征（发型、发色、脸型、肤色、身材、肩/腰/臀/腿、眼镜）和一段英文外观描述，30 秒超时则跳过；再以全部照片为 `image_urls`（Supabase 用 15 分钟签名 URL，本地用 data URI）并行调用 `fal-ai/nano-banana-pro/edit` 三次（`aspect_ratio 3:4`、`resolution 2K`、`X-Fal-Store-IO: 0`），每张失败且剩余时间足够时重试一次；正面必须成功，侧面/背面失败则为空。结果存 `<userId>/avatars/twin-<jobId>-<front|side|back>.<ext>`，写 `avatar_job`（`provider = twin`，`result_images = { front, side, back, summary, traits, gender, descriptor }`）。新分身成功后才删除旧分身文件；同一用户同时只允许一个生成。
+- 展示：“你的形象”卡——画廊可拖动、方向键、圆点切换，交叉淡入 + 轻微视差（只动 transform / opacity，减弱动态只淡入淡出），下方一句概括与特征标签，按钮「去试穿」（`/fitting-room`）「重新生成」「删除这个形象」。生成中显示等待态：本人全身照压暗 + 香槟扫光，阶段文案按真实秒数切换（正在读取你的照片 → 正在理解你的身材与发型 → 正在为你拍摄标准照），显示已用秒数，不显示百分比。
+- 删除：「删除这个形象」删形象照、保留照片（`DELETE /api/avatar/jobs/<id>/result`）；「一键删除」清掉全部照片、形象照与记录。
+- 给试穿的接口（`lib/avatar/twin.ts`）：`getTwin(userId)`、`readTwinImageDataUri(key)`、`getIdentityRefs(userId)`（分身正面 + 正脸 + 侧脸，最多 4 张 data URI）。
+- 数据库：迁移 `drizzle/0005_twin_result_images.sql` 给 `avatar_job` 加 `result_images jsonb`，需要在 Supabase 执行（`npm run db:setup`）；未执行时形象页会因缺列报错。
+- 测试：`lib/avatar/twin.test.ts`（全部 mock fal 与分析，合成纯色图片）。
+- 成本：建一次分身约 0.45–0.6 美元。
+
+### MetaPerson 模式（已停用，D63；代码保留）
 
 `AVATAR3D_PROVIDER=metaperson` 且 `AVATARSDK_CLIENT_ID`、`AVATARSDK_CLIENT_SECRET` 都存在时启用（`lib/avatar/metaperson.ts`、`lib/avatar/metaperson-protocol.ts`），否则保持原来的 mock / tripo_fal 流程。没有真实 key，以下流程只有单元测试（mock fetch），尚未与 Avatar SDK 实测。
 
@@ -147,7 +162,7 @@ npm run dev                  # http://localhost:3000
 目录 v0.2、个人档案与 3D 形象之后，据各开发会话的记录，以下步骤都还没有在发起用户的 Supabase 上执行过（这些会话只用本地 PGlite，没有连接用户的 Supabase）：
 
 1. `.env.local` 设置 `DATABASE_URL`（transaction pooler 即可）；迁移需要会话模式连接，可另设 `DATABASE_MIGRATE_URL`（5432 端口）。
-2. 运行 `npm run db:setup`：按顺序执行尚未执行的迁移——0001（profile / avatar_photo / avatar_job）、0002（目录 v0.2 字段、`avatar_photo.expires_at`、外部任务字段）、0003（2D 试穿 `tryon` / `tryon_consent`），再写入目录 v0.2。MetaPerson 不需要新表（沿用 `avatar_job`，provider 为 `metaperson`）。衣橱、搭配、单品都做 upsert，搭配与单品的对应关系整体重写；不删除旧行（试衣间引用单品编号），所以 v0.1 中编号不再使用的旧单品会留在库里。
+2. 运行 `npm run db:setup`：按顺序执行尚未执行的迁移——0001（profile / avatar_photo / avatar_job）、0002（目录 v0.2 字段、`avatar_photo.expires_at`、外部任务字段）、0003（2D 试穿 `tryon` / `tryon_consent`）、0004（上身效果 `scene_render`）、0005（数字分身 `avatar_job.result_images`），再写入目录 v0.2。MetaPerson 不需要新表（沿用 `avatar_job`，provider 为 `metaperson`）。衣橱、搭配、单品都做 upsert，搭配与单品的对应关系整体重写；不删除旧行（试衣间引用单品编号），所以 v0.1 中编号不再使用的旧单品会留在库里。
 3. 在 SQL Editor 再执行一次 `supabase/rls.sql`，为新表开启 RLS 并收回 Data API 权限。
 4. 如需把照片和 GLB 存到 Supabase：在 SQL Editor 执行 `supabase/storage.sql` 建私有桶 `avatar-private`，并在 `.env.local` 设置 `SUPABASE_URL` 与 `SUPABASE_SERVICE_ROLE_KEY`（只在服务端使用）。两项都有才启用，否则仍写本地 `.data/uploads/`。
 5. 每天运行一次 `npm run avatar:purge` 的定时任务（见上文“30 天删除”）。
