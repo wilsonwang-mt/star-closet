@@ -132,7 +132,11 @@ export default function PhotoTile({
           提示：{h}
         </span>
       ))}
-      {error ? <span className="error">{error}</span> : null}
+      {error ? (
+        <span className="error" role="alert">
+          {error}
+        </span>
+      ) : null}
     </div>
   );
 }

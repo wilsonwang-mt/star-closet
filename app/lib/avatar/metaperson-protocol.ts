@@ -8,6 +8,8 @@ export const MP_MOBILE_URL = "https://mobile.metaperson.avatarsdk.com/generator"
 /** 视口宽度小于此值时使用手机版生成器。 */
 export const MP_MOBILE_BREAKPOINT = 768;
 export const MP_SOURCE = "metaperson_creator";
+/** Avatar SDK（Itseez3D）隐私政策：手机版创建器上传前的 “Accept and continue” 指向的就是这一页。 */
+export const MP_PRIVACY_URL = "https://avatarsdk.com/privacy-policy/";
 
 /** 只接受这两个来源的消息，并把消息只回发给对应来源。 */
 export const MP_ORIGINS = [new URL(MP_DESKTOP_URL).origin, new URL(MP_MOBILE_URL).origin] as const;
