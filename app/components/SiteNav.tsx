@@ -138,8 +138,12 @@ export default function SiteNav({ initialTheme }: { initialTheme: ThemePref }) {
   return (
     <>
       <header ref={navRef} className={navClass} onFocus={() => setHidden(false)}>
-        <Link href="/" className="sc-nav__brand site-nav__brand" aria-label="Star Closet 首页">
-          STAR CLOSET
+        <Link href="/" className="sc-nav__brand site-nav__brand" aria-label="SEEN. 首页">
+          {/* 横排标识：深浅主题各一份，按 data-theme / 系统主题切换（globals.css） */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="brand-logo brand-logo--dark" src="/brand/seen-lockup-horizontal.svg" alt="SEEN." width={96} height={26} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="brand-logo brand-logo--light" src="/brand/seen-lockup-horizontal-light.svg" alt="" aria-hidden="true" width={96} height={26} />
         </Link>
         <div className="site-nav__end">
           <nav aria-label="主导航" className="sc-nav__links site-nav__inline">

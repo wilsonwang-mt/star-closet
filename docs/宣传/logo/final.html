@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>SEEN. 定稿资产</title>
+<!--
+  生成全部定稿 SVG（写入 #dump，由 export.py 拆成文件），同时显示一张总览（out/final-sheet.png）。
+-->
+<script src="seen-logo.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 2400px; background: #1b1d22; color: #f4f2ed; font-family: "Songti SC", serif; padding: 40px; }
+  h2 { font-family: "Didot", serif; font-weight: 400; letter-spacing: .2em; font-size: 22px; color: #8a8378; margin: 30px 0 14px; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .cell { border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 28px; min-height: 300px; position: relative; }
+  .cell.dark { background: #0b0d10; } .cell.light { background: #f4efe6; color: #1a150d; }
+  .cell small { position: absolute; left: 14px; bottom: 10px; font-size: 14px; color: #8a8378; letter-spacing: .06em; }
+  .row { display: flex; align-items: center; gap: 22px; }
+  #dump { display: none; }
+  svg { display: block; overflow: visible; }
+</style>
+</head>
+<body>
+<h2>FINAL ASSETS · 定稿资产</h2>
+<div class="grid" id="sheet"></div>
+<h2>SIZE TEST · 小尺寸（字高 24px）：上为 display，下为 text</h2>
+<div class="grid" id="sizes"></div>
+<pre id="dump"></pre>
+<script>
+  const { PALETTE, mark, MARK_BOX, wordmark, bars } = SEEN;
+  const XMLNS = 'xmlns="http://www.w3.org/2000/svg"';
+  const vb = (s) => s.split(" ").map(Number);
+  const assets = {};
+
+  function file(name, w, h, box, inner, bg) {
+    const [x, y, bw, bh] = vb(box);
+    const back = bg ? `<rect x="${x}" y="${y}" width="${bw}" height="${bh}" fill="${bg}"/>` : "";
+    assets[name] = `<svg ${XMLNS} width="${w}" height="${h}" viewBox="${box}">${back}${inner}</svg>`;
+    return assets[name];
+  }
+  const nest = (x, y, w, h, box, inner) => `<svg x="${x}" y="${y}" width="${w}" height="${h}" viewBox="${box}">${inner}</svg>`;
+
+  for (const theme of ["dark", "light"]) {
+    const sfx = theme === "light" ? "-light" : "";
+    // 图形
+    file(`seen-mark${sfx}`, 920, 710, MARK_BOX.std, mark({ theme }));
+    file(`seen-mark-small${sfx}`, 480, 370, MARK_BOX.small, mark({ mode: "small", theme }));
+    // 字标
+    const wd = wordmark({ size: "display", theme });
+    file(`seen-wordmark${sfx}`, Math.round(wd.w * 3), 318, wd.box, wd.svg);
+    const wt = wordmark({ size: "text", theme });
+    file(`seen-wordmark-text${sfx}`, Math.round(wt.w * 2), 212, wt.box, wt.svg);
+    // 竖排组合：图形宽 368，字标宽 380，间距 40
+    {
+      const m = vb(MARK_BOX.std), mw = 368, mh = mw * m[3] / m[2];
+      const w2 = wordmark({ size: "display", theme }), ww = 380, wh = ww * 106 / (w2.w + 8);
+      const W = 440, H = mh + 40 + wh;
+      file(`seen-lockup-vertical${sfx}`, W * 2, Math.round(H * 2), `0 0 ${W} ${H}`,
+        nest((W - mw) / 2, 0, mw, mh, MARK_BOX.std, mark({ theme })) + nest((W - ww) / 2, mh + 40, ww, wh, w2.box, w2.svg));
+    }
+    // 横排组合（网站顶栏 / PPT 页脚）：小图形 + text 字标
+    {
+      const m = vb(MARK_BOX.small), mh = 120, mw = mh * m[2] / m[3];
+      const w3 = wordmark({ size: "text", theme }), wh = 58, ww = wh * (w3.w + 8) / 106;
+      const W = mw + 34 + ww, H = mh;
+      file(`seen-lockup-horizontal${sfx}`, Math.round(W * 2), H * 2, `0 0 ${W} ${H}`,
+        nest(0, 0, mw, mh, MARK_BOX.small, mark({ mode: "small", theme })) + nest(mw + 34, (H - wh) / 2 + 8, ww, wh, w3.box, w3.svg));
+    }
+    // 辅助图形 ≡
+    file(`seen-bars${sfx}`, 300, 500, "-12 -12 78 124", bars({ theme }));
+  }
+  // App 图标（1024 方形，系统负责圆角）
+  file("seen-app-icon", 1024, 1024, "0 0 1024 1024", nest(212, 281, 600, 600 * 148 / 192, MARK_BOX.small, mark({ mode: "std", sw: 7.5 })), "#0b0d10");
+  // 宣传片分层：光束落地 + 地面字标，全部部件带 id
+  {
+    const wh = wordmark({ size: "display", theme: "dark" });
+    const ww = 190, hh = ww * 106 / (wh.w + 8);
+    file("seen-motion-hero", 960, 1068, MARK_BOX.hero, mark({ mode: "hero" }) + nest(120 - ww / 2, 316 - hh / 2, ww, hh, wh.box, wh.svg));
+  }
+
+  // —— 总览 ——
+  const sheet = document.getElementById("sheet");
+  const show = (name, theme, wpx, label) => {
+    const el = document.createElement("div"); el.className = `cell ${theme}`;
+    el.innerHTML = assets[name].replace(/width="[\d.]+" height="[\d.]+"/, `width="${wpx}"`) + `<small>${label}</small>`;
+    const s = el.querySelector("svg"); const [, , bw, bh] = vb(s.getAttribute("viewBox")); s.setAttribute("height", wpx * bh / bw);
+    sheet.appendChild(el);
+  };
+  show("seen-lockup-vertical", "dark", 300, "竖排组合 · 深底");
+  show("seen-lockup-vertical-light", "light", 300, "竖排组合 · 浅底");
+  show("seen-motion-hero", "dark", 300, "宣传片分层 · 光束落地");
+  show("seen-app-icon", "dark", 220, "App 图标 1024");
+  show("seen-wordmark", "dark", 460, "主字标 display");
+  show("seen-wordmark-light", "light", 460, "主字标 display · 浅底");
+  show("seen-lockup-horizontal", "dark", 460, "横排 · 网站顶栏");
+  show("seen-lockup-horizontal-light", "light", 460, "横排 · 浅底 / PPT");
+  show("seen-mark", "dark", 260, "图形 · 标准");
+  show("seen-mark-small", "dark", 160, "图形 · 小尺寸");
+  show("seen-bars", "dark", 80, "辅助图形 ≡");
+  show("seen-mark-light", "light", 260, "图形 · 浅底");
+
+  // 小尺寸对比：字高 24px
+  const sizes = document.getElementById("sizes");
+  for (const theme of ["dark", "light"]) {
+    const el = document.createElement("div"); el.className = `cell ${theme}`; el.style.gridColumn = "span 2";
+    const a = wordmark({ size: "display", theme }), b = wordmark({ size: "text", theme });
+    const px = (wm) => `<svg width="${24 * (wm.w + 8) / 106}" height="24" viewBox="${wm.box}">${wm.svg}</svg>`;
+    el.innerHTML = `<div class="row">${px(a)}<span style="font-size:14px;color:#8a8378">display</span></div><div class="row">${px(b)}<span style="font-size:14px;color:#8a8378">text</span></div>`;
+    sizes.appendChild(el);
+  }
+
+  document.getElementById("dump").textContent = JSON.stringify(assets);
+</script>
+</body>
+</html>

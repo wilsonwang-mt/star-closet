@@ -20,6 +20,7 @@ import {
 } from "motion/react";
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ClosetView } from "@/components/closet/data";
+import ChatHint from "@/components/chat/ChatHint";
 import SceneVideo from "@/components/closet/SceneVideo";
 import {
   captureHandoff,
@@ -398,7 +399,7 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
   const geo = useMemo(() => ({ unit, wideMv }), [unit, wideMv]);
 
   // 筛选衣橱：桌面放在标题右侧；手机（<900px）移出首屏，放到下方「全部衣橱」索引区头部，
-  // 首屏留给刊头、标题与轮播（之后由 AI 对话帮用户定位衣橱）。两处同一份状态，另一处用 CSS display:none 隐藏（不进焦点与读屏）。
+  // 首屏留给刊头、标题与轮播，定位交给右下角的悬浮对话（D66，标题旁有引导胶囊）。两处同一份状态，另一处用 CSS display:none 隐藏（不进焦点与读屏）。
   const renderFilters = (placement: "top" | "index") => (
     <div className={`${styles.filters} ${placement === "top" ? styles.filtersTop : styles.filtersIndex}`} role="toolbar" aria-label="筛选衣橱" onKeyDown={onToolbarKey}>
             <button type="button" className={styles.chip} aria-pressed={!gender} onClick={() => setGender(null)}>
@@ -479,6 +480,8 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
               想走进谁的衣橱？
             </h1>
           </div>
+          {/* 用对话定位衣橱（D51、D66）：手机上取代首屏筛选行，桌面在标题与筛选之间 */}
+          <ChatHint />
           {renderFilters("top")}
         </header>
 
