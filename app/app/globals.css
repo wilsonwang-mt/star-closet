@@ -309,6 +309,8 @@ body { overflow-x: hidden; }
   padding: 16px 0 calc(14px + env(safe-area-inset-bottom));
 }
 .cta-bar .sc-cta:first-child { flex: 1; }
+/* 悬浮对话入口停靠在操作条右侧（components/chat/ChatDock.tsx 加的标记）：给它留出 54px 圆钮 + 10px 间距 */
+.cta-bar[data-dock-reserve] { padding-right: 64px; }
 .link-btn { background: none; border: none; padding: 0; color: var(--sc-ink-2); cursor: pointer; font-size: 12px; letter-spacing: .08em; text-decoration: underline; text-underline-offset: 3px; }
 /* 小按钮可点高度 ≥36px（视觉不变，靠最小高度与居中扩大点击区） */
 .link-btn { display: inline-flex; align-items: center; min-height: 36px; }
