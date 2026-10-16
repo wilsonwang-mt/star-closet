@@ -1,46 +1,54 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { and, asc, desc, eq, gt, inArray, isNull, ne, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, ne, sql, type SQL } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { getItemsByIds, type Item } from "@/lib/catalog";
 import { avatarKey, getStorage } from "@/lib/storage";
 import { MAX_PHOTO_BYTES, sniffImage } from "@/lib/avatar/image";
 import { PHOTO_RETENTION_DAYS } from "@/lib/avatar/purge";
 import { stripMetadata } from "@/lib/avatar/strip";
+import { accessoryKind } from "./accessory";
+import { baseInfo, fileUrl, identityExtras, resolveBaseRef, storedImage, type BaseSource } from "./base";
 import {
   cancelFashn,
   fashnResult,
   fashnStatus,
   FashnTransientError,
   fetchResultImage,
-  isTryonEnabled,
-  PROVIDER_ID,
-  submitFashn,
   TryonError,
   type FashnJob,
   type FashnMode,
   type FashnStatus,
 } from "./fashn";
+import type { NanoKind } from "./nano";
+import { chainModel, isTryonEnabled, providerId, providerName, stageDeadline, stagePlan, submitStage, type StageInput, type StageModel } from "./provider";
 import { planTryon, stepFor, wearOn, type FashnCategory, type TryonLabel, type WornPiece } from "./plan";
 
-// 2D 试穿服务：把衣服换到用户自己的正面全身照上（FASHN on fal.ai，队列接口）。
-// - 逐件（试衣间主路径，D62 两段式）：一次只穿一件。先提交 performance（约 8 秒出图）并立刻返回；quality 在响应之后提交，
-//   好了以后替换成清晰的一张。前端轮询 GET /api/tryon/<id>，服务端每次查一下 fal 状态、取回结果，写入私有存储放到响应之后（after）。
-//   底图是本人正面照，或本人一张成功的试穿结果（baseTryonId，用当前最好的那张，细化中也不必等）。
+// 2D 试穿服务：把衣服换到用户自己的形象上（fal.ai 队列接口；模型编排见 provider.ts）。
+// - 底图（D63）：优先数字分身的正面标准形象照；没有分身时退回本人正面全身照（avatar_photo.slot = front），见 base.ts。
+// - 逐件（试衣间主路径，两段式）：一次只穿一件。默认先提交可灵 Kolors（约 20 秒出图）并立刻返回；nano-banana 多参考细化
+//   （约 45 秒，[底图, 正脸, 商品图]）在响应之后提交，好了以后原地替换（界面写“正在细化”）。鞋包配饰只跑 nano 一段。
+//   TRYON_PROVIDER=fashn_fal 时为原来的 FASHN performance → quality。
+//   前端轮询 GET /api/tryon/<id>，服务端每次查一下 fal 状态、取回结果，写入私有存储放到响应之后（after）。
+//   底图是本人形象，或本人一张成功的试穿结果（baseTryonId，用当前最好的那张，细化中也不必等）。
+// - 一键试穿（商品详情页，createQuickTryon）：同一套逐件流程，不属于任何搭配；鞋包配饰也可以。
 // - 缓存：同一底图（正面照 id 或底图试穿 id）+ 同一单品只生成一次，重复试穿直接返回；另一套里已完成的复制结果图，不再调用 FASHN。
 // - 预热：上传正面照且已同意后，前端用 prewarm 先跑这一套的第一件（只跑 performance）；用户点“试穿”时命中缓存，再补提交 quality。
 //   预热的记录在用户点“试穿”之前不出现在穿搭进度里；换照片时清掉没用上的预热结果。
 // - 整套（旧调用方式，保留兼容）：按 plan.ts 的顺序依次叠加，mode=balanced，也走队列，每次轮询推进一步。
 // - 照片来源：3D 形象流程已上传的正面全身照（avatar_photo.slot = front）；也可在试穿卡里直接上传一张，
 //   同样去元数据后存私有存储，并作为正面照供 3D 形象复用（每个位置只保留一张）。上传时写 expires_at = 上传时间 + 30 天（D47）。
-// - 同意（D47）：首次试穿（含预热）前单独勾选“同意把我的正面照发送给 FASHN（fal.ai）生成试穿图”，记录在 tryon_consent。
+// - 同意（D47）：首次试穿（含预热）前单独勾选“同意把我的形象照片发送给 fal.ai 上的 AI 模型生成试穿图”，记录在 tryon_consent，
+//   版本 tryon-consent-v2:fal；旧版本（tryon-consent-v1:fashn_fal）需要重新同意。
 // - 结果：存 `<userId>/avatars/tryon-<id>.jpg`（细化后另存 `tryon-<id>-hq.jpg`，两张都随记录删除），
 //   浏览器经 /api/avatar/files/<key> 读取（他人 404）；刚生成的一张直接以 data URI 随轮询响应返回。
 // - 不新增数据库字段：生成信息放在 outfit_snapshot 末尾的一条 { kind: "step" | "chain", ... } 记录里。
 
 export { TryonError } from "./fashn";
 
-export const CONSENT_VERSION = `tryon-consent-v1:${PROVIDER_ID}`;
+/** 当前同意版本：处理方为 fal.ai（不区分 fal 上的具体模型）；旧的 v1（FASHN）视为未同意。 */
+export const CONSENT_VERSION = "tryon-consent-v2:fal";
+export const consentVersion = () => CONSENT_VERSION;
 /** 快速出图（performance）与整套每一步：从提交起最多等这么久。 */
 export const FAST_DEADLINE_MS = 90_000;
 /** 细化（quality）：从提交起最多等这么久，超过就保留快速出的那张。 */
@@ -96,8 +104,12 @@ export type TryonContext = {
   enabled: boolean;
   signedIn: boolean;
   consented: boolean;
-  /** 本人正面全身照的鉴权读取地址；没有时为 null。 */
+  /** 试穿底图的鉴权读取地址：数字分身正面照优先，否则正面全身照；都没有时为 null。字段名沿用旧名。 */
   frontPhotoUrl: string | null;
+  /** 底图来源：twin（数字分身）/ photo（正面全身照）/ null（还没有形象）。 */
+  baseSource: BaseSource | null;
+  /** 同意文案里的处理方：“fal.ai 上的 AI 模型”。 */
+  providerName: string;
 };
 
 /** 把任务放到响应之后执行（路由里传 next/server 的 after）；不传时就地执行（单元测试与脚本）。 */
@@ -105,10 +117,8 @@ export type Defer = (task: () => Promise<void>) => void;
 
 type Row = typeof schema.tryon.$inferSelect;
 
-const fileUrl = (key: string) => `/api/avatar/files/${key.split("/").map(encodeURIComponent).join("/")}`;
-
-/** 队列里的一段生成。没有 statusUrl 表示还在提交；done 之前每次轮询查一次状态。 */
-type Stage = Partial<FashnJob> & { submittedAt: number; done?: "ok" | "failed"; error?: string };
+/** 队列里的一段生成。没有 statusUrl 表示还在提交；done 之前每次轮询查一次状态。model：这一段用的模型（旧记录没有，按 FASHN）。 */
+type Stage = Partial<FashnJob> & { submittedAt: number; done?: "ok" | "failed"; error?: string; model?: StageModel };
 
 type StepMeta = {
   kind: "step";
@@ -123,6 +133,10 @@ type StepMeta = {
   fine?: Stage | null;
   fastKey?: string;
   hqKey?: string;
+  /** 鞋包配饰：nano 的动词（shoes / bag / accessory），只跑一段，不参与逐件叠穿。 */
+  nanoKind?: NanoKind | null;
+  /** 发起时的 TRYON_PROVIDER。 */
+  provider?: string | null;
 };
 
 type ChainMeta = {
@@ -209,34 +223,17 @@ async function later(defer: Defer | undefined, task: () => Promise<void>) {
   else await safe();
 }
 
-/** 本人正面照；已过 30 天期限（尚未被清理流程删除）的不再使用。 */
-async function frontPhoto(userId: string) {
-  const rows = await db
-    .select()
-    .from(schema.avatarPhoto)
-    .where(
-      and(
-        eq(schema.avatarPhoto.userId, userId),
-        eq(schema.avatarPhoto.slot, "front"),
-        isNull(schema.avatarPhoto.deletedAt),
-        or(isNull(schema.avatarPhoto.expiresAt), gt(schema.avatarPhoto.expiresAt, new Date())),
-      ),
-    )
-    .orderBy(desc(schema.avatarPhoto.createdAt))
-    .limit(1);
-  return rows[0] ?? null;
-}
-
-async function hasConsent(userId: string): Promise<boolean> {
+export async function hasConsent(userId: string): Promise<boolean> {
   const rows = await db.select().from(schema.tryonConsent).where(eq(schema.tryonConsent.userId, userId)).limit(1);
   return rows[0]?.consentVersion === CONSENT_VERSION;
 }
 
 export async function getTryonContext(userId: string | null): Promise<TryonContext> {
   const enabled = isTryonEnabled();
-  if (!enabled || !userId) return { enabled, signedIn: !!userId, consented: false, frontPhotoUrl: null };
-  const [consented, photo] = await Promise.all([hasConsent(userId), frontPhoto(userId)]);
-  return { enabled, signedIn: true, consented, frontPhotoUrl: photo ? fileUrl(photo.storageKey) : null };
+  const name = providerName();
+  if (!enabled || !userId) return { enabled, signedIn: !!userId, consented: false, frontPhotoUrl: null, baseSource: null, providerName: name };
+  const [consented, base] = await Promise.all([hasConsent(userId), baseInfo(userId)]);
+  return { enabled, signedIn: true, consented, frontPhotoUrl: base.url, baseSource: base.source, providerName: name };
 }
 
 export async function recordConsent(userId: string) {
@@ -324,20 +321,12 @@ async function garmentImage(image: string): Promise<string> {
   return `data:${mime};base64,${bytes.toString("base64")}`;
 }
 
-/** 私有存储里的图片交给 FASHN：Supabase 私有桶生成 15 分钟签名 URL；本地存储没有公开地址，改用 data URI。文件不存在时返回 null。 */
-async function storedImage(key: string, mime?: string): Promise<string | null> {
-  const storage = getStorage();
-  // 签名失败（如对象已不存在）时退回直接读取，读不到即视为不存在。
-  const signed = await storage.signedUrl(key, 900).catch(() => null);
-  if (signed) return signed;
-  const obj = await storage.get(key);
-  if (!obj) return null;
-  return `data:${mime ?? obj.contentType};base64,${Buffer.from(obj.bytes).toString("base64")}`;
-}
+const NO_BASE = "先建立你的形象，再开始试穿";
 
-async function modelImage(photo: { storageKey: string; mime: string }): Promise<string> {
-  const image = await storedImage(photo.storageKey, photo.mime);
-  if (!image) throw new TryonError(409, "没有找到你的正面全身照，请重新上传");
+/** 读出底图交给 fal；文件已不在时 409。 */
+async function loadBase(load: () => Promise<string | null>): Promise<string> {
+  const image = await load();
+  if (!image) throw new TryonError(409, NO_BASE);
   return image;
 }
 
@@ -449,7 +438,7 @@ async function advanceStep(userId: string, row: Row, meta: StepMeta, defer?: Def
   if (isLive(fine)) {
     if (!hasJob(fine)) {
       if (now - fine.submittedAt > FINE_SUBMIT_GRACE_MS) row = (await patchMeta(row.id, { "fine.done": "failed" })) ?? row;
-    } else if (now - fine.submittedAt > FINE_DEADLINE_MS) {
+    } else if (now - fine.submittedAt > stageDeadline(fine.model, FINE_DEADLINE_MS)) {
       void cancelFashn(fine);
       row = (await patchMeta(row.id, { "fine.done": "failed", "fine.error": TIMEOUT_MESSAGE })) ?? row;
     } else {
@@ -468,7 +457,7 @@ async function advanceStep(userId: string, row: Row, meta: StepMeta, defer?: Def
   const fast = meta.fast;
   let live: Partial<TryonView> = {};
   if (isLive(fast) && hasJob(fast)) {
-    if (now - fast.submittedAt > FAST_DEADLINE_MS) {
+    if (now - fast.submittedAt > stageDeadline(fast.model, FAST_DEADLINE_MS)) {
       void cancelFashn(fast);
       row = (await patchMeta(row.id, { "fast.done": "failed", "fast.error": TIMEOUT_MESSAGE })) ?? row;
     } else {
@@ -499,7 +488,7 @@ async function failRow(row: Row, message: string) {
 /** 整套的一次轮询：当前一步好了就提交下一步（结果地址直接交给下一步，不取回本站）；最后一步取回结果图。 */
 async function advanceChain(userId: string, row: Row, meta: ChainMeta, defer?: Defer): Promise<TryonView> {
   const total = meta.steps.length;
-  if (Date.now() - row.createdAt.getTime() > FAST_DEADLINE_MS * total) {
+  if (Date.now() - row.createdAt.getTime() > stageDeadline(meta.job?.model, FAST_DEADLINE_MS) * total) {
     if (meta.job) void cancelFashn(meta.job);
     return failRow(row, TIMEOUT_MESSAGE);
   }
@@ -535,12 +524,14 @@ async function advanceChain(userId: string, row: Row, meta: ChainMeta, defer?: D
   const item = (claimed.outfitSnapshot as unknown as SnapshotItem[]).find((i) => !isMeta(i) && i.id === step.itemId);
   try {
     if (!item?.image) throw new TryonError(422, "单品图片不可用");
-    const nextJob = await submitFashn({
+    const model = meta.job?.model ?? "fashn_balanced";
+    const nextJob = await submitStage(model, {
       modelImage: url,
       garmentImage: await garmentImage(item.image),
       category: step.category,
-      mode: "balanced",
       syncMode: next === total - 1,
+      // 正脸参考是 data URI，不存进记录：每步现取。
+      ...(model === "nano" ? await identityExtras(userId) : {}),
     });
     const updated = await patchMeta(row.id, { job: nextJob });
     return toView(updated ?? claimed, { stage: "queued" });
@@ -574,21 +565,24 @@ async function findCached(userId: string, cacheKey: string): Promise<Row[]> {
   return rows.filter((r) => r.status !== "processing" || Date.now() - r.createdAt.getTime() < FAST_DEADLINE_MS);
 }
 
-/** 补提交细化（quality）；提交失败时记为细化失败，保留快速出的那张。 */
-async function submitFine(id: string, model: () => Promise<string>, garment: () => Promise<string>, category: FashnCategory) {
+/** 补提交细化（默认 nano-banana 多参考，FASHN 备选时为 quality）；提交失败时记为细化失败，保留快速出的那张。 */
+async function submitFine(id: string, model: StageModel, input: () => Promise<StageInput>) {
   try {
-    const job = await submitFashn({ modelImage: await model(), garmentImage: await garment(), category, mode: "quality" });
-    await patchMeta(id, { fine: job });
+    const job = await submitStage(model, await input());
+    await patchMeta(id, { fine: { ...job, submittedAt: job.submittedAt } });
   } catch (e) {
     await patchMeta(id, { "fine.done": "failed", "fine.error": e instanceof TryonError ? e.message : "细化失败" });
   }
 }
 
+type ItemOptions = { allowAccessory?: boolean };
+
 /**
  * 逐件：只把这一件穿上。底图：baseTryonId 指向本人一张成功的试穿结果时读该结果图（不属于本人、不存在、未成功或文件已删一律 404，不区分）；
- * 否则用本人正面照。命中缓存直接返回；否则提交 performance、写记录后返回，quality 放到响应之后提交（预热不提交）。
+ * 否则用本人形象（数字分身正面照优先，否则正面照）。命中缓存直接返回；否则提交快出图一段、写记录后返回，细化放到响应之后提交（预热不提交）。
+ * allowAccessory（详情页一键试穿）：鞋包配饰也可以，只跑 nano 一段，不改变已穿着的上身单品。
  */
-async function createItemTryon(userId: string, input: TryonInput, defer?: Defer): Promise<TryonView> {
+async function createItemTryon(userId: string, input: TryonInput, defer?: Defer, opts: ItemOptions = {}): Promise<TryonView> {
   const ids = uniqueIds(input.itemIds);
   if (ids.length !== 1) throw new TryonError(400, "一次只能试穿一件");
   if (input.prewarm && input.baseTryonId) throw new TryonError(400, "预热只用于正面照");
@@ -597,11 +591,14 @@ async function createItemTryon(userId: string, input: TryonInput, defer?: Defer)
   const item = items.find((i) => i.id === itemId);
   if (!item) throw new TryonError(404, lookId ? "这套搭配里没有这件单品" : "没有找到这件单品");
   const step = stepFor(item);
-  if (!step) throw new TryonError(422, "只能试穿上装、下装、连衣裙或外套");
+  const nanoKind = !step && opts.allowAccessory && item.image ? accessoryKind(item) : null;
+  if (!step && !nanoKind) throw new TryonError(422, "只能试穿上装、下装、连衣裙或外套");
+  const category: FashnCategory = step?.category ?? "tops";
+  const plan = stagePlan(nanoKind);
 
   let base: Row | null = null;
-  let photo: typeof schema.avatarPhoto.$inferSelect | null = null;
   let worn: WornPiece[] = [];
+  let ref: Awaited<ReturnType<typeof resolveBaseRef>> = null;
   if (input.baseTryonId) {
     const rows = await db
       .select()
@@ -613,31 +610,41 @@ async function createItemTryon(userId: string, input: TryonInput, defer?: Defer)
     const labels = base.appliedCategories as TryonLabel[];
     worn = base.itemIds.flatMap((id, i) => (labels[i] ? [{ itemId: id, label: labels[i] }] : []));
   } else {
-    photo = await frontPhoto(userId);
-    if (!photo) throw new TryonError(409, "请先上传一张正面全身照");
+    ref = await resolveBaseRef(userId);
+    if (!ref) throw new TryonError(409, NO_BASE);
   }
   const baseRow = base;
-  const basePhoto = photo;
-  const loadModel = () => (baseRow ? baseImage(baseRow) : modelImage(basePhoto!));
+  const baseRef = ref;
+  const loadModel = () => (baseRow ? baseImage(baseRow) : loadBase(baseRef!.load));
   const loadGarment = () => garmentImage(item.image!);
-  const cacheKey = `${baseRow ? `tryon:${baseRow.id}` : `photo:${basePhoto!.id}`}|${item.id}`;
-  const after = wearOn(worn, step);
+  const cacheKey = `${baseRow ? `tryon:${baseRow.id}` : baseRef!.id}|${item.id}`;
+  const after = step ? wearOn(worn, step) : worn;
+  const afterIds = step ? after.map((w) => w.itemId) : [...after.map((w) => w.itemId), item.id];
 
   // 缓存：同一套里的直接返回（预热的转为正式，补提交细化）；另一套里已完成的复制结果图。
   const hits = await findCached(userId, cacheKey);
   const same = hits.find((h) => h.sourceLookId === lookId);
+  const extrasP = identityExtras(userId);
+  const stageInput = async (): Promise<StageInput> => ({
+    modelImage: await loadModel(),
+    garmentImage: await loadGarment(),
+    category,
+    nanoKind,
+    ...(await extrasP),
+  });
   if (same) {
     const m = stepMetaOf(same)!;
     if (input.prewarm || !m.prewarm) return toView(same);
     // 认领预热（乐观锁：并发的两次点击只有一次补提交细化）。
     const claimed = await patchMeta(
       same.id,
-      { prewarm: false, fine: { submittedAt: Date.now() } },
+      { prewarm: false, fine: plan.fine ? { submittedAt: Date.now() } : null },
       {},
       sql`(${schema.tryon.outfitSnapshot}->(-1)->>'prewarm') = 'true'`,
     );
     if (claimed) {
-      await later(defer, () => submitFine(same.id, loadModel, loadGarment, step.category));
+      const fineModel = plan.fine;
+      if (fineModel) await later(defer, () => submitFine(same.id, fineModel, stageInput));
       return toView(claimed);
     }
     const [fresh] = await db.select().from(schema.tryon).where(eq(schema.tryon.id, same.id)).limit(1);
@@ -659,9 +666,11 @@ async function createItemTryon(userId: string, input: TryonInput, defer?: Defer)
         kind: "step",
         wornItemId: item.id,
         baseTryonId: baseRow?.id ?? null,
-        basePhotoId: basePhoto?.id ?? null,
+        basePhotoId: baseRef?.photoId ?? null,
         mode: toView(done).mode,
         cacheKey,
+        nanoKind,
+        provider: providerId(),
       };
       const [row] = await db
         .insert(schema.tryon)
@@ -671,7 +680,7 @@ async function createItemTryon(userId: string, input: TryonInput, defer?: Defer)
           sourceLookId: lookId,
           sourceOutfitId: outfitId,
           outfitSnapshot: [...snapshotOf(items), meta] as unknown as Record<string, unknown>[],
-          itemIds: after.map((w) => w.itemId),
+          itemIds: afterIds,
           appliedCategories: after.map((w) => w.label),
           status: "succeeded",
           resultKey: key,
@@ -681,20 +690,21 @@ async function createItemTryon(userId: string, input: TryonInput, defer?: Defer)
     }
   }
 
-  const model = await loadModel();
-  const garment = await loadGarment();
-  const fast = await submitFashn({ modelImage: model, garmentImage: garment, category: step.category, mode: "performance" });
+  const prepared = await stageInput();
+  const fast = await submitStage(plan.fast, prepared);
   const id = crypto.randomUUID();
   const meta: StepMeta = {
     kind: "step",
     wornItemId: item.id,
     baseTryonId: baseRow?.id ?? null,
-    basePhotoId: basePhoto?.id ?? null,
+    basePhotoId: baseRef?.photoId ?? null,
     mode: "quality",
     cacheKey,
     prewarm: !!input.prewarm,
     fast,
-    fine: input.prewarm ? null : { submittedAt: Date.now() },
+    fine: input.prewarm || !plan.fine ? null : { submittedAt: Date.now() },
+    nanoKind,
+    provider: providerId(),
   };
   const [row] = await db
     .insert(schema.tryon)
@@ -704,40 +714,35 @@ async function createItemTryon(userId: string, input: TryonInput, defer?: Defer)
       sourceLookId: lookId,
       sourceOutfitId: outfitId,
       outfitSnapshot: [...snapshotOf(items), meta] as unknown as Record<string, unknown>[],
-      itemIds: after.map((w) => w.itemId),
+      itemIds: afterIds,
       appliedCategories: after.map((w) => w.label),
       status: "processing",
     })
     .returning();
-  if (!input.prewarm) {
-    await later(defer, () =>
-      submitFine(
-        id,
-        async () => model,
-        async () => garment,
-        step.category,
-      ),
-    );
+  const fineModel = plan.fine;
+  if (!input.prewarm && fineModel) {
+    await later(defer, () => submitFine(id, fineModel, async () => prepared));
   }
   return toView(row);
 }
 
-/** 旧的整套试穿（保留兼容）：按 plan.ts 的顺序依次叠加，每一步 balanced；这里只提交第一步，之后由轮询推进。 */
+/** 旧的整套试穿（保留兼容）：按 plan.ts 的顺序依次叠加，每步一段（默认 Kolors）；这里只提交第一步，之后由轮询推进。 */
 async function createOutfitTryon(userId: string, input: TryonInput): Promise<TryonView> {
-  const photo = await frontPhoto(userId);
-  if (!photo) throw new TryonError(409, "请先上传一张正面全身照");
+  const ref = await resolveBaseRef(userId);
+  if (!ref) throw new TryonError(409, NO_BASE);
 
   const { items, lookId, outfitId } = await resolveItems(userId, input);
   const steps = planTryon(items);
   if (!steps.length) throw new TryonError(422, "这套里没有可试穿的上装、下装、连衣裙或外套");
 
   const byId = new Map(items.map((i) => [i.id, i]));
-  const job = await submitFashn({
-    modelImage: await modelImage(photo),
+  const model = chainModel();
+  const job = await submitStage(model, {
+    modelImage: await loadBase(ref.load),
     garmentImage: await garmentImage(byId.get(steps[0].itemId)!.image!),
     category: steps[0].category,
-    mode: "balanced",
     syncMode: steps.length === 1,
+    ...(model === "nano" ? await identityExtras(userId) : {}),
   });
   const meta: ChainMeta = { kind: "chain", steps: steps.map((s) => ({ itemId: s.itemId, category: s.category })), index: 0, job };
   const [row] = await db
@@ -754,6 +759,48 @@ async function createOutfitTryon(userId: string, input: TryonInput): Promise<Try
     })
     .returning();
   return toView(row);
+}
+
+/**
+ * 商品详情页“一键试穿”：把这一件穿到本人形象上（不属于任何搭配），走同一套逐件两段式与缓存。
+ * 上装 / 下装 / 外套 / 连衣裙：Kolors 快出图 → nano 细化；鞋、包、配饰：只跑 nano。前端轮询 GET /api/tryon/<id>。
+ */
+export async function createQuickTryon(userId: string, itemId: string, opts: { consent?: boolean } = {}, defer?: Defer): Promise<TryonView> {
+  if (!isTryonEnabled()) throw new TryonError(503, "试穿服务未开放");
+  if (opts.consent === true) await recordConsent(userId);
+  if (!(await hasConsent(userId))) throw new TryonError(403, "请先勾选同意，再开始试穿");
+  const [item] = await getItemsByIds([itemId]);
+  if (!item) throw new TryonError(404, "没有找到这件单品");
+  if (!item.image) throw new TryonError(422, "这件单品没有可用的图片");
+  if (!stepFor(item) && !accessoryKind(item)) throw new TryonError(422, "这件单品暂不支持试穿");
+  return createItemTryon(userId, { itemIds: [item.id] }, defer, { allowAccessory: true });
+}
+
+async function latestItemTryonRow(userId: string, itemId: string) {
+  const rows = await db
+    .select()
+    .from(schema.tryon)
+    .where(and(eq(schema.tryon.userId, userId), isNull(schema.tryon.sourceLookId), eq(schema.tryon.status, "succeeded")))
+    .orderBy(desc(schema.tryon.createdAt))
+    .limit(60);
+  return (
+    rows.find((row) => {
+      const m = stepMetaOf(row);
+      return !!m && !m.prewarm && m.wornItemId === itemId && m.baseTryonId === null && !!row.resultKey;
+    }) ?? null
+  );
+}
+
+/** 本人这件单品最新的一键试穿结果（详情页首屏用；细化中时 refining 为 true，前端接着轮询）。 */
+export async function getItemTryon(userId: string, itemId: string): Promise<TryonView | null> {
+  const row = await latestItemTryonRow(userId, itemId);
+  return row ? toView(row) : null;
+}
+
+/** 一键试穿结果图（交给场景图生成作参考，保证衣服准确）；没有或文件已删时为 null。 */
+export async function itemTryonImage(userId: string, itemId: string): Promise<string | null> {
+  const row = await latestItemTryonRow(userId, itemId);
+  return row?.resultKey ? storedImage(row.resultKey) : null;
 }
 
 /** 每套最多带回的试穿结果数（取最新的这些，按时间先后排列）。 */

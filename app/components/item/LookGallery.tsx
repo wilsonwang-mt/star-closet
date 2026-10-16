@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import LivePhoto from "@/components/live/LivePhoto";
-import { compress, preload, readError } from "@/components/tryon/shared";
+import { compress, fetchView, preload, readError, sleep, waitFirst } from "@/components/tryon/shared";
 import { springs } from "@/lib/motion";
 import type { DemoScene } from "@/lib/scene/scenes";
 import type { SceneState } from "@/lib/scene/service";
@@ -41,8 +41,14 @@ const STAGES: { from: number; text: string }[] = [
   { from: 18, text: "正在调光" },
   { from: 28, text: "正在收尾" },
 ];
-// 一键试穿（nano-banana 多参考约 45 秒）的节奏。
+// 一键试穿的等待节奏：衣服先由 Kolors 快出图（约 20 秒），鞋包配饰只跑 nano-banana（约 45 秒）；之后的细化另有“正在细化”标签。
 const QUICK_STAGES: { from: number; text: string }[] = [
+  { from: 0, text: "正在读取你的形象" },
+  { from: 4, text: "正在为你换上这件" },
+  { from: 12, text: "正在调整光影" },
+  { from: 20, text: "正在收尾" },
+];
+const NANO_STAGES: { from: number; text: string }[] = [
   { from: 0, text: "正在读取你的形象" },
   { from: 6, text: "正在为你换上这件" },
   { from: 22, text: "正在调整光影" },
@@ -94,7 +100,15 @@ export default function LookGallery({
   const [quickView, setQuickView] = useState<TryonView | null>(quick?.initial ?? null);
   const [quickRunning, setQuickRunning] = useState(false);
   const [quickError, setQuickError] = useState<string | null>(null);
+  const [refining, setRefining] = useState(false);
   const [zoom, setZoom] = useState(false);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
   const elapsed = useTicker(phase === "running");
   const quickElapsed = useTicker(quickRunning);
 
@@ -182,14 +196,49 @@ export default function LookGallery({
         setQuickError(await readError(res, "试穿失败，请稍后再试"));
         return;
       }
-      const view = (await res.json()) as TryonView;
-      if (view.resultUrl) await preload(view.resultUrl);
-      setQuickView(view);
       setState((st) => ({ ...st, consented: true, hasFrontPhoto: true }));
+      // 只提交到队列就返回：轮询到出第一张图（或失败）。
+      const view = await waitFirst((await res.json()) as TryonView, { alive: () => alive.current, pollMs: 1200 });
+      if (!alive.current) return;
+      if (view.status === "failed" || !view.resultUrl) {
+        setQuickError(view.error ?? "试穿失败，请稍后再试");
+        return;
+      }
+      await preload(view.resultUrl);
+      setQuickView(view);
+      if (view.refining) void refine(view.id);
     } finally {
       setQuickRunning(false);
     }
   }
+
+  /** 细化：每 2 秒查一次，清晰版好了原地替换；细化失败保留快出的那张。 */
+  const refine = useCallback(async (id: string) => {
+    setRefining(true);
+    try {
+      for (let i = 0; i < 100 && alive.current; i++) {
+        await sleep(2000);
+        const r = await fetchView(id);
+        if (r.kind === "gone") return;
+        if (r.kind === "error") continue;
+        const v = r.view;
+        if (v.refining || v.status === "processing") continue;
+        if (v.status === "succeeded" && v.resultUrl) {
+          await preload(v.resultUrl);
+          if (alive.current) setQuickView((cur) => (cur?.id === id ? v : cur));
+        }
+        return;
+      }
+    } finally {
+      if (alive.current) setRefining(false);
+    }
+  }, []);
+
+  // 首屏带来的结果还在细化（刷新了页面）：接着轮询。
+  const initialRefine = useRef(quick?.initial?.refining ? quick.initial.id : null);
+  useEffect(() => {
+    if (initialRefine.current) void refine(initialRefine.current);
+  }, [refine]);
 
   const canGenerate = state.enabled && state.signedIn && state.hasFrontPhoto && (state.consented || agree);
   const running = phase === "running";
@@ -212,7 +261,7 @@ export default function LookGallery({
     if (!quickOn || !quick) return null;
     const result = quickView?.resultUrl ?? null;
     const shown = result ?? quick.baseUrl;
-    const stages = QUICK_STAGES;
+    const stages = quick.accessory ? NANO_STAGES : QUICK_STAGES;
     const verb = quick.accessory ? "穿戴" : "穿上";
     let action: React.ReactNode;
     if (!state.signedIn) {
@@ -255,7 +304,7 @@ export default function LookGallery({
         ? "上传 3–5 张照片生成你的数字分身，之后每件衣服都能一键试穿"
         : result
           ? `这是你${verb}「${itemName}」的样子 · 点图放大`
-          : `${quick.isTwin ? "用你的数字分身" : "用你的正面全身照"}，约 45 秒看这件${quick.accessory ? "穿戴" : "穿"}在你身上`;
+          : `${quick.isTwin ? "用你的数字分身" : "用你的正面全身照"}，${quick.accessory ? "约 45 秒" : "约 20 秒"}看这件${quick.accessory ? "穿戴" : "穿"}在你身上`;
     return (
       <div className={s.quick}>
         <div className={s.quickStage}>
@@ -278,7 +327,11 @@ export default function LookGallery({
           {result && !quickRunning ? (
             <button type="button" className={s.quickZoom} onClick={() => setZoom(true)} aria-label="放大查看" />
           ) : null}
-          {shown && !quickRunning ? <span className={s.quickLabel}>{result ? "On You" : quick.isTwin ? "你的分身" : "You"}</span> : null}
+          {shown && !quickRunning ? (
+            <span className={s.quickLabel} role={refining ? "status" : undefined}>
+              {result ? (refining ? "正在细化" : "On You") : quick.isTwin ? "你的分身" : "You"}
+            </span>
+          ) : null}
         </div>
         <div className={s.quickText}>
           <span className="sc-kicker">Try It On</span>
@@ -293,7 +346,7 @@ export default function LookGallery({
               </p>
             </>
           ) : (
-            <p className="sc-meta">{desc}</p>
+            <p className="sc-meta">{result && refining ? "正在细化：衣长、领型和细节会更贴近商品图，好了自动替换" : desc}</p>
           )}
           {action}
           {quickError ? (

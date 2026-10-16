@@ -26,7 +26,11 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
   const enabled = !!ctx?.enabled && !!ctx?.signedIn;
   const [frames, setFrames] = useState<TryonView[]>(() => (initial ?? []).filter((f) => !!f.resultUrl));
   const [selectedId, setSelectedId] = useState<string | null>(() => frames.at(-1)?.id ?? null);
+  // photoUrl：试穿底图（数字分身正面照优先，否则正面全身照，D63）。
   const [photoUrl, setPhotoUrl] = useState<string | null>(ctx?.frontPhotoUrl ?? null);
+  const [baseSource, setBaseSource] = useState<"twin" | "photo" | null>(ctx?.baseSource ?? null);
+  const isTwin = baseSource === "twin";
+  const providerName = ctx?.providerName ?? "fal.ai 上的 AI 模型";
   const [consented, setConsented] = useState(!!ctx?.consented);
   const [agree, setAgree] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -134,7 +138,10 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
           // 服务端在调用 FASHN 之前就记下了同意：只要不是“未同意”，下次不用再勾。
           if (res && res.status !== 403 && res.status !== 401 && agree) setConsented(true);
           if (res?.status === 404 && baseId) setFrames((f) => f.filter((x) => x.id !== baseId));
-          if (res?.status === 409 && !baseId) setPhotoUrl(null);
+          if (res?.status === 409 && !baseId) {
+            setPhotoUrl(null);
+            setBaseSource(null);
+          }
           setError(message);
           setQueued(itemId);
           return;
@@ -278,6 +285,7 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
       setFreshPhoto(url);
       await preload(url);
       setPhotoUrl(url);
+      setBaseSource("photo");
     } finally {
       setUploading(false);
     }
@@ -302,6 +310,8 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
     selected,
     wornIds,
     photoUrl,
+    isTwin,
+    providerName,
     consented,
     agree,
     setAgree,

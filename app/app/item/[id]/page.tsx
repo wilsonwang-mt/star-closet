@@ -7,6 +7,9 @@ import Scene from "@/components/Scene";
 import { getCurrentUser } from "@/lib/auth";
 import { demoScenesFor, readDemoManifest } from "@/lib/scene/scenes";
 import { getSceneState } from "@/lib/scene/service";
+import { isAccessory } from "@/lib/tryon/accessory";
+import { isWearable } from "@/lib/tryon/plan";
+import { getItemTryon, getTryonContext, type TryonView } from "@/lib/tryon/service";
 import { getItemDetail } from "./data";
 import s from "./page.module.css";
 
@@ -30,14 +33,29 @@ export default async function ItemPage({ params }: Props) {
   const { item, curator, outfits } = detail;
   // 上身效果查询失败（如数据库还没有执行迁移 0004）时不影响页面：退回演示模特画廊，不显示生成入口。
   const sceneFallback = { enabled: false, signedIn: !!user, hasFrontPhoto: false, consented: false, renders: [] };
-  const [sceneState, demo, manifest] = await Promise.all([
+  const [sceneState, demo, manifest, tryonCtx, itemTryon] = await Promise.all([
     getSceneState(user?.id ?? null, item.id).catch((e: unknown) => {
       console.error("[scene]", e instanceof Error ? e.message : "unknown error");
       return sceneFallback;
     }),
     demoScenesFor(item.id),
     readDemoManifest(),
+    getTryonContext(user?.id ?? null).catch(() => null),
+    user ? getItemTryon(user.id, item.id).catch(() => null as TryonView | null) : Promise.resolve(null),
   ]);
+  // 一键试穿（D63）：上装 / 下装 / 外套 / 连衣裙 / 鞋 / 包 / 配饰，有单品图才显示。
+  const accessory = isAccessory(item);
+  const quick = tryonCtx
+    ? {
+        enabled: tryonCtx.enabled,
+        supported: !!item.image && (isWearable(item) || accessory),
+        accessory,
+        baseUrl: tryonCtx.frontPhotoUrl,
+        isTwin: tryonCtx.baseSource === "twin",
+        providerName: tryonCtx.providerName,
+        initial: itemTryon,
+      }
+    : null;
   const demoModel = manifest?.items?.[item.id]?.model;
   const name = clean(item.name);
   const facts: [string, string][] = [
@@ -114,6 +132,7 @@ export default async function ItemPage({ params }: Props) {
             initial={sceneState}
             demo={demo}
             demoModelLabel={demoModel ? `演示模特 · 由 AI 生成的虚构人物` : "演示模特"}
+            quick={quick}
           />
         </div>
 

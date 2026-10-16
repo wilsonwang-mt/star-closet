@@ -1,14 +1,12 @@
-import { TryonError } from "./fashn";
+import { submitQueue, type FashnJob } from "./fashn";
 
-// nano-banana 多参考试穿（fal-ai/nano-banana-pro/edit，指挥台实测后定为默认）：
+// nano-banana 多参考试穿（fal-ai/nano-banana-pro/edit，队列接口）：两段式里的“细化”一段；鞋包配饰只跑这一段。
 // 指挥台用真实 key 在分身正面照上对比风衣、高领毛衣：Kolors 约 20 秒，但衣长、腰带、领型会变；
 // nano-banana 多参考约 45 秒，衣长、领型、扣子、腰带与商品图一致，人物也是本人。
 // - image_urls = [底图（分身正面照 / 上一步试穿结果 / 正面照）, 正脸（有则加）, 商品图]，每张长边 1536、JPEG q92 的 data URI。
-// - aspect_ratio 3:4、resolution 2K、num_images 1；输出 images[0].url。所有品类走同一条路，鞋包配饰只把动词改成穿 / 拿。
+// - aspect_ratio 3:4、resolution 2K、num_images 1；输出 images[0].url。鞋包配饰同一提示词，只把动词改成 wearing / carrying the item。
 
-export const NANO_ENDPOINT = "https://fal.run/fal-ai/nano-banana-pro/edit";
-/** 超过 100 秒视为超时（调用方会自动回退到 Kolors）。 */
-export const NANO_TIMEOUT_MS = 100_000;
+export const NANO_MODEL = "fal-ai/nano-banana-pro/edit";
 const MAX_EDGE = 1536;
 const JPEG_QUALITY = 92;
 
@@ -72,46 +70,22 @@ export function nanoTryonPrompt(opts: { hasFace: boolean; gender?: Gender; kind?
   ].join(" ");
 }
 
-export type NanoInput = { base: string; face?: string | null; garment: string; gender?: Gender; kind?: NanoKind };
+export type NanoInput = { base: string; face?: string | null; garment: string; gender?: Gender; kind?: NanoKind; syncMode?: boolean };
 
-/** 调用一次 nano-banana 试穿，返回结果图地址。 */
-export async function runNanoTryon(input: NanoInput, signal?: AbortSignal): Promise<string> {
-  const key = process.env.FAL_KEY;
-  if (!key) throw new TryonError(503, "试穿服务未开放");
-  const timeout = AbortSignal.timeout(NANO_TIMEOUT_MS);
-  const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
-  const images = await Promise.all([input.base, ...(input.face ? [input.face] : []), input.garment].map((x) => toJpegDataUri(x, combined)));
-  let res: Response;
-  try {
-    res = await fetch(NANO_ENDPOINT, {
-      method: "POST",
-      headers: { Authorization: `Key ${key}`, "Content-Type": "application/json", "X-Fal-Store-IO": "0" },
-      body: JSON.stringify({
-        prompt: nanoTryonPrompt({ hasFace: !!input.face, gender: input.gender, kind: input.kind }),
-        image_urls: images,
-        aspect_ratio: "3:4",
-        resolution: "2K",
-        num_images: 1,
-      }),
-      signal: combined,
-      cache: "no-store",
-    });
-  } catch (e) {
-    if (combined.aborted || (e as Error)?.name === "TimeoutError" || (e as Error)?.name === "AbortError") {
-      throw new TryonError(504, "试穿超时，请稍后再试");
-    }
-    throw new TryonError(502, "试穿服务暂时连不上，请稍后再试");
-  }
-  if (!res.ok) {
-    if (res.status === 401 || res.status === 403) throw new TryonError(502, "试穿服务配置有误，请稍后再试");
-    if (res.status === 422 || res.status === 400) throw new TryonError(422, "这张形象照无法试穿，请换一张光线充足的正面全身照");
-    if (res.status === 429) throw new TryonError(429, "试穿的人有点多，请稍后再试");
-    throw new TryonError(502, "试穿服务暂时不可用，请稍后再试");
-  }
-  const data = (await res.json().catch(() => null)) as { images?: { url?: unknown }[] } | null;
-  const url = data?.images?.[0]?.url;
-  if (typeof url !== "string" || !(url.startsWith("https://") || url.startsWith("data:image/"))) {
-    throw new TryonError(502, "试穿服务没有返回图片，请稍后再试");
-  }
-  return url;
+export async function nanoBody(input: NanoInput, signal?: AbortSignal): Promise<Record<string, unknown>> {
+  const images = await Promise.all([input.base, ...(input.face ? [input.face] : []), input.garment].map((x) => toJpegDataUri(x, signal)));
+  return {
+    prompt: nanoTryonPrompt({ hasFace: !!input.face, gender: input.gender, kind: input.kind }),
+    image_urls: images,
+    aspect_ratio: "3:4",
+    resolution: "2K",
+    num_images: 1,
+    // 结果以 data URI 返回，fal 不留 CDN 副本（D47）；未用真实 key 核对 nano-banana 是否支持，不支持时 fal 会忽略、返回 https 地址。
+    sync_mode: input.syncMode ?? true,
+  };
+}
+
+/** 提交一次 nano-banana 试穿到 fal 队列（不等待生成）。 */
+export async function submitNano(input: NanoInput, signal?: AbortSignal): Promise<FashnJob> {
+  return submitQueue(NANO_MODEL, await nanoBody(input, signal), signal);
 }

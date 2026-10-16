@@ -86,6 +86,15 @@ API：`GET /api/avatar/metaperson/token`、`POST /api/avatar/metaperson/import`�
 
 ## 2D 试穿
 
+**2026-10-17 更新（D62 / D63，`feat/twin-tryon`）——以本段为准，下文 FASHN 细节仅适用于 `TRYON_PROVIDER=fashn_fal`：**
+
+- 模型编排（`lib/tryon/provider.ts`，两段式与队列框架不变）：默认 `TRYON_PROVIDER=kolors_nano`——第一段“快出图”用可灵 Kolors（`fal-ai/kling/v1-5/kolors-virtual-try-on`，输入 `human_image_url` / `garment_image_url` / `sync_mode`，输出 `image.url`，约 20 秒），第二段“细化”用 `fal-ai/nano-banana-pro/edit` 多参考（约 45 秒），好了原地替换、界面写“正在细化”。鞋、包、配饰 Kolors 不支持，只跑 nano 一段。可选 `nano_fal`（只跑 nano）、`kolors_fal`（只跑 Kolors）、`fashn_fal`（原 FASHN performance → quality，备选保留）。整套每步一段（默认 Kolors）。
+- nano 请求（`lib/tryon/nano.ts`）：`image_urls = [底图, 正脸（有分身时）, 商品图]`，每张转为长边 1536、JPEG q92 的 data URI；`aspect_ratio 3:4`、`resolution 2K`、`num_images 1`；提示词为指挥台实测有效的 virtual try-on 文案，按分身性别换 her / his，没有正脸时去掉 reference 2；鞋包配饰改为 wearing / carrying the item。
+- 底图（`lib/tryon/base.ts`）：有数字分身时用分身正面标准形象照（`lib/avatar/twin.ts` 的 `getTwin` + `readTwinImageDataUri`），没有时退回正面全身照；都没有时 409“先建立你的形象”，界面引导去 `/profile/avatar`（保留直接上传正面照作兜底）。缓存键 `twin:<jobId>` / `photo:<id>` + 单品。
+- 商品详情页一键试穿：`POST /api/tryon/quick { itemId, consent? }`，同一套逐件两段式，不属于任何搭配；前端轮询 `GET /api/tryon/<id>`。上身效果场景图的身份参考改为 `getIdentityRefs`（最多 4 张），已有一键试穿结果时一并作衣服参考。
+- 同意（D47）：文案“同意把我的形象照片发送给 fal.ai 上的 AI 模型生成试穿图”，版本 `tryon-consent-v2:fal`；旧 `tryon-consent-v1:fashn_fal` 需要重新同意，切换 fal 上的模型不需要。
+- 测试：`lib/tryon/kolors.test.ts`（模拟队列与数字分身：Kolors 请求体、nano 细化参数与提示词、分身优先、无分身退回正面照、无形象 409、鞋包只跑 nano、同意升级、场景多参考、单段模式）；`lib/tryon/tryon.test.ts` 固定 `TRYON_PROVIDER=fashn_fal` 覆盖 FASHN 备选。真实 key 下的 Kolors 队列、nano `sync_mode` 与耗时未在本分支实测。
+
 用户自己的形象穿着选中的衣服，一件一件来（试衣间主路径）；搭配页改编结果卡仍保留整套“穿在我身上”。服务：fal.ai 上的 FASHN v1.6，走队列接口（`https://queue.fal.run/fal-ai/fashn/tryon/v1.6` 提交，之后用提交响应里的 `status_url` / `response_url` 查询；D62）。2026-10-17 已用本机 `FAL_KEY` 与 AI 生成的虚构模特图实测，耗时见[交付记录](../docs/交付记录.md)。
 
 - 启用：设置 `FAL_KEY`（`TRYON_PROVIDER` 可留空，设置时必须为 `fashn_fal`）。没有 key 时不显示入口，也不发任何外部请求。

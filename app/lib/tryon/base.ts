@@ -70,6 +70,23 @@ export async function resolveBase(userId: string): Promise<{ image: string; sour
   return image ? { image, source: "photo" } : null;
 }
 
+/**
+ * 底图引用（不立即读取）：id 用作缓存键（twin:<jobId> / photo:<photoId>），load() 读出交给 fal 的图片；都没有时为 null。
+ * 分身图片读取失败时退回正面照。
+ */
+export async function resolveBaseRef(
+  userId: string,
+): Promise<{ source: BaseSource; id: string; photoId: string | null; load: () => Promise<string | null> } | null> {
+  const twin = await findTwin(userId);
+  if (twin) {
+    const front = twin.images.front;
+    return { source: "twin", id: `twin:${twin.jobId}`, photoId: null, load: () => twinApi.readTwinImageDataUri(front).catch(() => null) };
+  }
+  const photo = await frontPhoto(userId);
+  if (!photo) return null;
+  return { source: "photo", id: `photo:${photo.id}`, photoId: photo.id, load: () => storedImage(photo.storageKey, photo.mime) };
+}
+
 /** 界面展示用的底图地址（鉴权读取，他人 404）。 */
 export async function baseInfo(userId: string): Promise<{ url: string | null; source: BaseSource | null }> {
   const twin = await findTwin(userId);

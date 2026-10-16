@@ -5,8 +5,8 @@ import path from "node:path";
 import { after, before, beforeEach, test } from "node:test";
 import { pngWithMetadata } from "@/lib/avatar/testing";
 
-// D62 / D63：默认试穿模型可灵 Kolors、底图优先数字分身、鞋包配饰走 nano-banana、同意版本升级。
-// 临时目录里的 PGlite 与本地存储；fetch 全部被替换，不访问任何外部服务；数字分身用注入的假实现，测试图由代码生成。
+// 默认编排（Kolors 快出图 → nano-banana 多参考细化）、底图优先数字分身、鞋包配饰只跑 nano、同意版本升级。
+// 临时目录里的 PGlite 与本地存储；fetch 全部被替换（模拟 fal 队列三步），不访问任何外部服务；数字分身用注入的假实现，测试图由代码生成。
 const dir = mkdtempSync(path.join(tmpdir(), "sc-kolors-"));
 process.env.PGLITE_DIR = path.join(dir, "pglite");
 process.env.UPLOADS_DIR = path.join(dir, "uploads");
@@ -16,10 +16,12 @@ delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 delete process.env.FAL_KEY;
 delete process.env.TRYON_PROVIDER;
 
-const KOLORS = "https://fal.run/fal-ai/kling/v1-5/kolors-virtual-try-on";
-const NANO = "https://fal.run/fal-ai/nano-banana-pro/edit";
+const Q_KOLORS = "https://queue.fal.run/fal-ai/kling/v1-5/kolors-virtual-try-on";
+const Q_NANO = "https://queue.fal.run/fal-ai/nano-banana-pro/edit";
+const SCENE_NANO = "https://fal.run/fal-ai/nano-banana-pro/edit";
 const TWIN_FRONT = "data:image/png;base64,VFdJTi1GUk9OVA==";
-const REFS = [TWIN_FRONT, "data:image/png;base64,RkFDRQ==", "data:image/png;base64,UFJPRklMRQ=="];
+const FACE = "data:image/png;base64,RkFDRQ==";
+const REFS = [TWIN_FRONT, FACE, "data:image/png;base64,UFJPRklMRQ=="];
 
 type Mods = {
   db: typeof import("@/lib/db");
@@ -32,8 +34,21 @@ let m: Mods;
 const realFetch = globalThis.fetch;
 type Call = { url: string; init?: RequestInit };
 let calls: Call[] = [];
-let kolorsStatus = 200;
+let kolorsSubmitStatus = 200;
 const RESULT_PNG = pngWithMetadata(96, 144, [120, 90, 60]);
+const RESULT_URI = `data:image/png;base64,${Buffer.from(RESULT_PNG).toString("base64")}`;
+let seq = 0;
+const seenNano = new Set<string>();
+
+/** 轮询到完成（出图且不在细化），最多 6 次。 */
+async function pollDone(userId: string, id: string) {
+  let v = null;
+  for (let i = 0; i < 6; i++) {
+    v = await m.svc.pollTryon(userId, id);
+    if (!v || v.status === "failed" || (v.status === "succeeded" && !v.refining)) break;
+  }
+  return v;
+}
 
 before(async () => {
   const db = await import("@/lib/db");
@@ -67,7 +82,7 @@ before(async () => {
   m.base.__setTwinApiForTests({
     getTwin: async (userId: string) =>
       userId === "u3"
-        ? { jobId: "job3", images: { front: "u3/avatars/twin-front.png", side: null, back: null }, summary: null, traits: null, gender: "female" as const }
+        ? { jobId: "job3", images: { front: "u3/avatars/twin-front.png", side: null, back: null }, summary: null, traits: null, gender: "male" as const }
         : null,
     readTwinImageDataUri: async (key: string) => {
       assert.equal(key, "u3/avatars/twin-front.png");
@@ -79,13 +94,27 @@ before(async () => {
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     calls.push({ url, init });
-    const ok = (data: unknown) => new Response(JSON.stringify(data), { status: 200, headers: { "content-type": "application/json" } });
-    if (url === KOLORS) {
-      if (kolorsStatus !== 200) return new Response("{}", { status: kolorsStatus });
-      return ok({ image: { url: "https://v3.fal.media/files/kolors.png", width: 768, height: 1024, content_type: "image/png" } });
+    const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json" } });
+    if (init?.method === "POST" && (url === Q_KOLORS || url === Q_NANO)) {
+      if (url === Q_KOLORS && kolorsSubmitStatus !== 200) return json({}, kolorsSubmitStatus);
+      const model = url === Q_KOLORS ? "kolors" : "nano";
+      const at = `https://queue.fal.run/fal-ai/${model}/requests/r${++seq}`;
+      return json({ request_id: `r${seq}`, status_url: `${at}/status`, response_url: at, cancel_url: `${at}/cancel` });
     }
-    if (url === NANO) return ok({ images: [{ url: "https://v3.fal.media/files/nano.png" }] });
-    if (url.startsWith("https://queue.fal.run/")) return new Response("{}", { status: 500 });
+    if (url.startsWith("https://queue.fal.run/fal-ai/kolors/requests/") || url.startsWith("https://queue.fal.run/fal-ai/nano/requests/")) {
+      if (url.endsWith("/status")) {
+        // nano 比 Kolors 慢：每个 nano 请求第一次查询时还在生成，第二次才完成（模拟“先出图、再细化”的先后）。
+        if (url.includes("/nano/") && !seenNano.has(url)) {
+          seenNano.add(url);
+          return json({ status: "IN_PROGRESS" });
+        }
+        return json({ status: "COMPLETED" });
+      }
+      // Kolors 返回 image.url（单个对象），nano-banana 返回 images[0].url。
+      return url.includes("/kolors/") ? json({ image: { url: RESULT_URI } }) : json({ images: [{ url: RESULT_URI }] });
+    }
+    if (url === SCENE_NANO) return json({ images: [{ url: "https://v3.fal.media/files/scene.jpg" }] });
+    if (url.startsWith("https://queue.fal.run/")) return json({}, 500);
     if (url.startsWith("https://v3.fal.media/")) return new Response(Buffer.from(RESULT_PNG), { status: 200 });
     throw new Error("unexpected network call in tests");
   }) as typeof fetch;
@@ -93,7 +122,7 @@ before(async () => {
 
 beforeEach(async () => {
   calls = [];
-  kolorsStatus = 200;
+  kolorsSubmitStatus = 200;
   process.env.FAL_KEY = "test-key";
   delete process.env.TRYON_PROVIDER;
 });
@@ -105,42 +134,64 @@ after(() => {
 });
 
 const bodyOf = (c: Call) => JSON.parse(String(c.init?.body));
+const submits = (q: string) => calls.filter((c) => c.url === q && c.init?.method === "POST");
 const status = (n: number) => (e: Error & { status?: number }) => e.status === n;
 
-test("默认模型是 Kolors：请求体只有 human_image_url / garment_image_url，取 image.url 作结果；没有分身时底图是正面照", async () => {
+test("默认两段式：先提交 Kolors（human_image_url / garment_image_url），再提交 nano-banana 细化；没有分身时底图是正面照", async () => {
   const ctx = await m.svc.getTryonContext("u1");
   assert.equal(ctx.enabled, true);
   assert.equal(ctx.baseSource, "photo");
   assert.ok(ctx.frontPhotoUrl?.startsWith("/api/avatar/files/u1/photos/"));
-  assert.equal(ctx.providerName, "fal.ai（可灵 Kolors）");
+  assert.equal(ctx.providerName, "fal.ai 上的 AI 模型");
 
-  const view = await m.svc.createTryon("u1", { itemIds: ["T1"], consent: true });
-  assert.equal(view.status, "succeeded");
-  const fal = calls.filter((c) => c.url.startsWith("https://fal.run/"));
-  assert.equal(fal.length, 1);
-  assert.equal(fal[0].url, KOLORS);
-  const body = bodyOf(fal[0]);
-  assert.deepEqual(Object.keys(body).sort(), ["garment_image_url", "human_image_url"]);
-  assert.ok(body.human_image_url.startsWith("data:image/png;base64,"), "底图是本人正面照");
-  assert.equal(Buffer.from(body.human_image_url.split(",")[1], "base64").length, pngWithMetadata(64, 96).length);
-  assert.ok(body.garment_image_url.startsWith("data:image/webp;base64,"));
-  const headers = fal[0].init?.headers as Record<string, string>;
+  const v0 = await m.svc.createTryon("u1", { itemIds: ["T1"], consent: true });
+  assert.equal(v0.status, "processing");
+  const [k] = submits(Q_KOLORS);
+  const kb = bodyOf(k);
+  assert.deepEqual(Object.keys(kb).sort(), ["garment_image_url", "human_image_url", "sync_mode"]);
+  assert.ok(kb.human_image_url.startsWith("data:image/png;base64,"), "底图是本人正面照");
+  assert.ok(kb.garment_image_url.startsWith("data:image/webp;base64,"));
+  assert.equal(kb.sync_mode, true);
+  const headers = k.init?.headers as Record<string, string>;
   assert.equal(headers.Authorization, "Key test-key");
   assert.equal(headers["X-Fal-Store-IO"], "0");
-  assert.equal(calls.at(-1)?.url, "https://v3.fal.media/files/kolors.png", "取回 image.url");
-  assert.ok(view.resultUrl?.startsWith("/api/avatar/files/u1/avatars/tryon-"));
-  assert.deepEqual(view.applied, ["上装"]);
-  await m.svc.deleteTryon("u1", view.id);
+
+  const [n] = submits(Q_NANO);
+  const nb = bodyOf(n);
+  assert.equal(nb.image_urls.length, 2, "没有正脸参考：底图 + 商品图");
+  assert.ok(nb.image_urls.every((u: string) => u.startsWith("data:image/jpeg;base64,")), "每张转成 JPEG");
+  assert.equal(nb.aspect_ratio, "3:4");
+  assert.equal(nb.resolution, "2K");
+  assert.equal(nb.num_images, 1);
+  assert.match(nb.prompt, /^Virtual try-on\. Reference 1 is the person \(full body\), reference 2 is a garment product photo\./);
+  assert.match(nb.prompt, /wearing the garment from reference 2, replacing the corresponding clothing; keep her other clothing items unchanged/);
+  assert.doesNotMatch(nb.prompt, /close-up/);
+
+  const v1 = await m.svc.pollTryon("u1", v0.id);
+  assert.equal(v1?.status, "succeeded");
+  assert.equal(v1?.mode, "performance");
+  assert.equal(v1?.refining, true, "Kolors 出图后正在细化");
+  const v2 = await m.svc.pollTryon("u1", v0.id);
+  assert.equal(v2?.mode, "quality");
+  assert.equal(v2?.refining, false);
+  assert.deepEqual(v2?.applied, ["上装"]);
+  await m.svc.deleteTryon("u1", v0.id);
 });
 
-test("有数字分身时底图优先用分身正面照", async () => {
+test("有数字分身时底图优先用分身正面照；nano 加正脸参考，按性别换代词", async () => {
   const ctx = await m.svc.getTryonContext("u3");
   assert.equal(ctx.baseSource, "twin");
   assert.equal(ctx.frontPhotoUrl, "/api/avatar/files/u3/avatars/twin-front.png");
-  const view = await m.svc.createTryon("u3", { itemIds: ["T1"], consent: true });
-  const [k] = calls.filter((c) => c.url === KOLORS);
-  assert.equal(bodyOf(k).human_image_url, TWIN_FRONT);
-  await m.svc.deleteTryon("u3", view.id);
+  const v = await m.svc.createTryon("u3", { itemIds: ["T1"], consent: true });
+  assert.equal(bodyOf(submits(Q_KOLORS)[0]).human_image_url, TWIN_FRONT);
+  const nb = bodyOf(submits(Q_NANO)[0]);
+  assert.equal(nb.image_urls.length, 3);
+  assert.equal(nb.image_urls[0], TWIN_FRONT, "底图（假图转不了 JPEG 时原样发送）");
+  assert.equal(nb.image_urls[1], FACE, "正脸参考");
+  assert.match(nb.prompt, /reference 2 is a close-up of the same person's face, reference 3 is a garment product photo/);
+  assert.match(nb.prompt, /keep his other clothing items unchanged/);
+  assert.doesNotMatch(nb.prompt, /\bher\b/);
+  await m.svc.deleteTryon("u3", v.id);
 });
 
 test("没有分身也没有正面照：409 引导建立形象，不调用模型", async () => {
@@ -154,7 +205,7 @@ test("没有分身也没有正面照：409 引导建立形象，不调用模型"
   assert.equal(calls.length, 0);
 });
 
-test("同意版本升级：旧的 v1（FASHN）同意需要重新同意；新版本带模型名", async () => {
+test("同意版本升级：旧的 v1（FASHN）同意需要重新同意；新版本 tryon-consent-v2:fal，切换 fal 上的模型不需要重新同意", async () => {
   const { db, schema } = m.db;
   const { eq } = await import("drizzle-orm");
   await db
@@ -169,71 +220,72 @@ test("同意版本升级：旧的 v1（FASHN）同意需要重新同意；新版
 
   await m.svc.recordConsent("u1");
   const [row] = await db.select().from(schema.tryonConsent).where(eq(schema.tryonConsent.userId, "u1"));
-  assert.equal(row.consentVersion, "tryon-consent-v2:kolors_fal");
+  assert.equal(row.consentVersion, "tryon-consent-v2:fal");
   assert.equal((await m.svc.getTryonContext("u1")).consented, true);
-  // 切回 FASHN：处理方变了，同样需要重新同意
-  process.env.TRYON_PROVIDER = "fashn_fal";
-  assert.equal((await m.svc.getTryonContext("u1")).consented, false);
-  assert.equal((await m.svc.getTryonContext("u1")).providerName, "FASHN（fal.ai）");
+  for (const p of ["nano_fal", "kolors_fal", "fashn_fal"]) {
+    process.env.TRYON_PROVIDER = p;
+    assert.equal((await m.svc.getTryonContext("u1")).consented, true, p);
+  }
   process.env.TRYON_PROVIDER = "something_else";
   assert.equal((await m.svc.getTryonContext("u1")).enabled, false, "未知模型不开放");
 });
 
-test("一键试穿：上装走 Kolors；鞋包走 nano-banana，image_urls = 分身多张参考 + 商品图", async () => {
+test("一键试穿：上装走 Kolors → nano；鞋包只跑 nano 一段（wearing / carrying the item）", async () => {
   await m.svc.recordConsent("u3");
   const top = await m.svc.createQuickTryon("u3", "T1");
-  assert.equal(calls.filter((c) => c.url === KOLORS).length, 1);
+  assert.equal(submits(Q_KOLORS).length, 1);
+  assert.equal(submits(Q_NANO).length, 1);
   assert.equal(top.wornItemId, "T1");
   assert.equal(top.sourceLookId, null);
+  await pollDone("u3", top.id);
 
   calls = [];
-  const shoe = await m.svc.createQuickTryon("u3", "S1");
-  assert.equal(calls.filter((c) => c.url === KOLORS).length, 0, "鞋不走 Kolors");
-  const nano = calls.filter((c) => c.url === NANO);
-  assert.equal(nano.length, 1);
+  const shoe0 = await m.svc.createQuickTryon("u3", "S1");
+  assert.equal(submits(Q_KOLORS).length, 0, "鞋不走 Kolors");
+  const nano = submits(Q_NANO);
+  assert.equal(nano.length, 1, "只跑一段");
   const body = bodyOf(nano[0]);
-  assert.equal(body.image_urls.length, REFS.length + 1);
-  assert.deepEqual(body.image_urls.slice(0, REFS.length), REFS, "先放身份参考");
-  assert.ok(body.image_urls.at(-1).startsWith("data:image/webp;base64,"), "最后是商品图");
-  assert.match(body.prompt, /Images 1–3 are reference photos of the same person/);
-  assert.match(body.prompt, /Image 4 is the product/);
-  assert.match(body.prompt, /full-body/);
-  assert.match(body.prompt, /light beige studio/);
-  assert.equal(shoe.status, "succeeded");
-  assert.equal(shoe.wornItemId, "S1");
-  assert.deepEqual(shoe.appliedItemIds, ["S1"]);
+  assert.equal(body.image_urls.length, 3);
+  assert.equal(body.image_urls[1], FACE);
+  assert.ok(body.image_urls[2].startsWith("data:image/jpeg;base64,"), "最后是商品图");
+  assert.match(body.prompt, /reference 3 is a shoes product photo/);
+  assert.match(body.prompt, /wearing the item from reference 3; keep his clothing unchanged/);
+  const shoe = await pollDone("u3", shoe0.id);
+  assert.equal(shoe?.status, "succeeded");
+  assert.equal(shoe?.refining, false, "鞋包没有细化段");
+  assert.deepEqual(shoe?.appliedItemIds, ["S1"]);
+  assert.deepEqual(shoe?.applied, []);
 
-  assert.equal((await m.svc.getItemTryon("u3", "S1"))?.id, shoe.id);
+  assert.equal((await m.svc.getItemTryon("u3", "S1"))?.id, shoe0.id);
   assert.equal((await m.svc.getItemTryon("u3", "T1"))?.id, top.id);
   assert.equal(await m.svc.getItemTryon("u1", "S1"), null, "他人看不到");
 
-  // 没有分身的用户：身份参考退回正面照一张
+  // 没有分身的用户：没有正脸参考
   await m.svc.recordConsent("u1");
   calls = [];
   const bag = await m.svc.createQuickTryon("u1", "G1");
-  const [nb] = calls.filter((c) => c.url === NANO);
-  const b2 = bodyOf(nb);
+  const b2 = bodyOf(submits(Q_NANO)[0]);
   assert.equal(b2.image_urls.length, 2);
-  assert.ok(b2.image_urls[0].startsWith("data:image/png;base64,"));
-  assert.match(b2.prompt, /carrying the product from image 2/);
-  for (const v of [top, shoe]) await m.svc.deleteTryon("u3", v.id);
+  assert.match(b2.prompt, /carrying the item from reference 2; keep her clothing unchanged/);
+  for (const v of [top, shoe0]) await m.svc.deleteTryon("u3", v.id);
   await m.svc.deleteTryon("u1", bag.id);
 });
 
 test("上身效果：身份参考用分身多张，并带上一键试穿结果作衣服参考", async () => {
   await m.svc.recordConsent("u3");
   const top = await m.svc.createQuickTryon("u3", "T1");
+  await pollDone("u3", top.id);
   calls = [];
   const [item] = await (await import("@/lib/catalog")).getItemsByIds(["T1"]);
   const state = await m.scene.createScenes("u3", item);
   assert.ok(state.hasFrontPhoto);
-  const nano = calls.filter((c) => c.url === NANO);
+  const nano = calls.filter((c) => c.url === SCENE_NANO);
   assert.equal(nano.length, 2, "两张场景图");
   for (const c of nano) {
     const b = bodyOf(c);
     assert.equal(b.image_urls.length, REFS.length + 2);
     assert.deepEqual(b.image_urls.slice(0, REFS.length), REFS);
-    assert.ok(b.image_urls[REFS.length].startsWith("data:image/png;base64,"), "一键试穿结果");
+    assert.ok(b.image_urls[REFS.length].startsWith("data:image/"), "一键试穿结果");
     assert.ok(b.image_urls.at(-1).startsWith("data:image/webp;base64,"), "商品图在最后");
     assert.match(b.prompt, /Image 4 shows this person already wearing the garment/);
     assert.match(b.prompt, /Image 5 is the garment/);
@@ -242,15 +294,27 @@ test("上身效果：身份参考用分身多张，并带上一键试穿结果�
   await m.svc.deleteTryon("u3", top.id);
 });
 
-test("Kolors 出错时给出中文说明并记录失败", async () => {
+test("Kolors 提交出错时给出中文说明，不写记录", async () => {
   await m.svc.recordConsent("u1");
-  kolorsStatus = 422;
+  kolorsSubmitStatus = 422;
   await assert.rejects(m.svc.createTryon("u1", { itemIds: ["T1"] }), (e: Error & { status?: number }) => e.status === 422 && /无法试穿/.test(e.message));
-  kolorsStatus = 429;
+  kolorsSubmitStatus = 429;
   await assert.rejects(m.svc.createTryon("u1", { itemIds: ["T1"] }), status(429));
-  kolorsStatus = 500;
-  await assert.rejects(m.svc.createTryon("u1", { itemIds: ["T1"] }), (e: Error & { status?: number }) => e.status === 502 && /暂时不可用/.test(e.message));
-  const rows = await m.db.db.select().from(m.db.schema.tryon);
-  assert.ok(rows.length >= 3 && rows.every((r) => r.status === "failed" && !!r.error));
-  await m.db.db.delete(m.db.schema.tryon);
+  assert.equal((await m.db.db.select().from(m.db.schema.tryon)).length, 0);
+});
+
+test("TRYON_PROVIDER=nano_fal 只跑 nano 一段；kolors_fal 只跑 Kolors 一段", async () => {
+  await m.svc.recordConsent("u1");
+  process.env.TRYON_PROVIDER = "nano_fal";
+  const a = await m.svc.createTryon("u1", { itemIds: ["T1"] });
+  assert.equal(submits(Q_KOLORS).length, 0);
+  assert.equal(submits(Q_NANO).length, 1);
+  assert.equal((await pollDone("u1", a.id))?.refining, false);
+  await m.svc.deleteTryon("u1", a.id);
+  calls = [];
+  process.env.TRYON_PROVIDER = "kolors_fal";
+  const b = await m.svc.createTryon("u1", { itemIds: ["T1"] });
+  assert.equal(submits(Q_KOLORS).length, 1);
+  assert.equal(submits(Q_NANO).length, 0);
+  await m.svc.deleteTryon("u1", b.id);
 });
