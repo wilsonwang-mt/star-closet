@@ -80,7 +80,7 @@ export async function nanoBody(input: NanoInput, signal?: AbortSignal): Promise<
     aspect_ratio: "3:4",
     resolution: "2K",
     num_images: 1,
-    // 结果以 data URI 返回，fal 不留 CDN 副本（D47）；未用真实 key 核对 nano-banana 是否支持，不支持时 fal 会忽略、返回 https 地址。
+    // 结果以 data URI 返回，fal 不留 CDN 副本（D47）；fal OpenAPI 已列出 sync_mode 与 resolution 1K/2K/4K（2026-10-17 核对）。
     sync_mode: input.syncMode ?? true,
   };
 }
