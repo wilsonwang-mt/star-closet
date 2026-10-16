@@ -1,4 +1,4 @@
--- Star Closet · Supabase 行级安全（RLS）与访问权限
+-- SEEN.（原工作名 Star Closet）· Supabase 行级安全（RLS）与访问权限
 --
 -- 表结构的唯一来源是 app/lib/db/schema.ts（Drizzle），本文件不建表。
 -- 用法：Drizzle 迁移在 Supabase 上建好表之后，在 Supabase SQL Editor 里整份执行一次；

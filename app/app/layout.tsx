@@ -12,9 +12,9 @@ const didone = Bodoni_Moda({ subsets: ["latin"], style: ["normal", "italic"], we
 const serif = Noto_Serif_SC({ weight: ["300", "400"], variable: "--font-serif", preload: false });
 
 export const metadata: Metadata = {
-  title: "Star Closet",
+  title: { default: "SEEN.", template: "%s · SEEN." },
   description: "把主理人的一整套穿搭，改成适合你、买得起的那一套。",
-  applicationName: "Star Closet",
+  applicationName: "SEEN.",
 };
 
 export const viewport: Viewport = {

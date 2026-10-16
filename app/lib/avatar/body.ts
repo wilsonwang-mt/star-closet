@@ -49,7 +49,7 @@ const BodySchema = z.object({
 });
 export type ModelBody = z.infer<typeof BodySchema>;
 
-const SYSTEM = `你在为线上买手店 Star Closet 的 3D 形象微调身体比例。输入是同一个人的全身正面照（可能还有全身侧面照），以及可选的身高体重。
+const SYSTEM = `你在为线上买手店 SEEN. 的 3D 形象微调身体比例。输入是同一个人的全身正面照（可能还有全身侧面照），以及可选的身高体重。
 3D 形象有 8 个身体比例参数，取值 -1 到 1，0 表示该身体模板成年人的平均比例：
 - Body：整体体量（偏纤细为负，偏丰满为正）
 - Neck：颈部粗细

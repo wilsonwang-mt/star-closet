@@ -19,7 +19,7 @@ const clean = (n: string) => n.replace(/^占位：/, "");
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const d = await getItemDetail(id).catch(() => null);
-  return { title: d ? `${clean(d.item.name)} · Star Closet` : "Star Closet" };
+  return d ? { title: clean(d.item.name) } : {};
 }
 
 // 商品详情页（T3）：首屏商品大图与信息、购买按钮；“上身效果”画廊（本人 / 演示模特）；这件出现在哪些搭配里。
