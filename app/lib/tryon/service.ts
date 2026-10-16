@@ -46,8 +46,10 @@ export type TryonView = {
 
 export type TryonContext = {
   enabled: boolean;
+  signedIn: boolean;
   consented: boolean;
-  hasFrontPhoto: boolean;
+  /** 本人正面全身照的鉴权读取地址；没有时为 null。 */
+  frontPhotoUrl: string | null;
 };
 
 const fileUrl = (key: string) => `/api/avatar/files/${key.split("/").map(encodeURIComponent).join("/")}`;
@@ -84,9 +86,9 @@ async function hasConsent(userId: string): Promise<boolean> {
 
 export async function getTryonContext(userId: string | null): Promise<TryonContext> {
   const enabled = isTryonEnabled();
-  if (!enabled || !userId) return { enabled, consented: false, hasFrontPhoto: false };
+  if (!enabled || !userId) return { enabled, signedIn: !!userId, consented: false, frontPhotoUrl: null };
   const [consented, photo] = await Promise.all([hasConsent(userId), frontPhoto(userId)]);
-  return { enabled, consented, hasFrontPhoto: !!photo };
+  return { enabled, signedIn: true, consented, frontPhotoUrl: photo ? fileUrl(photo.storageKey) : null };
 }
 
 export async function recordConsent(userId: string) {
@@ -144,7 +146,7 @@ export async function uploadFrontPhoto(userId: string, file: File) {
       .set({ deletedAt: new Date() })
       .where(and(eq(schema.avatarPhoto.userId, userId), inArray(schema.avatarPhoto.id, old.map((p) => p.id))));
   }
-  return { ok: true };
+  return { frontPhotoUrl: fileUrl(key) };
 }
 
 /** 单品图：本站 public 下的相对路径读成 data URI；https 地址原样使用。 */

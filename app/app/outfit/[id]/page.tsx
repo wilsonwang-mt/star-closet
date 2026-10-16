@@ -6,18 +6,21 @@ import Scene from "@/components/Scene";
 import { getAllItems, getOutfit, getOutfitsByCurator } from "@/lib/catalog";
 import { hasAiKey } from "@/lib/adapt/ai";
 import { buildCandidatePool } from "@/lib/adapt/rules";
+import { getCurrentUser } from "@/lib/auth";
+import { getTryonContext } from "@/lib/tryon/service";
 
 export const dynamic = "force-dynamic";
 
 export default async function OutfitPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [outfit, allItems] = await Promise.all([getOutfit(id), getAllItems()]);
+  const [outfit, allItems, user] = await Promise.all([getOutfit(id), getAllItems(), getCurrentUser()]);
   if (!outfit) notFound();
   // N° 与衣橱页搭配卡一致：这套搭配在所属衣橱里的位置（与衣橱页同一查询、同一排序）
   const siblings = await getOutfitsByCurator(outfit.curatorId);
   // 逐件替换只从候选池里选（同性别/中性，本衣橱优先、其他衣橱单独分组），与改编规则一致。
   const catalog = buildCandidatePool(outfit, allItems);
   const idx = siblings.findIndex((o) => o.id === outfit.id);
+  const tryon = await getTryonContext(user?.id ?? null);
   return (
     <>
       {/* 场景用这套搭配自己的封面照片，与衣橱页的搭配卡衔接 */}
@@ -48,7 +51,7 @@ export default async function OutfitPage({ params }: { params: Promise<{ id: str
           {outfit.styleNote}
         </p>
       </section>
-      <Adapter outfit={outfit} catalog={catalog} aiEnabled={hasAiKey()} />
+      <Adapter outfit={outfit} catalog={catalog} aiEnabled={hasAiKey()} tryon={tryon} />
     </>
   );
 }

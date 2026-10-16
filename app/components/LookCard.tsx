@@ -4,10 +4,12 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import ItemThumb from "./ItemThumb";
 import type { Look } from "@/lib/looks";
+import type { TryonContext } from "@/lib/tryon/service";
+import TryOn from "./tryon/TryOn";
 
 const MODE_LABEL: Record<string, string> = { original: "主理人原搭配", ai: "AI 改编", offline: "为你改编" };
 
-export default function LookCard({ look }: { look: Look }) {
+export default function LookCard({ look, tryon }: { look: Look; tryon?: TryonContext }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(() => new Set(look.items.map((i) => i.id)));
   const [deleting, setDeleting] = useState(false);
@@ -57,6 +59,11 @@ export default function LookCard({ look }: { look: Look }) {
           </label>
         ))}
       </div>
+      {tryon ? (
+        <div className="row">
+          <TryOn ctx={tryon} source={{ lookId: look.id }} items={look.items} />
+        </div>
+      ) : null}
       <div className="spread">
         <span className="sc-meta">已选 {chosen.length} / {look.items.length} 件</span>
         <span className="total sc-foil">¥{chosenTotal}</span>

@@ -4,6 +4,7 @@ import LookCard from "@/components/LookCard";
 import Scene from "@/components/Scene";
 import { getCurrentUser } from "@/lib/auth";
 import { listLooks } from "@/lib/looks";
+import { getTryonContext } from "@/lib/tryon/service";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,7 @@ export default async function FittingRoom() {
       </>
     );
   }
-  const looks = await listLooks(user.id);
+  const [looks, tryon] = await Promise.all([listLooks(user.id), getTryonContext(user.id)]);
   return (
     <>
       <Scene dim />
@@ -53,7 +54,7 @@ export default async function FittingRoom() {
       </section>
       <div className="stack">
         {looks.map((l) => (
-          <LookCard key={l.id} look={l} />
+          <LookCard key={l.id} look={l} tryon={tryon} />
         ))}
         <LifeScene />
       </div>

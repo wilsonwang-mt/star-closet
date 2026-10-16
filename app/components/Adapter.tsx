@@ -7,6 +7,8 @@ import ItemList, { REVEAL_DELAY, type ListedItem } from "./ItemList";
 import { CountTo } from "./motion/RollingNumber";
 import type { Item, Outfit } from "@/lib/catalog";
 import type { AdaptResult } from "@/lib/adapt/types";
+import type { TryonContext } from "@/lib/tryon/service";
+import TryOn from "./tryon/TryOn";
 
 // 等待卡至少停留这么久：规则模式几乎瞬间返回，等待卡一闪而过会造成闪烁
 const MIN_WAIT_MS = 900;
@@ -34,7 +36,17 @@ function total(items: { price: number }[]) {
   return items.reduce((s, i) => s + i.price, 0);
 }
 
-export default function Adapter({ outfit, catalog, aiEnabled }: { outfit: Outfit; catalog: Item[]; aiEnabled: boolean }) {
+export default function Adapter({
+  outfit,
+  catalog,
+  aiEnabled,
+  tryon,
+}: {
+  outfit: Outfit;
+  catalog: Item[];
+  aiEnabled: boolean;
+  tryon?: TryonContext;
+}) {
   const router = useRouter();
   const [request, setRequest] = useState("");
   const [loading, setLoading] = useState(false);
@@ -299,6 +311,12 @@ export default function Adapter({ outfit, catalog, aiEnabled }: { outfit: Outfit
               : "由规则挑选，未使用 AI：优先用这间衣橱的单品，不够时也会用其他衣橱的；"}
             金线标出的是换掉的单品；总价按各单品标价计算。
           </p>
+          {tryon ? (
+            <div className="row">
+              {/* 试穿的是当前这一套（含手动替换后的单品） */}
+              <TryOn ctx={tryon} source={{ outfitId: outfit.id }} items={items} />
+            </div>
+          ) : null}
         </section>
       ) : null}
 
