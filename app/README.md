@@ -99,6 +99,22 @@ API：`GET /api/avatar/metaperson/token`、`POST /api/avatar/metaperson/import`�
 - 表：`tryon`（id、user_id、source_look_id、source_outfit_id、outfit_snapshot、item_ids、applied_categories、status、result_key、error、created_at）、`tryon_consent`（user_id、consent_version、consent_at），迁移 `drizzle/0003_tryon.sql`；Supabase 上执行 `npm run db:setup` 后再执行一次 `supabase/rls.sql`。
 - 测试：`lib/tryon/tryon.test.ts`（品类映射与逐件叠加规则；逐件只调用一次 FASHN 且 `mode=quality`、默认穿在正面照上、带 `baseTryonId` 时底图是那张结果；`baseTryonId` 属于他人 / 失败 / 处理中 / 不存在 / 文件已删一律 404 且不调用 FASHN；鞋包配饰 422、不在这套里 404；整套 `{ lookId }` 仍为 balanced 依次叠加；过期正面照不再使用；试穿面板上传的正面照写入 30 天 `expires_at`；以及原有的无 key 与未同意不发请求、链式 `model_image`、他人 404、清空存储后记录清理、3D 形象一键删除同时删除试穿记录与同意）。所有对 fal 的 fetch 都被替换。
 
+## 商品详情页与上身效果（T3）
+
+入口：衣橱页、搭配页、改编结果里的单品缩略图与名称都链接到 `/item/[id]`（`components/ItemThumb.tsx` 新增可选 `href`，`components/ItemList.tsx` 传入；替换下拉不变）。
+
+- 页面（`app/item/[id]/`）：所属衣橱的场景图做背景（`Scene cover`）；首屏左侧玻璃台面上的商品大图，右侧名称、价格（金箔）、颜色 / 材质 / 尺码 / 版型 / 季节、所属衣橱（链接回衣橱页）与购买按钮（目录 `buy_url` / `buy_label`，新窗口打开）；下方“上身效果”画廊与“这件出现在哪些搭配里”（搭配卡链接 `/outfit/[id]`，N° 为所属衣橱内序号）。不存在的单品返回 404（这一段没有 `loading.tsx`，状态码正确）。
+- “上身效果”画廊（`components/item/LookGallery.tsx`），按优先级：
+  1. 本人：已登录、有正面全身照（`avatar_photo.slot = front`，与 2D 试穿共用）、已同意（`tryon_consent`，与 2D 试穿同一项）、配置了 `FAL_KEY` → 点“生成我的上身效果”，约 30 秒出 2 张场景图，标题“你的上身效果”。缺照片或同意时，在画廊下方就地上传照片（复用 `POST /api/tryon/photo`）并勾选同意。
+  2. 演示模特：读取 `public/demo/manifest.json`（T2 产出，路径只接受 `/demo/` 下的本站文件），标题“模特上身”，并写明“演示模特 · 由 AI 生成的虚构人物”。
+  3. 都没有：已登录显示生成入口，未登录为“登录后生成我的上身效果”（`/login?next=/item/[id]`）。
+- 生成（`lib/scene/service.ts`，`POST /api/scene { itemId, consent? }`，`maxDuration 120`）：`fal-ai/nano-banana-pro/edit`，输入本人正面照 + 单品图 + 场景描述（`lib/scene/scenes.ts`，按单品场合与风格标签从 T2 那组 6 个场景里选 2 个），要求单品颜色款式材质与商品图一致、人物长相不变；两张并行生成。请求头 `X-Fal-Store-IO: 0`。同一用户同一件单品只保留最新一组（重新生成前删旧记录与文件）。
+- Live：场景图存好后立即向 fal queue 提交 `fal-ai/kling-video/v2.5-turbo/pro/image-to-video`（5 秒、细微动作、无声），状态地址存 `scene_render.video_status_url`；`GET /api/scene?itemId=` 每次推进一次轮询，完成后取回 mp4 存私有存储。浏览器每 5 秒查询一次，视频就绪前卡片用纯前端效果（推镜 + 光影扫过、无 LIVE 标），就绪后显示 LIVE 标并播放真视频。视频经 `GET /api/scene/video/[id]` 读取（支持 Range，iOS Safari 需要；他人 404）。Kling 原始输出约 1080p、14–17MB，未在服务端转码。
+- `<LivePhoto>`（`components/live/`）：桌面悬停约 150ms、手机长按约 300ms（`navigator.vibrate` 可用时轻震一次）开始，松开或移出回到静态图；按下时弹簧放大到约 1.04、预先模糊的一层同图淡入再淡出、视频从第一帧淡入、LIVE 圆环描一圈。视频 `preload="none"`，首次激活才设置地址；减弱动态时只显示静态图。只动 transform / opacity（模糊层的 blur 为静态值，只改 opacity；LIVE 圆环为 14px SVG 的描边动画）。
+- 存储：`<userId>/avatars/scene-<id>.jpg|mp4`（沿用现有 key 规则）。3D 形象“一键删除”在 `lib/avatar/service.ts` 的 `deleteAll` 里多一行调用 `deleteAllSceneRenders()`，删除记录与文件。
+- 表：`scene_render`（id、user_id → user 级联删除、item_id、scene_id、status、image_key、video_key、video_status_url、error、created_at；索引 user_id + item_id），迁移 `drizzle/0004_scene_render.sql`；`supabase/rls.sql` 为它开启 RLS 并收回 Data API 权限。Supabase 上需执行 `npm run db:setup`（迁移 0004）后再执行一次 `supabase/rls.sql`。
+- 测试：`lib/scene/scenes.test.ts`（场景挑选、演示清单路径过滤）。fal 调用没有单元测试，真实 key 实测见 `demo-assets/T3报告.md`。
+
 ## 界面提示（D48）
 
 公司内部比赛版不显示免责类提示（占位数据、AI 生成示意、虚构主理人、合身未验证、规则模式、照片删除日期、第三方删除状态等）；身体数据填写即保存；3D 形象同意为一句话。后台的存储、30 天删除与一键删除规则（D47）不变。

@@ -29,6 +29,13 @@
       "when": 1792134803055,
       "tag": "0003_tryon",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792147963988,
+      "tag": "0004_scene_render",
+      "breakpoints": true
     }
   ]
 }

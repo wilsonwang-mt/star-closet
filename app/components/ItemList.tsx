@@ -5,6 +5,7 @@
 // 每个位置是一个单格 grid：旧单品与新单品叠在同一格里交接，位置高度从一开始就按新单品排好，换装过程中不塌陷、不跳动。
 // 手动逐件替换走同一条路径（AnimatePresence 按单品 id 做 key：旧的淡出，新的稍后落入）。
 // 只动 transform / opacity；减弱动态时只淡入淡出。
+import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion, type Transition } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import ItemThumb from "./ItemThumb";
@@ -137,9 +138,11 @@ function Row({
   );
   return (
     <div className={`sc-glass sc-glass--row item-row${changed ? " sc-glass--changed" : ""}`}>
-      <ItemThumb name={it.name} image={it.image} color={it.color} />
+      <ItemThumb name={it.name} image={it.image} color={it.color} href={`/item/${it.id}`} />
       <div>
-        <div className="item-name">{it.name.replace(/^占位：/, "")}</div>
+        <Link href={`/item/${it.id}`} className="item-name" style={{ display: "block", color: "inherit", textDecoration: "none" }}>
+          {it.name.replace(/^占位：/, "")}
+        </Link>
         <div className="sc-meta">
           {it.category} · {it.color}
           {it.sizeNote ? ` · ${it.sizeNote}` : ""}
