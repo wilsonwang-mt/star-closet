@@ -16,7 +16,7 @@
 |---|---|---|---|
 | [T2](T2-演示素材.md) | fal 批量生成演示模特、场景上身图、Live 视频（预算上限 20 美元） | `feat/studio-demo-assets` | 先做 |
 | [T1](T1-演示视频.md) | Remotion 演示视频框架（90 秒，横竖两版） | `feat/studio-demo-video` | 等待 T2 生成结果时穿插做 |
-| T3 | 商品详情页 `/item/[id]`：上身效果与 Live 组件 | `feat/studio-item-detail` | 待派（指挥台工作流合并后） |
+| [T3](T3-商品详情页.md) | 商品详情页 `/item/[id]`：上身效果与 Live 组件（基于 origin/main） | `feat/studio-item-detail` | 已派，T2 出第一批素材后即可开始，可与 T2 并行 |
 | T4 | 冻结后的演示服务器、录屏与成片 | `feat/studio-demo-video` | 待派（21:00 冻结后） |
 
 功能冻结：2026-10-16 21:00（SGT）。比赛截止：2026-10-17 12:00。
