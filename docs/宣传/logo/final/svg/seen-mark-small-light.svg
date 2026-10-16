@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="370" viewBox="24 12 192 148"><defs>
+      <radialGradient id="m12b" cx="120" cy="92" r="78" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#8a6a36" stop-opacity="0.42"/><stop offset=".35" stop-color="#8a6a36" stop-opacity="0.16"/><stop offset="1" stop-color="#8a6a36" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="m12c" x1="0" y1="148" x2="0" y2="330" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#8a6a36" stop-opacity=".16"/><stop offset="1" stop-color="#8a6a36" stop-opacity="0"/>
+      </linearGradient>
+      <radialGradient id="m12f"><stop offset="0" stop-color="#8a6a36" stop-opacity=".32"/><stop offset="1" stop-color="#8a6a36" stop-opacity="0"/></radialGradient>
+      <filter id="m12g" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="7"/></filter>
+    </defs><g id="shoulders"><path d="M 36 148 Q 74 110 120 92 Q 166 110 204 148" fill="none" stroke="#1a150d" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/></g><g id="bar"><line x1="36" y1="148" x2="204" y2="148" stroke="#1a150d" stroke-width="11" stroke-linecap="round"/></g><g id="hook"><path d="M 98 40 A 22 22 0 1 1 133 57 Q 120 65 120 72" fill="none" stroke="#8a6a36" stroke-width="11" stroke-linecap="round"/></g><g id="bulb"><circle cx="120" cy="92" r="10.45" fill="#8a6a36"/></g></svg>

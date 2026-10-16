@@ -51,7 +51,7 @@ export default async function OutfitPage({ params }: { params: Promise<{ id: str
           {outfit.styleNote}
         </p>
       </section>
-      <Adapter outfit={outfit} catalog={catalog} aiEnabled={hasAiKey()} tryon={tryon} />
+      <Adapter outfit={outfit} catalog={catalog} aiEnabled={hasAiKey()} tryon={tryon} signedIn={Boolean(user)} />
     </>
   );
 }

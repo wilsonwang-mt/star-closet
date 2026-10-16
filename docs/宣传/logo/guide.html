@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>SEEN. 标识使用规范</title>
+<script src="seen-logo.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 2400px; height: 1500px; background: #0b0d10; color: #f4f2ed; font-family: "Songti SC", serif; padding: 64px 72px; display: grid; grid-template-columns: 1.1fr 1fr 1fr; grid-template-rows: auto 1fr 1fr; gap: 28px 40px; }
+  h1 { grid-column: 1 / -1; font-family: "Didot", serif; font-weight: 400; font-size: 34px; letter-spacing: .3em; color: #e8cf9c; }
+  h1 span { font-family: "Songti SC", serif; font-weight: 900; letter-spacing: .12em; color: #f4f2ed; margin-left: 24px; font-size: 30px; }
+  section { border-top: 1px solid rgba(244,242,237,.16); padding-top: 22px; }
+  h2 { font-size: 26px; font-weight: 900; margin-bottom: 14px; }
+  p, li { font-size: 19px; line-height: 1.75; color: #b9b2a6; }
+  li { list-style: none; } li b { color: #f4f2ed; font-weight: 700; }
+  .demo { margin-top: 18px; display: flex; align-items: center; gap: 30px; }
+  .clear { position: relative; padding: 46px; border: 1px dashed rgba(232,207,156,.55); }
+  .clear::after { content: "x"; position: absolute; left: 12px; top: 10px; font-family: "Didot", serif; font-size: 18px; color: #e8cf9c; }
+  .sw { display: flex; gap: 16px; margin-top: 16px; }
+  .chip { width: 150px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(244,242,237,.14); }
+  .chip div { height: 70px; } .chip p { font-size: 15px; line-height: 1.5; padding: 8px 10px; color: #b9b2a6; font-family: "Didot", serif; }
+  .no { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 14px; }
+  .no div { background: #15171c; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .no span { font-size: 16px; color: #d98a7a; }
+  svg { display: block; overflow: visible; }
+</style>
+</head>
+<body>
+  <h1>SEEN. <span>标识使用规范</span></h1>
+
+  <section>
+    <h2>安全边距与组合</h2>
+    <p>以字标中 <b style="color:#f4f2ed">E 的宽度</b> 为单位 x，标识四周至少留出 1x 空白。竖排用于封面、海报、片尾；横排用于网站顶栏和 PPT 页眉页脚。</p>
+    <div class="demo"><div class="clear" id="clear"></div></div>
+  </section>
+
+  <section>
+    <h2>两个光学尺寸</h2>
+    <ul>
+      <li><b>display</b>　字高 ≥ 48px：宣传片、海报、PPT 封面、发布会大屏。保留高反差与句点光晕。</li>
+      <li><b>text</b>　字高 16–48px：网站顶栏、PPT 页脚、文档。横笔加粗、字距放宽、句点不发光。</li>
+      <li><b>图形小尺寸版</b>　≤ 64px：网站小图标、头像角标，笔画加粗、无光晕。</li>
+      <li><b>最小尺寸</b>　字标字高 16px，图形宽 24px；更小时只用图形。</li>
+    </ul>
+    <div class="demo" id="sizes"></div>
+  </section>
+
+  <section>
+    <h2>颜色</h2>
+    <p>默认用深底。浅底版本只用于浅色 PPT 与文档，不加光晕。灯泡与问号挂钩永远是香槟色，其余部分为单一墨色。</p>
+    <div class="sw">
+      <div class="chip"><div style="background:#0b0d10"></div><p>Night #0B0D10</p></div>
+      <div class="chip"><div style="background:#f4f2ed"></div><p>Ivory #F4F2ED</p></div>
+      <div class="chip"><div style="background:#e8cf9c"></div><p>Champagne #E8CF9C</p></div>
+    </div>
+    <div class="sw">
+      <div class="chip"><div style="background:#f4efe6"></div><p>Cream #F4EFE6</p></div>
+      <div class="chip"><div style="background:#1a150d"></div><p>Ink #1A150D</p></div>
+      <div class="chip"><div style="background:#8a6a36"></div><p>Champagne Deep #8A6A36</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>宣传片与动效</h2>
+    <ul>
+      <li>使用 <b>seen-motion-hero.svg</b>，部件已分组命名：hook、bulb、shoulders、bar、glow、beam、S、E1、E2、N、period。</li>
+      <li><b>揭幕顺序</b>：问号挂钩出现 → 点亮灯泡（bulb）→ 光晕铺开（glow）→ 衣架线条描出（shoulders、bar）→ 光束落地（beam）→ 字母依次浮现 → 句点最后亮起。</li>
+      <li>辅助图形 ≡ 用于加载动画（三道横杆依次亮起）与周边印花，不与主标识并排使用。</li>
+    </ul>
+  </section>
+
+  <section style="grid-column: span 2">
+    <h2>不要这样做</h2>
+    <div class="no" id="no"></div>
+  </section>
+<script>
+  const { mark, MARK_BOX, wordmark } = SEEN;
+  const vb = (s) => s.split(" ").map(Number);
+  const sv = (w, box, inner, style = "") => { const [, , bw, bh] = vb(box); return `<svg width="${w}" height="${w * bh / bw}" viewBox="${box}" style="${style}">${inner}</svg>`; };
+
+  // 竖排组合 + 安全边距
+  const wd = wordmark();
+  document.getElementById("clear").innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:20px">${sv(220, MARK_BOX.std, mark())}${sv(230, wd.box, wd.svg)}</div>`;
+
+  // 尺寸示例
+  const wt = wordmark({ size: "text" });
+  document.getElementById("sizes").innerHTML =
+    `<div>${sv(300, wd.box, wd.svg)}<p style="font-size:14px">display · 字高 72px</p></div>` +
+    `<div>${sv(110, wt.box, wt.svg)}<p style="font-size:14px">text · 字高 26px</p></div>` +
+    `<div>${sv(46, MARK_BOX.small, mark({ mode: "small" }))}<p style="font-size:14px">图形 小尺寸</p></div>`;
+
+  // 错误示例
+  const bad = [
+    [sv(260, wd.box, wd.svg, "transform:scaleX(1.35)"), "不要拉伸或压扁"],
+    [sv(260, wd.box, wd.svg.replaceAll("#e8cf9c", "#4fa3ff").replaceAll("#fff6e0", "#cfe6ff")), "不要改变灯泡颜色"],
+    [`<div style="background:#f4efe6;padding:14px 20px;border-radius:8px">${sv(220, wd.box, wordmark({ theme: "light", glow: false }).svg.replace(/#8a6a36/g, "#e8cf9c"))}</div>`, "浅底不要用浅香槟色句点"],
+    [sv(120, wd.box, wd.svg), "字高小于 48px 不要用 display 版"],
+  ];
+  document.getElementById("no").innerHTML = bad.map(([h, t]) => `<div>${h}<span>✕ ${t}</span></div>`).join("");
+</script>
+</body>
+</html>

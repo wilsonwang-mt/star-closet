@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Nova 揭幕海报 ④</title>
+<!--
+  用法：poster4.html?f=portrait|wide&t=90&u=分钟
+  揭幕：顶灯衣架点亮，光束落地，SEEN. 站在光里。版式沿用海报①：竖排宋体 Black、左上倒计时、底部时间地点。
+-->
+<script src="../logo/seen-logo.js"></script>
+<style>
+  :root { --bg: #08090b; --ink: #f4f2ed; --ink-2: #b9b2a6; --champ: #e8cf9c;
+    --serif: "Songti SC", "STSong", serif; --latin: "Didot", "Bodoni 72", serif; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); }
+  body { width: var(--w); height: var(--h); overflow: hidden; color: var(--ink); font-family: var(--serif); position: relative; }
+  .vignette { position: absolute; inset: 0; background: radial-gradient(90% 70% at 50% 55%, transparent 40%, rgba(0,0,0,.7)); }
+  .grain { position: absolute; inset: 0; opacity: .12; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  #hero { position: absolute; left: var(--hx); top: var(--hy); }
+  .lead { position: absolute; top: var(--vtop); right: var(--vright); writing-mode: vertical-rl; font-weight: 900; font-size: var(--lead); line-height: 1.1; letter-spacing: .04em; }
+  .lead .em { color: var(--champ); }
+  .countdown { position: absolute; left: var(--fx); top: var(--ctop); }
+  .countdown .label { font-size: 22px; font-weight: 700; color: var(--ink-2); letter-spacing: .2em; }
+  .countdown .num { margin-top: .05em; font-family: var(--latin); font-size: var(--c-num); line-height: 1; color: var(--champ); letter-spacing: -.02em; }
+  .countdown .unit { font-family: var(--serif); font-weight: 700; font-size: 30px; color: var(--ink); letter-spacing: .1em; margin-left: .3em; }
+  .footer { position: absolute; left: var(--fx); bottom: var(--fy); font-size: 24px; font-weight: 700; color: var(--champ); letter-spacing: .12em; white-space: nowrap; }
+  .footer .latin { font-family: var(--latin); letter-spacing: .08em; }
+  .footer .dot { padding: 0 .45em; }
+  body.portrait { --w: 1080px; --h: 1440px; --hx: 150px; --hy: 300px; --hw: 780px; --vtop: 96px; --vright: 64px; --lead: 96px; --fx: 64px; --fy: 72px; --ctop: 72px; --c-num: 132px; }
+  body.wide { --w: 1920px; --h: 1080px; --hx: 520px; --hy: 70px; --hw: 760px; --vtop: 84px; --vright: 110px; --lead: 104px; --fx: 104px; --fy: 72px; --ctop: 76px; --c-num: 124px; }
+  svg { display: block; overflow: visible; }
+</style>
+</head>
+<body>
+  <div id="hero"></div>
+  <div class="vignette"></div>
+  <div class="grain"></div>
+  <div class="lead"><div>三个问题</div><div>一个<span class="em">答案</span></div></div>
+  <div class="countdown"><div class="label">距离发布会还有</div><div class="num"><span id="t"></span><span class="unit" id="u"></span></div></div>
+  <div class="footer"><span class="latin">2026.10.17&nbsp;09:30</span><span class="dot">·</span>imToken 杭州<span class="dot">·</span><span class="latin">Nova</span> 新品发布会</div>
+<script>
+  const q = new URLSearchParams(location.search);
+  const f = q.get("f") || "portrait";
+  document.body.className = f;
+  document.getElementById("t").textContent = q.get("t") || "90";
+  document.getElementById("u").textContent = q.get("u") || "分钟";
+  const { mark, MARK_BOX, wordmark } = SEEN;
+  const [bx, by, bw, bh] = MARK_BOX.hero.split(" ").map(Number);
+  const wm = wordmark(), ww = 196, wh = ww * 106 / (wm.w + 8);
+  const hw = parseFloat(getComputedStyle(document.body).getPropertyValue("--hw"));
+  document.getElementById("hero").innerHTML =
+    `<svg width="${hw}" height="${hw * bh / bw}" viewBox="${MARK_BOX.hero}">${mark({ mode: "hero" })}` +
+    `<svg x="${120 - ww / 2}" y="${314 - wh / 2}" width="${ww}" height="${wh}" viewBox="${wm.box}">${wm.svg}</svg></svg>`;
+</script>
+</body>
+</html>

@@ -1,4 +1,6 @@
-# Star Closet 比赛版应用
+# SEEN. 比赛版应用
+
+品牌 SEEN.（原工作名 Star Closet / 明星衣橱），标识源文件与使用规范见 `docs/宣传/logo/`。
 
 手机优先的 Next.js（App Router）+ TypeScript 网站。授权范围见仓库根目录 [AGENTS.md](../AGENTS.md)；部署未获授权，目前只在本机运行。
 
@@ -18,7 +20,7 @@
   - 改编动效：等待卡列出当前这一套并有光束扫过（至少停留 0.9s），结果出现时被换掉的单品淡出、新单品从上方落入回弹，总价滚动到新值。
   - 改编结果可以逐件替换为同类单品。
 - 账号：邮箱 + 密码注册/登录/退出（better-auth），登录与注册错误按错误码显示中文。退出登录在导航里（手机在菜单面板底部，桌面点首字母圆钮打开账号面板），`/profile` 底部也保留一个。
-- 导航（`components/SiteNav.tsx`）：顶部悬浮玻璃胶囊（视觉规范 §6.1）。左侧 STAR CLOSET 刊头字；桌面直接排列 衣橱 / 试衣间 / 我的档案（未登录为“登录”）与主题切换；手机（<640px）把链接收进圆形菜单按钮，展开为玻璃下拉面板。向下滚动累计超过 8px 收起，向上滚动、回到顶部或键盘焦点进入时出现，首次加载先显示 2 秒；菜单打开时不收起。在 `/`、`/closet/*`、`/outfit/*` 高亮“衣橱”。
+- 导航（`components/SiteNav.tsx`）：顶部悬浮玻璃胶囊（视觉规范 §6.1）。左侧 SEEN. 横排标识（`public/brand/`，深浅主题各一份）；桌面直接排列 衣橱 / 试衣间 / 我的档案（未登录为“登录”）与主题切换；手机（<640px）把链接收进圆形菜单按钮，展开为玻璃下拉面板。向下滚动累计超过 8px 收起，向上滚动、回到顶部或键盘焦点进入时出现，首次加载先显示 2 秒；菜单打开时不收起。在 `/`、`/closet/*`、`/outfit/*` 高亮“衣橱”。
 - 个人档案（`/profile`）：昵称、简介、城市、风格与颜色标签、尺码、预算；身高体重须单独勾选同意才保存，可一键清除。只有本人可读写，可见性固定为私密。
 - 个人试衣间：登录后保存原搭配或改编版本；勾选单品生成购物清单，外链到商家页面购买。
 
@@ -28,6 +30,15 @@
 - 视觉：按 [视觉规范 v5](../docs/design/visual-v04/视觉规范.md)。`app/tokens.css` 复制自 `docs/design/visual-v04/tokens.css`，改动先改源文件再同步；场景图在 `public/scenes/`。深色默认，可切换浅色或跟随系统（cookie `sc-theme`）。
 
 尚未接入：单品可旋转 GLB、打赏、站内支付。场景视频（`public/scenes/*-web.mp4`）只加载并播放当前显示的那一段，减弱动态时只显示首帧。试衣间里的咖啡馆生活场景只是标注了“AI 生成场景示意 · 合身未验证”的示意图。
+
+## 悬浮对话（D66）
+
+全站右下角的圆形入口（首页标题旁还有一枚「说场合和预算」引导胶囊），说出场合、风格、预算、性别或想像谁，对话里直接出卡片：衣橱卡 → `/closet/[id]`，搭配卡 → `/outfit/[id]`，功能卡 → 试衣间、3D 形象、2D 试穿（有 `FAL_KEY` 才出现）、档案、登录。手机是底部抽屉，桌面是右下角浮窗；对话存在 sessionStorage，路由切换与刷新都不丢；遇到吸底操作条（`.cta-bar`）时，手机上入口停靠进操作条右侧、成为主按钮旁的圆形次按钮（操作条加 `data-dock-reserve` 留位），其他会挡住入口的元素（`[data-dock-avoid]`）则把入口抬到它上方。
+
+- 接口：`POST /api/chat` 返回 NDJSON 流。第一行是规则层结果（`lib/locate/core.ts`：像谁 / 风格 / 场合 / 性别 / 预算 / 否定六个信号，复用 `parseConstraints`、`allowedGenders`；目录快照在服务端内存缓存 5 分钟，根布局会提前读一次），本机实测首字节约 10ms；随后是 Claude 的流式文字，最后是它用工具（`show_outfits` / `show_closets` / `open_page` / `suggest_replies`）选出的卡片。工具只返回 id，服务端按目录与性别校验后才转成卡片。
+- 模型：`claude-opus-5-5`，effort `low`，**fast mode**（`speed: "fast"`，beta `fast-mode-2026-02-01`，价格为标准 2 倍，Claude API 研究预览；2026-10-16 用户决定）；未开通或被限流且还没流出文字时自动用标准速度重试一次（标准速度下带服务端 `fallbacks: "default"`）。目录在系统提示里缓存。`CHAT_SPEED=standard` 关掉 fast，`CHAT_MODEL` 换模型。本机实测（2026-10-17，4 句样例）fast：4 句样例中 3 句首段文字 1.9–2.3 秒、整轮 2.6–3.2 秒（标准速度同 3 句 2.8–4.5 / 5.3–6.6 秒）；“暖一点的颜色”一句模型思考更久，fast 首字 9.5 秒、标准 10.7 秒。首字 15 秒、整轮 25 秒超时；没有 key、超时或出错时停在规则结果，不显示“规则模式”（D48）。
+- 用户的话不落库，服务端日志只记错误类型。
+- 测试：`lib/locate/locate.test.ts`（17 个样例，直接读 `data/catalog.json`）。
 
 ## 数字分身（原 3D 形象）
 
@@ -126,6 +137,7 @@ API：`GET /api/avatar/metaperson/token`、`POST /api/avatar/metaperson/import`�
 - 结果：快速一段存 `<userId>/avatars/tryon-<id>.jpg`，细化后另存 `tryon-<id>-hq.jpg` 并把 `result_key` 指过去（两张都随记录删除；快速那张保留到删除，避免正在读它的请求读空；整套为 `tryon-<id>.jpg`；改造前的旧结果为 `.png`），经 `GET /api/avatar/files/<key>` 读取，他人 404。删除时尽力取消还在跑的 fal 请求。3D 形象的“一键删除”同时调用 `deleteAllTryons()`：删除该用户全部 `tryon` 记录、结果图与 `tryon_consent`（之后再试穿需重新同意），再清空用户存储前缀；单独清空存储前缀时，残留的 `tryon` 记录在下次读取或被用作底图时发现文件不存在即删除。
 - 表：`tryon`（id、user_id、source_look_id、source_outfit_id、outfit_snapshot、item_ids、applied_categories、status、result_key、error、created_at）、`tryon_consent`（user_id、consent_version、consent_at），迁移 `drizzle/0003_tryon.sql`；Supabase 上执行 `npm run db:setup` 后再执行一次 `supabase/rls.sql`。
 - 测试：`lib/tryon/tryon.test.ts`，fetch 模拟 fal 队列（提交 → 状态 → 结果）：品类映射与逐件叠加规则；两段式依次报排队 → 出图并细化中 → 换成清晰的一张，两张都存、都删；缓存命中不发请求、另一套复制结果；预热只跑 performance、不进穿搭进度、认领时补提交 quality 且不重复；细化中继续穿时底图用快速的一张；细化失败保留快速、快速失败等细化、两段都失败才失败；改造前遗留的处理中记录判为失败；`baseTryonId` 属于他人 / 失败 / 处理中 / 不存在 / 文件已删一律 404 且不调用 FASHN；鞋包配饰 422、不在这套里 404；整套逐步推进、中间步骤把结果地址交给下一步；过期正面照不再使用；试穿面板上传的正面照写入 30 天 `expires_at` 并清掉没用上的预热结果；无 key 与未同意（含预热）不发请求；清空存储后记录清理；3D 形象一键删除同时删除试穿记录与同意。
+- 前端轮询（`components/tryon/shared.tsx`）：间隔按两次请求的开始时间计（`pollDelay()`，最少 150 ms），链路慢时不会在每次响应之后再整段等待；测试 `lib/tryon/poll.test.ts`（模拟 fetch）。
 
 ## 商品详情页与上身效果（T3）
 
@@ -181,7 +193,7 @@ npm run dev                  # http://localhost:3000
 目录 v0.2、个人档案与 3D 形象之后，据各开发会话的记录，以下步骤都还没有在发起用户的 Supabase 上执行过（这些会话只用本地 PGlite，没有连接用户的 Supabase）：
 
 1. `.env.local` 设置 `DATABASE_URL`（transaction pooler 即可）；迁移需要会话模式连接，可另设 `DATABASE_MIGRATE_URL`（5432 端口）。
-2. 运行 `npm run db:setup`：按顺序执行尚未执行的迁移——0001（profile / avatar_photo / avatar_job）、0002（目录 v0.2 字段、`avatar_photo.expires_at`、外部任务字段）、0003（2D 试穿 `tryon` / `tryon_consent`）、0004（上身效果 `scene_render`）、0005（数字分身 `avatar_job.result_images`），再写入目录 v0.2。MetaPerson 不需要新表（沿用 `avatar_job`，provider 为 `metaperson`）。衣橱、搭配、单品都做 upsert，搭配与单品的对应关系整体重写；不删除旧行（试衣间引用单品编号），所以 v0.1 中编号不再使用的旧单品会留在库里。
+2. 运行 `npm run db:setup`：按顺序执行尚未执行的迁移——0001（profile / avatar_photo / avatar_job）、0002（目录 v0.2 字段、`avatar_photo.expires_at`、外部任务字段）、0003（2D 试穿 `tryon` / `tryon_consent`）、0004（上身效果 `scene_render`）、0005（数字分身 `avatar_job.result_images`）、0006（每日限次 `usage_counter`，D64），再写入目录 v0.2。MetaPerson 不需要新表（沿用 `avatar_job`，provider 为 `metaperson`）。衣橱、搭配、单品都做 upsert，搭配与单品的对应关系整体重写；不删除旧行（试衣间引用单品编号），所以 v0.1 中编号不再使用的旧单品会留在库里。
 3. 在 SQL Editor 再执行一次 `supabase/rls.sql`，为新表开启 RLS 并收回 Data API 权限。
 4. 如需把照片和 GLB 存到 Supabase：在 SQL Editor 执行 `supabase/storage.sql` 建私有桶 `avatar-private`，并在 `.env.local` 设置 `SUPABASE_URL` 与 `SUPABASE_SERVICE_ROLE_KEY`（只在服务端使用）。两项都有才启用，否则仍写本地 `.data/uploads/`。
 5. 每天运行一次 `npm run avatar:purge` 的定时任务（见上文“30 天删除”）。
@@ -196,6 +208,60 @@ npm run dev                  # http://localhost:3000
 - AI 改编（`claude-opus-5-5`，effort `low`）单次耗时约 10–13 秒。发起用户 2026-10-16 决定保持模型与速度，只加等待动画（`components/AdaptWaiting.tsx`）。
 
 连接串注意：把 `[YOUR-PASSWORD]` 整体（含方括号）换成密码；密码含 `@ # / ? %` 等字符需先做百分号编码。
+
+## 部署到 Vercel（受保护演示）
+
+授权范围见仓库根目录 AGENTS.md「2026-10-17 部署授权（受保护演示，D64）」：只允许开启 Deployment Protection 的演示部署，不公开上线、不绑自定义域名、不收款。部署、Vercel 账号与环境变量录入由发起用户本人操作；本节只写步骤与变量名，不写任何值。
+
+### 项目设置
+
+- Root Directory：`app`（Framework 自动识别为 Next.js；构建命令 `npm run build`，安装命令 `npm install`）。
+- 函数区域：`app/vercel.json` 已写 `"regions": ["sin1"]`，与 Supabase 新加坡区同地。
+- 函数时长：数字分身 `/api/avatar/twin` 300 秒、上身效果 `/api/scene` 120 秒、试穿 `/api/tryon*` 与改编、体型分析 60 秒（路由内 `maxDuration`），Pro 套餐都在上限内。
+- **Deployment Protection 必须开启，并覆盖所有部署（含 Production）**：优先 Password Protection（Pro 加购项）；未购买时用 Vercel Authentication + Shareable Links。部署后先确认未登录 Vercel、无密码时打不开页面。
+
+### 环境变量（只列名字；Production 与 Preview 分开录入，标记 Sensitive）
+
+必填（Vercel 上缺前三项任何一个，接口会直接报错并写明缺哪个，不会退回本地 PGlite 或本地文件，见 `lib/env.ts`）：
+
+- `DATABASE_URL`（Supabase transaction pooler，6543 端口）
+- `SUPABASE_URL`、`SUPABASE_SERVICE_ROLE_KEY`（私有桶 `avatar-private`；service role key 只在服务端使用，不能加 `NEXT_PUBLIC_` 前缀）
+- `BETTER_AUTH_SECRET`（正式环境新生成）
+- `BETTER_AUTH_URL`（线上地址，如 `https://<项目名>.vercel.app`；本次部署的 `https://$VERCEL_URL` 会自动加入 trustedOrigins，https 下 cookie 自动 Secure）
+
+按需：
+
+- `ANTHROPIC_API_KEY`（改编、体型分析；建议设花费上限的正式 key）
+- `FAL_KEY`、`TRYON_PROVIDER`、`AVATAR3D_PROVIDER`、`AVATAR3D_MAX_POLL_SECONDS`、`TWIN_QUEUE_POLL_MS`
+- `AVATARSDK_CLIENT_ID`、`AVATARSDK_CLIENT_SECRET`、`AVATARSDK_EXPORT_HOSTS`（MetaPerson，已停用）
+- 每日上限覆盖（正整数，不填用默认）：`QUOTA_ADAPT`（100）、`QUOTA_TRYON`（60，试衣间与一键试穿共用）、`QUOTA_SCENE`（30）、`QUOTA_TWIN`（10）、`QUOTA_BODY_ANALYSIS`（20）
+
+不要在 Vercel 上设置：`PGLITE_DIR`、`UPLOADS_DIR`（本地专用）；`DATABASE_MIGRATE_URL` 只在本机跑迁移时用。
+
+### 部署前在 Supabase 上执行（本机，不在 Vercel 构建时跑）
+
+1. 本机 `.env.local` 设置 `DATABASE_URL` 与 `DATABASE_MIGRATE_URL`（5432 会话模式），运行 `npm run db:setup`：执行到 0006（`usage_counter`）并写入目录。
+2. SQL Editor 整份执行 `supabase/rls.sql`（为 `usage_counter` 等新表开启 RLS、收回 anon / authenticated 权限）；未建桶时再执行 `supabase/storage.sql`。
+3. 用 Supabase 安全顾问（Security Advisor）复查：应只剩“已开 RLS 但无策略”的 INFO。
+4. 删除或改密测试账号（见 AGENTS.md D64 节）。
+
+### 私有文件与响应大小
+
+Vercel 函数响应上限 4.5 MB。`/api/avatar/files/*`（照片、试穿图、GLB）与 `/api/scene/video/<id>`（Live 视频）在校验登录与归属后，Supabase 存储时 302 跳到 60–300 秒有效的签名链接（`Cache-Control: private, no-store`），不经函数转发；本地存储时照旧直接返回字节。
+
+### 部署后冒烟检查
+
+- [ ] 不带密码 / 未登录 Vercel 打开站点与任意 `/api/*`：被 Deployment Protection 拦下。
+- [ ] 注册新账号、退出、再登录；刷新后仍保持登录（cookie 为 Secure）。
+- [ ] 未登录点“改编这一套”跳到登录页；登录后改编成功（AI 或规则兜底）。
+- [ ] 改编结果“加入试衣间”，试衣间页能读回。
+- [ ] 个人页建数字分身：作业进入生成中，结束后三张形象图能显示（图片地址经 302 到 Supabase 签名链接）。
+- [ ] 商品详情页一键试穿：先出快图，随后自动换成清晰版。
+- [ ] 上身效果：场景图出现，Live 视频能播放（含 iPhone Safari）。
+- [ ] Vercel 运行日志（Runtime Logs）没有“缺少环境变量”、5xx 或函数超时；区域显示 sin1。
+- [ ] 当日超过上限时返回中文提示（可临时把某个 `QUOTA_*` 设为 1 验证后改回）。
+
+照片 30 天删除（`npm run avatar:purge`）目前没有配置 Vercel Cron，演示期间由本机定时执行或手动执行。
 
 ## 说明
 

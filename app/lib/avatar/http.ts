@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { QuotaError } from "@/lib/usage";
 import { MetapersonError } from "./metaperson";
 import { AvatarError } from "./service";
 
@@ -16,7 +17,7 @@ export async function withUser(fn: (userId: string) => Promise<Response>): Promi
   try {
     return await fn(user.id);
   } catch (e) {
-    if (e instanceof AvatarError || e instanceof MetapersonError) return json({ error: e.message }, e.status);
+    if (e instanceof AvatarError || e instanceof MetapersonError || e instanceof QuotaError) return json({ error: e.message }, e.status);
     console.error("[avatar]", e instanceof Error ? e.message : "unknown error");
     return json({ error: "服务暂时不可用，请稍后再试" }, 500);
   }

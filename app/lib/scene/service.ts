@@ -274,13 +274,12 @@ export async function deleteAllSceneRenders(userId: string): Promise<void> {
 }
 
 /** 读取本人的 Live 视频（他人或不存在返回 null）。 */
-export async function readSceneVideo(userId: string, id: string) {
+/** 本人这条上身效果的 Live 视频存储 key；不存在、不属于本人或视频还没生成时返回 null。 */
+export async function sceneVideoKey(userId: string, id: string): Promise<string | null> {
   const rows = await db
-    .select()
+    .select({ videoKey: schema.sceneRender.videoKey })
     .from(schema.sceneRender)
     .where(and(eq(schema.sceneRender.id, id), eq(schema.sceneRender.userId, userId)))
     .limit(1);
-  const key = rows[0]?.videoKey;
-  if (!key) return null;
-  return getStorage().get(key);
+  return rows[0]?.videoKey ?? null;
 }

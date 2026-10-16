@@ -11,7 +11,7 @@ type Props = { params: Promise<{ id: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const c = await getCuratorById(id);
-  return { title: c ? `${c.closetName.replace(/^占位：/, "")} · Star Closet` : "Star Closet" };
+  return c ? { title: c.closetName.replace(/^占位：/, "") } : {};
 }
 
 // 衣橱页：全屏场景 + 衣橱信息 + 这间衣橱的全部搭配（核心路径：选择衣橱 → 进入空间 → 点搭配 → 详情 → 商家页面）。

@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { readBodyLimited } from "@/lib/avatar/http";
 import { getItemsByIds } from "@/lib/catalog";
 import { createScenes, getSceneState, SceneError } from "@/lib/scene/service";
+import { withQuota } from "@/lib/usage";
 
 // 商品详情页“上身效果”（T3）。
 // GET ?itemId=I011：本人这件单品的上身效果（未登录返回 signedIn:false）；视频生成中时每次 GET 推进一次轮询。
@@ -41,7 +42,8 @@ export async function POST(req: Request) {
     if (!ITEM_RE.test(itemId)) throw new SceneError(400, "请求格式不对");
     const [item] = await getItemsByIds([itemId]);
     if (!item) throw new SceneError(404, "没有找到这件单品");
-    return json(await createScenes(user.id, item, { consent: body?.consent === true }), 201);
+    // 每用户每日上身效果上限（D64），超限 429（QuotaError 带 status，由下方 catch 统一返回）。
+    return json(await withQuota(user.id, "scene", () => createScenes(user.id, item, { consent: body?.consent === true })), 201);
   } catch (e) {
     if (e instanceof SceneError) return json({ error: e.message }, e.status);
     const status = (e as { status?: unknown })?.status;
