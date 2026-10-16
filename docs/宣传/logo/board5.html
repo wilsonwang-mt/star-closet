@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>LOOK logo 草图 v5</title>
+<!--
+  v5：品牌英文改为 LOOK（看 + 一身造型）。核心是 LOOK 里的两个 O。
+  L1 OO 是一双眼睛（香槟瞳孔侧目）  L2 OO 是一副眼镜  L3 整个词挂在问号挂钩上
+  L4 一只眼睁、一只眼眨（wink）  L5 衣架×眼睛图形 + LOOK 字标  L6 中文组合「衣见 LOOK」
+  每格右下角为 48px 小图标测试。
+-->
+<style>
+  :root { --bg: #0b0d10; --panel: #111318; --ink: #f4f2ed; --ink-3: #8a8378; --champ: #e8cf9c; --rule: rgba(244,242,237,.12); }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 2100px; height: 1400px; background: var(--rule); display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr 1fr; gap: 2px; color: var(--ink); }
+  .panel { position: relative; background: var(--panel); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px; }
+  .tag { position: absolute; left: 26px; top: 22px; font-family: "Didot", serif; font-size: 20px; letter-spacing: .2em; color: var(--ink-3); }
+  .tag b { color: var(--champ); font-weight: 400; margin-right: .6em; }
+  .tag span { font-family: "Songti SC", serif; letter-spacing: .08em; }
+  .word { display: flex; align-items: baseline; font-family: "Didot", "Bodoni 72", serif; font-size: 150px; line-height: 1; color: var(--ink); }
+  .word .ch { display: inline-block; }
+  .word svg { display: inline-block; vertical-align: baseline; margin: 0 6px; }
+  .plain { font-family: "Didot", serif; font-size: 70px; letter-spacing: .3em; padding-left: .3em; }
+  .cn { font-family: "Songti SC", serif; font-weight: 900; font-size: 96px; letter-spacing: .1em; }
+  .mini { position: absolute; right: 26px; bottom: 26px; width: 56px; height: 56px; border-radius: 13px; background: var(--bg); border: 1px solid rgba(244,242,237,.16); display: flex; align-items: center; justify-content: center; }
+  .rel { position: relative; }
+  svg { overflow: visible; }
+</style>
+</head>
+<body>
+  <div class="panel" id="p1"><div class="tag"><b>L1</b><span>OO 是一双眼睛</span></div></div>
+  <div class="panel" id="p2"><div class="tag"><b>L2</b><span>OO 是一副眼镜</span></div></div>
+  <div class="panel" id="p3"><div class="tag"><b>L3</b><span>挂起来的 LOOK</span></div></div>
+  <div class="panel" id="p4"><div class="tag"><b>L4</b><span>眨眼</span></div></div>
+  <div class="panel" id="p5"><div class="tag"><b>L5</b><span>衣架 × 眼睛 + LOOK</span></div></div>
+  <div class="panel" id="p6"><div class="tag"><b>L6</b><span>中英组合</span></div></div>
+<script>
+  const INK = "#f4f2ed", CHAMP = "#e8cf9c";
+  // Didot 式的 O：左右粗、上下细（外椭圆减内椭圆）
+  const W = 104, H = 110;
+  function didotO(extra = "", ink = INK) {
+    const cx = W / 2, cy = H / 2;
+    return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="margin-bottom:-3px">
+      <path fill-rule="evenodd" fill="${ink}" d="M ${cx} 0 A ${cx} ${cy} 0 1 0 ${cx} ${H} A ${cx} ${cy} 0 1 0 ${cx} 0 Z
+        M ${cx} 4 A ${cx - 17} ${cy - 4} 0 1 1 ${cx} ${H - 4} A ${cx - 17} ${cy - 4} 0 1 1 ${cx} 4 Z"/>${extra}</svg>`;
+  }
+  const pupil = (dx, dy, r = 15) => `<circle cx="${W / 2 + dx}" cy="${H / 2 + dy}" r="${r}" fill="${CHAMP}"/>`;
+  const L = '<span class="ch">L</span>', K = '<span class="ch">K</span>';
+  const HOOK = (y, c = CHAMP, sw = 6) => `<path d="M 79 ${y - 36} A 21 21 0 1 1 112 ${y - 20} Q 100 ${y - 12} 100 ${y}" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>`;
+  const EYE = (sw) => `${HOOK(66, CHAMP, sw)}<path d="M 22 118 Q 100 34 178 118 Q 100 164 22 118 Z" fill="none" stroke="${INK}" stroke-width="${sw}" stroke-linejoin="round"/><circle cx="100" cy="108" r="17" fill="${CHAMP}"/>`;
+  const mini = (svg) => `<div class="mini">${svg}</div>`;
+
+  // L1 一双眼睛：瞳孔一起看向右上
+  p1.insertAdjacentHTML("beforeend",
+    `<div class="word">${L}${didotO(pupil(14, -12))}${didotO(pupil(14, -12))}${K}</div>` +
+    mini(`<svg width="44" height="24" viewBox="0 0 ${W * 2 + 10} ${H}"><g>${didotO(pupil(14, -12)).replace(/<\/?svg[^>]*>/g, "")}</g><g transform="translate(${W + 10} 0)">${didotO(pupil(14, -12)).replace(/<\/?svg[^>]*>/g, "")}</g></svg>`));
+
+  // L2 一副眼镜：均匀细框 + 香槟鼻梁 + 镜片反光
+  const lens = (glint) => `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="margin-bottom:-3px"><circle cx="${W / 2}" cy="${H / 2}" r="${H / 2 - 4}" fill="none" stroke="${INK}" stroke-width="8"/>${glint ? `<path d="M ${W / 2 - 26} ${H / 2 - 8} A 28 28 0 0 1 ${W / 2 - 6} ${H / 2 - 28}" fill="none" stroke="${CHAMP}" stroke-width="5" stroke-linecap="round"/>` : ""}</svg>`;
+  p2.insertAdjacentHTML("beforeend",
+    `<div class="word rel">${L}${lens(true)}<svg width="28" height="${H}" viewBox="0 0 28 ${H}" style="margin:0 -12px;margin-bottom:-3px"><path d="M 0 ${H / 2 - 8} Q 14 ${H / 2 - 26} 28 ${H / 2 - 8}" fill="none" stroke="${CHAMP}" stroke-width="7" stroke-linecap="round"/></svg>${lens(true)}${K}</div>` +
+    mini(`<svg width="44" height="22" viewBox="0 0 220 100"><circle cx="52" cy="54" r="42" fill="none" stroke="${INK}" stroke-width="12"/><circle cx="168" cy="54" r="42" fill="none" stroke="${INK}" stroke-width="12"/><path d="M 94 46 Q 110 26 126 46" fill="none" stroke="${CHAMP}" stroke-width="12" stroke-linecap="round"/></svg>`));
+
+  // L3 挂起来的 LOOK：L 的竖笔顶端长出问号挂钩
+  p3.insertAdjacentHTML("beforeend",
+    `<div class="word rel"><span class="ch rel">L<svg width="120" height="120" viewBox="0 0 200 200" style="position:absolute;left:-42px;top:-26px;"><path d="M 79 30 A 21 21 0 1 1 112 46 Q 100 54 100 66 L 100 100" fill="none" stroke="${CHAMP}" stroke-width="9" stroke-linecap="round"/></svg></span>${didotO()}${didotO()}${K}</div>` +
+    mini(`<svg width="40" height="40" viewBox="0 0 100 100"><path d="M 30 18 A 12 12 0 1 1 49 27 Q 42 32 42 38 L 42 86 L 76 86" fill="none" stroke="${INK}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M 30 18 A 12 12 0 1 1 49 27 Q 42 32 42 38 L 42 44" fill="none" stroke="${CHAMP}" stroke-width="9" stroke-linecap="round"/></svg>`));
+
+  // L4 眨眼：第一个 O 睁眼看你，第二个 O 闭成一道弧
+  const wink = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="margin-bottom:-3px"><path d="M 8 ${H / 2 + 4} Q ${W / 2} ${H / 2 + 46} ${W - 8} ${H / 2 + 4}" fill="none" stroke="${INK}" stroke-width="15" stroke-linecap="round"/></svg>`;
+  p4.insertAdjacentHTML("beforeend",
+    `<div class="word">${L}${didotO(pupil(0, 4, 17))}${wink}${K}</div>` +
+    mini(`<svg width="44" height="24" viewBox="0 0 ${W * 2 + 14} ${H}">${didotO(pupil(0, 4, 19)).replace(/<\/?svg[^>]*>/g, "")}<g transform="translate(${W + 14} 0)"><path d="M 8 ${H / 2 + 4} Q ${W / 2} ${H / 2 + 46} ${W - 8} ${H / 2 + 4}" fill="none" stroke="${INK}" stroke-width="17" stroke-linecap="round"/></g></svg>`));
+
+  // L5 衣架×眼睛图形 + LOOK
+  p5.insertAdjacentHTML("beforeend",
+    `<svg width="230" height="230" viewBox="0 0 200 200">${EYE(6)}</svg><div class="plain">LOOK</div>` +
+    mini(`<svg width="42" height="42" viewBox="0 0 200 200">${EYE(13)}</svg>`));
+
+  // L6 中英组合：衣见 + L4 字标
+  p6.insertAdjacentHTML("beforeend",
+    `<div class="cn">衣见</div><div class="word" style="font-size:96px;transform:scale(.7);margin-top:-30px">${L}${didotO(pupil(0, 4, 17))}${wink}${K}</div>`);
+</script>
+</body>
+</html>
