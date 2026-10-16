@@ -16,7 +16,7 @@ const globalForDb = globalThis as unknown as { db?: Db; dbKind?: DbKind };
 
 function create(): { db: Db; kind: DbKind } {
   // 生产环境缺 DATABASE_URL（Vercel 上还有 Supabase Storage 两个变量）时直接报错，不回落 PGlite（D64，见 lib/env.ts）。
-  assertDeployEnv();
+  assertDeployEnv(process.env, "db");
   const url = process.env.DATABASE_URL;
   if (url) {
     // Supabase transaction pooler（6543）不支持预备语句，需关闭。

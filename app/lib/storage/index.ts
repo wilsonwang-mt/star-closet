@@ -17,7 +17,7 @@ const globalForStorage = globalThis as unknown as { scStorage?: StorageDriver };
 export function getStorage(): StorageDriver {
   if (!globalForStorage.scStorage) {
     // Vercel 上缺 SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY 时直接报错，不回落只读的本地文件系统（D64，见 lib/env.ts）。
-    assertDeployEnv();
+    assertDeployEnv(process.env, "storage");
     const url = process.env.SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     globalForStorage.scStorage = url && key ? supabaseDriver(url, key) : localDriver();
