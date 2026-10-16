@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { after, before, beforeEach, test } from "node:test";
 import { pngWithMetadata } from "@/lib/avatar/testing";
-import { planTryon, stepFor, wearableInOrder, wearOn } from "./plan";
+import { notWornLabels, planTryon, stepFor, wearableInOrder, wearOn } from "./plan";
 
 // 临时目录里的 PGlite 与本地存储；fetch 全部被替换，不访问任何外部服务。测试图由代码生成。
 const dir = mkdtempSync(path.join(tmpdir(), "sc-tryon-"));
@@ -355,4 +355,16 @@ test("试穿卡上传的正面照写入 30 天 expires_at（D47），并替换�
   assert.equal(live.length, 1, "每个位置只保留一张");
   assert.ok(live[0].expiresAt, "新照片同样带期限");
   assert.equal(calls.length, 0);
+});
+
+test("notWornLabels：列出没穿到结果图上的单品类别，按展示类别去重", () => {
+  const items = [
+    { id: "D", category: "上装", displayCategory: "连衣裙" },
+    { id: "S", category: "鞋", displayCategory: "鞋" },
+    { id: "G", category: "包", displayCategory: "包" },
+    { id: "A1", category: "配饰", displayCategory: "配饰" },
+    { id: "A2", category: "配饰", displayCategory: null },
+  ];
+  assert.deepEqual(notWornLabels(items, ["D"]), ["鞋", "包", "配饰"]);
+  assert.deepEqual(notWornLabels(items.slice(0, 1), ["D"]), []);
 });
