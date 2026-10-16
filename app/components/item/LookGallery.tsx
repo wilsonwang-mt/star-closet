@@ -16,6 +16,20 @@ import s from "./LookGallery.module.css";
 
 type Phase = "idle" | "uploading" | "running" | "error";
 
+// 生成约 30 秒：按时间推进的阶段文案，让等待有节奏。只是叙述，不对应真实进度，也不显示百分比。
+const STAGES: { from: number; text: string }[] = [
+  { from: 0, text: "正在布景" },
+  { from: 8, text: "正在为你换上这件" },
+  { from: 18, text: "正在调光" },
+  { from: 28, text: "正在收尾" },
+];
+
+function stageAt(seconds: number): number {
+  let i = 0;
+  while (i + 1 < STAGES.length && seconds >= STAGES[i + 1].from) i++;
+  return i;
+}
+
 export default function LookGallery({
   itemId,
   itemName,
@@ -187,7 +201,13 @@ export default function LookGallery({
             {running ? "正在为你生成上身效果" : title}
           </h2>
           {running ? (
-            <p className="sc-meta">把你穿上「{itemName}」放进两个场景里 · {elapsed} 秒</p>
+            <>
+              {/* key 随阶段变化：每换一段文案就用 .wait-step 淡入浮起一次 */}
+              <p className={`serif-note wait-step ${s.stage}`} key={stageAt(elapsed)} role="status" aria-live="polite">
+                {STAGES[stageAt(elapsed)].text}…
+              </p>
+              <p className="sc-meta">把你穿上「{itemName}」放进两个场景里 · {elapsed} 秒</p>
+            </>
           ) : note ? (
             <p className="sc-meta">{note}</p>
           ) : own.length ? (

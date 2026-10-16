@@ -168,6 +168,9 @@
 .status { font-size: 12px; letter-spacing: .06em; line-height: 1.6; color: var(--sc-ink-2); margin: 0; }
 .status[data-tone="bad"] { color: var(--danger); }
 
+/* 同意项里的“隐私政策”：跟随文字的小链接，不抢勾选项的主次 */
+.policy { color: var(--sc-ink-2); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: .5px; }
+.policy:hover { color: var(--sc-ink); }
 .actions { display: flex; flex-wrap: wrap; gap: var(--sc-space-2) var(--sc-space-4); align-items: center; }
 
 /* 拍摄示意剪影（照片格空着时） */
@@ -374,7 +377,8 @@
 
 @media (min-width: 768px) {
   .grid { gap: var(--sc-space-4); }
-  .dock[data-open], .stageFloat { height: 640px; }
+  /* 桌面：舞台 + 上方保存按钮要在 1440×900 首屏放得下；矮屏按视口收窄，最低 480 */
+  .dock[data-open], .stageFloat { height: clamp(480px, calc(100dvh - 200px), 640px); }
 }
 
 @keyframes fade-only { from { opacity: 0; } to { opacity: 1; } }

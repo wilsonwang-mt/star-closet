@@ -7,7 +7,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import ItemThumb from "@/components/ItemThumb";
 import { reducedFade, springs } from "@/lib/motion";
-import { planTryon } from "@/lib/tryon/plan";
+import { notWornLabels, planTryon } from "@/lib/tryon/plan";
 import type { TryonContext, TryonView } from "@/lib/tryon/service";
 import { cleanName, CloseIcon, compress, HangerIcon, preload, readError } from "./shared";
 import s from "./TryOn.module.css";
@@ -97,6 +97,8 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
   const [phase, setPhase] = useState<Phase>("prep");
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<TryonView | null>(null);
+  // 没有逐件记录（appliedItemIds 为空）的旧结果不列，免得把已上身的也算成“未上身”
+  const notWorn = view?.appliedItemIds.length ? notWornLabels(items, view.appliedItemIds) : [];
   const [seconds, setSeconds] = useState(0);
   const [zoom, setZoom] = useState(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -370,7 +372,11 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
                   </motion.button>
                 </div>
               </div>
-              <p className={`sc-meta ${s.applied}`}>已试穿：{view.applied.join("、")}</p>
+              <p className={`sc-meta ${s.applied}`}>
+                已试穿：{view.applied.join("、")}
+              </p>
+              {/* 鞋、包、配饰不会上身：如实列出，避免与“这一套”的拼图对照时观感矛盾 */}
+              {notWorn.length ? <p className={`sc-meta ${s.applied} ${s.notWorn}`}>未上身：{notWorn.join("、")}</p> : null}
               {error ? <p className="error">{error}</p> : null}
               <div className={s.actions}>
                 <button type="button" className="sc-cta" onClick={onClose}>

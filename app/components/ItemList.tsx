@@ -144,7 +144,7 @@ function Row({
           {it.name.replace(/^占位：/, "")}
         </Link>
         <div className="sc-meta">
-          {it.category} · {it.color}
+          {it.displayCategory || it.category} · {it.color}
           {it.sizeNote ? ` · ${it.sizeNote}` : ""}
         </div>
         {it.reason ? (
@@ -154,7 +154,7 @@ function Row({
         ) : null}
         {onSwap && alts.length > 0 ? (
           <select className="swap" aria-label={`替换${it.name}`} value="" onChange={(e) => e.target.value && onSwap(it.id, e.target.value)}>
-            <option value="">换一件{it.category}…</option>
+            <option value="">换一件{it.displayCategory || it.category}…</option>
             {others.length && own.length ? <optgroup label="这间衣橱">{own.map(option)}</optgroup> : own.map(option)}
             {others.length ? <optgroup label="其他衣橱">{others.map(option)}</optgroup> : null}
           </select>

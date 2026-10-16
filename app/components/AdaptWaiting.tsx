@@ -8,7 +8,7 @@ import ItemThumb from "./ItemThumb";
 // 结果出来后由改编结果卡替换，结果卡先以同样的单品开场，再把被换的那几件换掉。
 const STEPS = ["读懂你的要求", "在这间衣橱里挑选", "保留原搭配的风格", "核对类别与预算", "写下每件的理由"];
 
-type Current = { id: string; name: string; image: string | null; color: string; category: string; price: number };
+type Current = { id: string; name: string; image: string | null; color: string; category: string; displayCategory?: string | null; price: number };
 
 const AdaptWaiting = forwardRef<HTMLElement, { aiEnabled: boolean; items: Current[] }>(function AdaptWaiting({ aiEnabled, items }, ref) {
   const [step, setStep] = useState(0);
@@ -43,7 +43,7 @@ const AdaptWaiting = forwardRef<HTMLElement, { aiEnabled: boolean; items: Curren
             <div>
               <div className="item-name">{it.name.replace(/^占位：/, "")}</div>
               <div className="sc-meta">
-                {it.category} · {it.color}
+                {it.displayCategory || it.category} · {it.color}
               </div>
             </div>
             <div className="price">¥{it.price}</div>

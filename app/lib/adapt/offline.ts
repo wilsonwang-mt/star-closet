@@ -203,13 +203,13 @@ export function adaptOffline(outfit: Outfit, request: string, pool: Item[]): Ada
     }
     if (v.kind === "exclude") {
       unmet.add(v.word!);
-      keptNotes.push(`目录内没有非${v.word}的${it.category}，保留原款「${clean(it.name)}」`);
+      keptNotes.push(`目录内没有非${v.word}的${it.displayCategory || it.category}，保留原款「${clean(it.name)}」`);
     } else if (v.kind === "flat") {
-      keptNotes.push(`目录内没有合适的平底${it.category}，保留原款「${clean(it.name)}」`);
+      keptNotes.push(`目录内没有合适的平底${it.displayCategory || it.category}，保留原款「${clean(it.name)}」`);
     } else if (v.kind === "occasion") {
-      keptNotes.push(`这间衣橱里没有更适合这个场合的${it.category}，保留原款「${clean(it.name)}」`);
+      keptNotes.push(`这间衣橱里没有更适合这个场合的${it.displayCategory || it.category}，保留原款「${clean(it.name)}」`);
     } else {
-      keptNotes.push(`没有找到有你尺码的同类${it.category}，保留原款「${clean(it.name)}」`);
+      keptNotes.push(`没有找到有你尺码的同类${it.displayCategory || it.category}，保留原款「${clean(it.name)}」`);
     }
   }
 
@@ -236,7 +236,7 @@ export function adaptOffline(outfit: Outfit, request: string, pool: Item[]): Ada
       if (taken.has(s.to.id)) continue;
       taken.add(s.to.id);
       const label = c.wantTags.length ? c.wantTags.join("、") : "舒适";
-      replace(s.from, s.to, `换成更适合${label}的${s.to.category}`);
+      replace(s.from, s.to, `换成更适合${label}的${s.to.displayCategory || s.to.category}`);
       n++;
     }
   }
@@ -261,7 +261,7 @@ export function adaptOffline(outfit: Outfit, request: string, pool: Item[]): Ada
         if (to && (!best || it.price - to.price > best.saving)) best = { from: it, to, saving: it.price - to.price };
       }
       if (!best) break;
-      replace(best.from, best.to, `为控制预算，换成更实惠的${best.to.category}`);
+      replace(best.from, best.to, `为控制预算，换成更实惠的${best.to.displayCategory || best.to.category}`);
     }
     // 4) 还超预算就去掉非必需件（说明由服务端按实际差异生成）
     //    先去掉最贵的那件非必需件，尽量少去掉
