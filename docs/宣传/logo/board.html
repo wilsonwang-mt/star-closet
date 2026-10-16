@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>SEEN 问号衣架 logo 草图</title>
+<!--
+  问号衣架：挂钩是问号的弧和竖，问号的点是衣架颈部（斜肩的起点）。
+  A1/A2 = 衣架托起单词（SEEN 即横杆，斜肩角度不同）；B = 图形 + 文字并排；C = 单独图形标与 App 图标。
+  导出：见 render.sh。配色取自 docs/design/visual-v04/tokens.css。
+-->
+<style>
+  :root { --bg: #0b0d10; --panel: #111318; --ink: #f4f2ed; --ink-3: #8a8378; --champ: #e8cf9c; --rule: rgba(244,242,237,.12); }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1600px; height: 1600px; background: var(--bg); color: var(--ink); font-family: "Songti SC", serif; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 2px; background: var(--rule); }
+  .panel { position: relative; background: var(--panel); display: flex; align-items: center; justify-content: center; }
+  .tag { position: absolute; left: 32px; top: 28px; font-family: "Didot", serif; font-size: 22px; letter-spacing: .2em; color: var(--ink-3); }
+  .tag b { color: var(--champ); font-weight: 400; margin-right: .6em; }
+  svg { overflow: visible; }
+  .word { font-family: "Didot", "Bodoni 72", serif; fill: var(--ink); }
+  .cn { font-family: "Songti SC", serif; font-weight: 900; fill: var(--ink); }
+</style>
+</head>
+<body>
+  <div class="panel"><div class="tag"><b>A1</b>衣架托起单词 · 平肩</div><svg id="a1" width="700" height="560"></svg></div>
+  <div class="panel"><div class="tag"><b>A2</b>衣架托起单词 · 斜肩</div><svg id="a2" width="700" height="600"></svg></div>
+  <div class="panel"><div class="tag"><b>B</b>图形 + 文字</div><svg id="b" width="720" height="300"></svg></div>
+  <div class="panel"><div class="tag"><b>C</b>图形标 · App 图标</div><svg id="c" width="720" height="420"></svg></div>
+<script>
+  const NS = "http://www.w3.org/2000/svg";
+  const CHAMP = "#e8cf9c", INK = "#f4f2ed";
+  const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent && parent.appendChild(e); return e; };
+
+  // 问号挂钩：局部坐标以“点”的圆心为原点；弧 + 竖 + 间隙 + 点
+  function hook(parent, x, y, s, sw = 6) {  // sw：局部笔画宽，小尺寸时加粗
+    const g = el("g", { transform: `translate(${x} ${y}) scale(${s})` }, parent);
+    el("path", { d: "M -21 -58 A 21 21 0 1 1 12 -42 Q 0 -34 0 -22 L 0 -15", fill: "none", stroke: CHAMP, "stroke-width": sw, "stroke-linecap": "round", "stroke-linejoin": "round" }, g);
+    el("circle", { cx: 0, cy: 0, r: sw * 1.05, fill: CHAMP }, g);
+    return g;
+  }
+  // 斜肩：从点（颈部）两侧引出
+  function shoulders(parent, x, y, xl, xr, yb, w, color = INK) {
+    el("path", { d: `M ${x} ${y} L ${xl} ${yb} M ${x} ${y} L ${xr} ${yb}`, fill: "none", stroke: color, "stroke-width": w, "stroke-linecap": "round" }, parent);
+  }
+
+  // A：单词就是衣架横杆
+  function lockupA(svg, angleDeg, fontSize) {
+    const W = +svg.getAttribute("width"), H = +svg.getAttribute("height");
+    const t = el("text", { class: "word", x: W / 2, y: 0, "text-anchor": "middle", "font-size": fontSize, "letter-spacing": fontSize * 0.28 }, svg);
+    t.textContent = "SEEN";
+    let bb = t.getBBox();
+    // letter-spacing 在末尾多留一段，向左补半格使视觉居中
+    t.setAttribute("x", W / 2 + fontSize * 0.14);
+    bb = t.getBBox();
+    const capTop = bb.y + bb.height * 0.2;
+    const pad = fontSize * 0.12;
+    const xl = bb.x - pad, xr = bb.x + bb.width - fontSize * 0.28 + pad;
+    const cx = (xl + xr) / 2;
+    const half = (xr - xl) / 2;
+    const drop = half * Math.tan(angleDeg * Math.PI / 180);
+    const s = fontSize / 70;
+    const hookH = 80 * s;
+    // 整体垂直居中
+    const total = hookH + drop + (bb.y + bb.height - capTop) + pad;
+    const top = (H - total) / 2;
+    const dotY = top + hookH;
+    const barY = dotY + drop;
+    const shift = barY + pad - capTop;
+    t.setAttribute("y", +t.getAttribute("y") + shift);
+    shoulders(svg, cx, dotY, xl, xr, barY, 3.2 * s);
+    hook(svg, cx, dotY, s);
+  }
+
+  lockupA(document.getElementById("a1"), 24, 150);
+  lockupA(document.getElementById("a2"), 40, 140);
+
+  // C：单独图形标（完整衣架：钩 + 点 + 斜肩 + 横杆）
+  function mark(parent, x, y, s, sw = 6, barColor = INK) {
+    const g = el("g", {}, parent);
+    const half = 68 * s, drop = 40 * s;
+    el("path", { d: `M ${x} ${y} L ${x - half} ${y + drop} L ${x + half} ${y + drop} Z`, fill: "none", stroke: barColor, "stroke-width": sw * s, "stroke-linejoin": "round" }, g);
+    hook(g, x, y, s, sw);
+    return g;
+  }
+
+  // B：图形 + 文字并排，下附中文名
+  (() => {
+    const svg = document.getElementById("b");
+    mark(svg, 120, 158, 1.25);
+    const t = el("text", { class: "word", x: 250, y: 200, "font-size": 128, "letter-spacing": 30 }, svg); t.textContent = "SEEN";
+    const c = el("text", { class: "cn", x: 256, y: 258, "font-size": 40, "letter-spacing": 22, fill: INK }, svg); c.textContent = "衣见";
+  })();
+
+  // C：大图形标 + App 图标 + 小尺寸
+  (() => {
+    const svg = document.getElementById("c");
+    mark(svg, 170, 210, 2.0);
+    // App 图标
+    el("rect", { x: 380, y: 110, width: 200, height: 200, rx: 46, fill: "#0b0d10", stroke: "rgba(244,242,237,.18)" }, svg);
+    mark(svg, 480, 214, 1.05, 7.5);
+    // 小尺寸
+    el("rect", { x: 610, y: 186, width: 48, height: 48, rx: 11, fill: "#0b0d10", stroke: "rgba(244,242,237,.18)" }, svg);
+    mark(svg, 634, 213, 0.27, 13);
+  })();
+</script>
+</body>
+</html>
