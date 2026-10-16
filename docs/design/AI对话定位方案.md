@@ -6,7 +6,7 @@
 > 1. **入口**：右下角圆形玻璃入口挂在根布局，与 `SiteNav` 同级，每页都在。手机点开是底部抽屉（模态，带遮罩），桌面是右下角浮窗（非模态，可以边聊边看页面）。遇到吸底操作条（`.cta-bar`）时，手机上入口停靠进操作条右侧，成为主按钮旁的圆形次按钮（视觉规范 §2 第 4 层），操作条右侧留位，不盖主按钮；带 `data-dock-avoid` 的元素则让入口抬到它上方。对话状态放在布局层，路由切换不丢；sessionStorage 持久，刷新后还在。
 > 2. **Gen UI**：回复是“一句话 + 可交互卡片 + 追问 chip”。卡片有三种：衣橱卡（封面、头像、衣橱名、tagline → `/closet/[id]`）、搭配卡（封面、N°、总价 → `/outfit/[id]`）、功能卡（试衣间、3D 形象、2D 试穿、个人档案、登录、全部衣橱）。AI 通过 Claude tool use 调用 `show_closets` / `show_outfits` / `open_page` / `suggest_replies`，只返回 id；服务端按目录校验 id（不在目录、性别不符都丢弃），再把 id 解析成卡片数据，前端只按数据渲染。
 > 3. **速度**：服务端先跑规则（§3 的解析与打分，`lib/locate/`），第一行 NDJSON 在目录读取后立刻返回卡片和一句话（目录在服务端内存缓存 5 分钟）；随后流式输出 Claude 的文字，结束时用 AI 的卡片替换规则卡片。没有 `ANTHROPIC_API_KEY`、超时（首字 10 秒、整轮 25 秒）或出错时停在规则结果，不加任何“规则模式”提示（D48）。
-> 4. **模型**：按 claude-api skill 的默认规则沿用 `claude-opus-5-5`，`effort: low`，流式输出，`maxRetries: 0`，目录放进可缓存的系统提示，开启服务端 `fallbacks: "default"`。可用环境变量 `CHAT_MODEL` 换模型而不改代码。2026-10-16 晚用户确认：“Keep the chat on claude-opus-5-5 for now; the first feedback comes from the rule layer anyway.”首个反馈靠规则保证，不靠模型速度。
+> 4. **模型**：`claude-opus-5-5`，`effort: low`，**fast mode**（`speed: "fast"`，beta `fast-mode-2026-02-01`；用户随后说“采用 Opus Fast Mode 吧”），流式输出，`maxRetries: 0`，目录放进可缓存的系统提示。fast mode 未开通或被限流（400/403/404/429）且还没流出文字时，自动用标准速度重试一次；标准速度下开启服务端 `fallbacks: "default"`。`CHAT_SPEED=standard` 可关掉 fast，`CHAT_MODEL` 可换模型，都不改代码。实测fast：4 句样例中 3 句首段文字 1.9–2.3 秒、整轮 2.6–3.2 秒（标准速度同 3 句 2.8–4.5 / 5.3–6.6 秒）；“暖一点的颜色”一句模型思考更久，fast 首字 9.5 秒、标准 10.7 秒。首个反馈仍靠规则保证。
 > 5. **首页**：标题同一行加一枚引导胶囊“告诉我场合和预算”，点开就是同一个悬浮对话；不加筛选（D51）。
 > 6. **视觉**：玻璃、香槟金、Bodoni 引题，深浅两种主题都成立；开合用 `lib/motion.ts` 的弹簧，减弱动态只淡入。键盘可达：Esc 关闭并把焦点还给入口，手机抽屉内 Tab 循环；`role="dialog"`，最新回复进 `aria-live` 区。
 >

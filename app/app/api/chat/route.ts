@@ -16,7 +16,8 @@ export const dynamic = "force-dynamic";
 // 没有 ANTHROPIC_API_KEY、AI 超时或出错时停在规则结果；已流出半截文字则发 revert 撤回。界面不显示“规则模式”（D48）。
 // 用户的话只在内存里用于这次请求：不落库，日志只记错误类型。
 
-const FIRST_TOKEN_MS = 10_000;
+// 审美类的话（如“暖一点的颜色”）模型会多想一会儿，实测首字约 10 秒；规则结果已经先到，这里宁可多等
+const FIRST_TOKEN_MS = 15_000;
 const TOTAL_MS = 25_000;
 
 const Turn = z.object({

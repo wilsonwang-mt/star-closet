@@ -8,10 +8,16 @@ import { genderAllows, PAGE_KEYS, type LocateCatalog, type LocateQuery, type Loc
 import { availablePages, closetCard, outfitCard, pageCard, pagesForPrompt } from "./catalog";
 import type { ChatCard, ChatTurn } from "./protocol";
 
-// 默认沿用项目里的 Opus 5.5（effort low）；要更快可在环境变量里换模型，不改代码。
+// Opus 5.5（effort low）+ fast mode（2026-10-16 用户决定，D56）：同一个模型，输出速度更快，价格为标准的 2 倍。
+// fast mode 是 Claude API 的研究预览（beta `fast-mode-2026-02-01`），只支持 Opus 5.5 / Opus 5 / Opus 4.8；
+// CHAT_SPEED=standard 可关掉，CHAT_MODEL 可换模型，都不改代码。
 const MODEL = process.env.CHAT_MODEL || "claude-opus-5-5";
-// 服务端拒绝时自动换模型重试（Haiku 不支持该参数）
+const FAST = process.env.CHAT_SPEED !== "standard" && /^claude-opus-(5-5|5|4-8)$/.test(MODEL);
+// 服务端拒绝时自动换模型重试（Haiku 不支持该参数）。fast mode 下不带：回退目标未必支持 fast，组合可能被拒；
+// 对话场景几乎不会触发拒绝，真被拒时调用方本来就停在规则结果。
 const WITH_FALLBACKS = /^claude-(opus|fable|sonnet-5-5)/.test(MODEL);
+// fast mode 未开通（400/403/404）或其独立限流（429）时，在还没流出文字的前提下改用标准速度重试一次
+const FAST_UNAVAILABLE = new Set([400, 403, 404, 429]);
 
 export function hasChatAi() {
   return Boolean(process.env.ANTHROPIC_API_KEY);
@@ -134,7 +140,7 @@ function hintFor(r: LocateResult) {
   return parts.filter(Boolean).join("；");
 }
 
-export type AiOutcome = { cards: ChatCard[]; chips: string[] };
+export type AiOutcome = { cards: ChatCard[]; chips: string[]; speed: "standard" | "fast" | null };
 
 /**
  * 流式调用：每段文字回调 onText；结束后返回校验过的卡片与追问。
@@ -153,27 +159,45 @@ export async function streamChatAi(opts: {
   const messages = toMessages(history, hintFor(rules));
   if (!messages.length) throw new Error("没有用户消息");
 
-  const stream = client.beta.messages.stream(
-    {
-      model: MODEL,
-      max_tokens: 2048,
-      ...(WITH_FALLBACKS ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const } : {}),
-      output_config: { effort: "low" },
-      system: [
-        { type: "text", text: RULES },
-        { type: "text", text: catalogForPrompt(catalog), cache_control: { type: "ephemeral" } },
-      ],
-      tools: tools(),
-      tool_choice: { type: "auto" },
-      messages,
-    },
-    { signal },
-  );
+  let streamed = false;
+  const run = async (fast: boolean) => {
+    const stream = client.beta.messages.stream(
+      {
+        model: MODEL,
+        max_tokens: 2048,
+        ...(fast
+          ? { betas: ["fast-mode-2026-02-01"], speed: "fast" as const }
+          : WITH_FALLBACKS
+            ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const }
+            : {}),
+        output_config: { effort: "low" },
+        system: [
+          { type: "text", text: RULES },
+          { type: "text", text: catalogForPrompt(catalog), cache_control: { type: "ephemeral" } },
+        ],
+        tools: tools(),
+        tool_choice: { type: "auto" },
+        messages,
+      },
+      { signal },
+    );
+    for await (const ev of stream) {
+      if (ev.type === "content_block_delta" && ev.delta.type === "text_delta" && ev.delta.text) {
+        streamed = true;
+        onText(ev.delta.text);
+      }
+    }
+    return stream.finalMessage();
+  };
 
-  for await (const ev of stream) {
-    if (ev.type === "content_block_delta" && ev.delta.type === "text_delta" && ev.delta.text) onText(ev.delta.text);
+  let final;
+  try {
+    final = await run(FAST);
+  } catch (e) {
+    if (!FAST || streamed || signal.aborted || !(e instanceof Anthropic.APIError) || !FAST_UNAVAILABLE.has(e.status ?? 0)) throw e;
+    console.error(`chat fast mode unavailable (${e.status}), retrying at standard speed`);
+    final = await run(false);
   }
-  const final = await stream.finalMessage();
   if (final.stop_reason === "refusal") throw new Error("模型拒绝了这次请求");
 
   const closets = new Map(catalog.closets.map((c) => [c.id, c]));
@@ -212,5 +236,5 @@ export async function streamChatAi(opts: {
         .slice(0, 3);
     }
   }
-  return { cards: [...closetCards, ...outfitCards, ...pageCards], chips };
+  return { cards: [...closetCards, ...outfitCards, ...pageCards], chips, speed: final.usage.speed ?? null };
 }

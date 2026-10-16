@@ -34,7 +34,7 @@
 全站右下角的圆形入口（首页标题旁还有一枚「说场合和预算」引导胶囊），说出场合、风格、预算、性别或想像谁，对话里直接出卡片：衣橱卡 → `/closet/[id]`，搭配卡 → `/outfit/[id]`，功能卡 → 试衣间、3D 形象、2D 试穿（有 `FAL_KEY` 才出现）、档案、登录。手机是底部抽屉，桌面是右下角浮窗；对话存在 sessionStorage，路由切换与刷新都不丢；遇到吸底操作条（`.cta-bar`）时，手机上入口停靠进操作条右侧、成为主按钮旁的圆形次按钮（操作条加 `data-dock-reserve` 留位），其他会挡住入口的元素（`[data-dock-avoid]`）则把入口抬到它上方。
 
 - 接口：`POST /api/chat` 返回 NDJSON 流。第一行是规则层结果（`lib/locate/core.ts`：像谁 / 风格 / 场合 / 性别 / 预算 / 否定六个信号，复用 `parseConstraints`、`allowedGenders`；目录快照在服务端内存缓存 5 分钟，根布局会提前读一次），本机实测首字节约 10ms；随后是 Claude 的流式文字，最后是它用工具（`show_outfits` / `show_closets` / `open_page` / `suggest_replies`）选出的卡片。工具只返回 id，服务端按目录与性别校验后才转成卡片。
-- 模型：`claude-opus-5-5`，effort `low`，开启服务端 `fallbacks: "default"`，目录在系统提示里缓存；可用 `CHAT_MODEL` 换模型。本机实测首段文字约 3–3.6 秒、整轮约 5–8 秒（2026-10-16，4 句样例）。首字 10 秒、整轮 25 秒超时；没有 key、超时或出错时停在规则结果，不显示“规则模式”（D48）。
+- 模型：`claude-opus-5-5`，effort `low`，**fast mode**（`speed: "fast"`，beta `fast-mode-2026-02-01`，价格为标准 2 倍，Claude API 研究预览；2026-10-16 用户决定）；未开通或被限流且还没流出文字时自动用标准速度重试一次（标准速度下带服务端 `fallbacks: "default"`）。目录在系统提示里缓存。`CHAT_SPEED=standard` 关掉 fast，`CHAT_MODEL` 换模型。本机实测（2026-10-17，4 句样例）fast：4 句样例中 3 句首段文字 1.9–2.3 秒、整轮 2.6–3.2 秒（标准速度同 3 句 2.8–4.5 / 5.3–6.6 秒）；“暖一点的颜色”一句模型思考更久，fast 首字 9.5 秒、标准 10.7 秒。首字 15 秒、整轮 25 秒超时；没有 key、超时或出错时停在规则结果，不显示“规则模式”（D48）。
 - 用户的话不落库，服务端日志只记错误类型。
 - 测试：`lib/locate/locate.test.ts`（17 个样例，直接读 `data/catalog.json`）。
 
