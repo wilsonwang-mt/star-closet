@@ -25,12 +25,13 @@ import { AvatarError, removeOlderResults, requireTwinConsent, TWIN_STALE_MS } fr
 const ANALYSIS_MODEL = "claude-opus-5-5";
 const IMAGE_MODEL = "fal-ai/nano-banana-pro/edit";
 /** 整个生成（含分析与重试）的上限；路由 maxDuration 为 120 秒。 */
-const TOTAL_BUDGET_MS = 110_000;
+/** 后台生成总预算：fal 排队时单张实测 40–120 秒，三张并行加一次重试。 */
+const TOTAL_BUDGET_MS = 240_000;
 const ANALYSIS_TIMEOUT_MS = 30_000;
 /** 分析结果最多等这么久再开始生成（赶上了就写进提示词）。 */
 const ANALYSIS_PROMPT_WAIT_MS = 12_000;
 /** 第一次失败后，剩余时间不少于这么多才重试。 */
-const RETRY_MIN_LEFT_MS = 40_000;
+const RETRY_MIN_LEFT_MS = 60_000;
 
 export type TwinGender = "female" | "male";
 export type TwinAngle = "front" | "side" | "back";
@@ -379,17 +380,41 @@ async function referenceDataUri(key: string, mime: string): Promise<string> {
   }
 }
 
+const sleep = (ms: number, signal: AbortSignal) =>
+  new Promise<void>((resolve, reject) => {
+    const t = setTimeout(resolve, ms);
+    signal.addEventListener("abort", () => (clearTimeout(t), reject(new GenError(504, "生成超时，请稍后再试"))), { once: true });
+  });
+
+/** 走 fal 排队接口：提交 → 轮询状态 → 取结果（同步端点在 fal 排队时容易超时，实测 40–120 秒波动）。 */
 async function generateOne(prompt: string, imageUrls: string[], signal: AbortSignal): Promise<Uint8Array> {
-  const res = await fetch(`https://fal.run/${IMAGE_MODEL}`, {
+  const netErr = (e: Error) => {
+    if (signal.aborted || e?.name === "TimeoutError" || e?.name === "AbortError") throw new GenError(504, "生成超时，请稍后再试");
+    throw new GenError(502, "生成服务暂时连不上，请稍后再试");
+  };
+  const submit = await fetch(`https://queue.fal.run/${IMAGE_MODEL}`, {
     method: "POST",
     headers: falHeaders(),
     body: JSON.stringify({ prompt, image_urls: imageUrls, aspect_ratio: "3:4", resolution: "2K", num_images: 1, output_format: "jpeg" }),
     signal,
     cache: "no-store",
-  }).catch((e: Error) => {
-    if (signal.aborted || e?.name === "TimeoutError" || e?.name === "AbortError") throw new GenError(504, "生成超时，请稍后再试");
-    throw new GenError(502, "生成服务暂时连不上，请稍后再试");
-  });
+  }).catch(netErr);
+  if (!submit.ok) throw falError(submit.status);
+  const q = (await submit.json().catch(() => null)) as { status_url?: unknown; response_url?: unknown } | null;
+  const statusUrl = typeof q?.status_url === "string" ? q.status_url : null;
+  const responseUrl = typeof q?.response_url === "string" ? q.response_url : null;
+  if (!statusUrl?.startsWith("https://") || !responseUrl?.startsWith("https://")) throw new GenError(502, "生成服务没有返回任务，请稍后再试");
+  for (;;) {
+    await sleep(Number(process.env.TWIN_QUEUE_POLL_MS ?? 3000), signal);
+    const st = await fetch(statusUrl, { headers: falHeaders(), signal, cache: "no-store" }).catch(netErr);
+    if (!st.ok) {
+      if (st.status >= 500) continue; // 状态查询偶发失败，继续等
+      throw falError(st.status);
+    }
+    const sd = (await st.json().catch(() => null)) as { status?: unknown } | null;
+    if (sd?.status === "COMPLETED") break;
+  }
+  const res = await fetch(responseUrl, { headers: falHeaders(), signal, cache: "no-store" }).catch(netErr);
   if (!res.ok) throw falError(res.status);
   const data = (await res.json().catch(() => null)) as { images?: { url?: unknown }[] } | null;
   const url = data?.images?.[0]?.url;
