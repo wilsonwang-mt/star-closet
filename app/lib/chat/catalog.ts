@@ -97,7 +97,7 @@ export function availablePages(): PageKey[] {
 const PAGES: Record<PageKey, Omit<PageCard, "kind" | "page">> = {
   closets: { href: "/", title: "全部衣橱", kicker: "The Closets", desc: "左右滑动，挑一间走进去" },
   "fitting-room": { href: "/fitting-room", title: "个人试衣间", kicker: "Fitting Room", desc: "加入试衣间的搭配都在这里" },
-  avatar: { href: "/profile/avatar", title: "我的 3D 形象", kicker: "Avatar", desc: "用你的自拍生成可以 360° 旋转的形象" },
+  avatar: { href: "/profile/avatar", title: "我的数字分身", kicker: "Avatar", desc: "上传 3–5 张照片，生成你本人的形象照，之后每件都能一键试穿" },
   tryon: { href: "/fitting-room", title: "2D 试穿", kicker: "Try On", desc: "在试衣间里把整套衣服穿到你的正面照上" },
   profile: { href: "/profile", title: "个人档案", kicker: "Profile", desc: "尺码、预算和喜欢的风格，只有你自己可见" },
   login: { href: "/login", title: "登录", kicker: "Sign In", desc: "登录后可以保存搭配、生成形象" },
