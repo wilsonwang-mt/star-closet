@@ -484,7 +484,7 @@ export default function ChatDock() {
             <div className={styles.list} ref={listRef}>
               {msgs.length === 0 ? (
                 <div className={styles.welcome}>
-                  <p className={styles.welcomeText}>告诉我场合、风格和预算，我帮你找到合适的衣橱和整套搭配；也可以带你去试衣间、生成 3D 形象。</p>
+                  <p className={styles.welcomeText}>告诉我场合、风格和预算，我帮你找到合适的衣橱和整套搭配；也可以带你去试衣间、建立你的数字分身。</p>
                   <div className={styles.chips}>
                     {EXAMPLES.map((ex) => (
                       <button key={ex} type="button" className={styles.chip} onClick={() => void send(ex)}>

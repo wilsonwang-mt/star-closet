@@ -9,6 +9,8 @@ import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion, type Transition } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import ItemThumb from "./ItemThumb";
+import { PickCheck, type Pick } from "./closet/LookActions";
+import { QuickTryButton } from "./tryon/QuickTryOn";
 import type { Item } from "@/lib/catalog";
 import { interchangeable } from "@/lib/adapt/rules";
 import { springs } from "@/lib/motion";
@@ -31,8 +33,14 @@ export default function ItemList({
   originalIds,
   reveal,
   ownCuratorId,
+  pick,
+  source,
 }: {
   items: ListedItem[];
+  /** 多选加入试衣间 / 购物袋（D67）：传入时单品缩略图上出现勾选圆钮。 */
+  pick?: Pick;
+  /** 一键试穿面板里“加入试衣间”记录的来源搭配。 */
+  source?: { outfitId?: string | null; outfitName?: string | null };
   catalog?: Item[];
   /** 这套搭配所属衣橱：替换下拉里本衣橱的单品排在前面，其他衣橱的单独分组 */
   ownCuratorId?: string;
@@ -106,6 +114,8 @@ export default function ItemList({
                   alts={catalog?.filter((c) => interchangeable(c, it) && !used.has(c.id)) ?? []}
                   ownCuratorId={ownCuratorId}
                   onSwap={waiting ? undefined : onSwap}
+                  pick={waiting ? undefined : pick}
+                  source={source}
                 />
               </motion.div>
             </AnimatePresence>
@@ -122,12 +132,16 @@ function Row({
   alts,
   onSwap,
   ownCuratorId,
+  pick,
+  source,
 }: {
   it: ListedItem;
   changed: boolean;
   alts: Item[];
   onSwap?: (fromId: string, toId: string) => void;
   ownCuratorId?: string;
+  pick?: Pick;
+  source?: { outfitId?: string | null; outfitName?: string | null };
 }) {
   const own = ownCuratorId ? alts.filter((a) => a.curatorId === ownCuratorId) : alts;
   const others = ownCuratorId ? alts.filter((a) => a.curatorId !== ownCuratorId) : [];
@@ -138,8 +152,11 @@ function Row({
   );
   return (
     <div className={`sc-glass sc-glass--row item-row${changed ? " sc-glass--changed" : ""}`}>
-      <ItemThumb name={it.name} image={it.image} color={it.color} href={`/item/${it.id}`} />
-      <div>
+      <span style={{ position: "relative", display: "block" }}>
+        <ItemThumb name={it.name} image={it.image} color={it.color} href={`/item/${it.id}`} />
+        {pick ? <PickCheck pick={pick} item={it} /> : null}
+      </span>
+      <div style={{ minWidth: 0 }}>
         <Link href={`/item/${it.id}`} className="item-name" style={{ display: "block", color: "inherit", textDecoration: "none" }}>
           {it.name.replace(/^占位：/, "")}
         </Link>
@@ -160,7 +177,11 @@ function Row({
           </select>
         ) : null}
       </div>
-      <div className="price">¥{it.price}</div>
+      <div style={{ display: "grid", justifyItems: "end", gap: 8 }}>
+        <div className="price">¥{it.price}</div>
+        {/* 浏览中的一键试穿（D67）：可上身的单品与鞋包配饰都有；服务未开放时不渲染 */}
+        <QuickTryButton item={it} source={source} />
+      </div>
     </div>
   );
 }

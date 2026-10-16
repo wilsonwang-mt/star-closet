@@ -50,6 +50,13 @@
       "when": 1792175634732,
       "tag": "0006_usage_counter",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792179618427,
+      "tag": "0007_bag_item",
+      "breakpoints": true
     }
   ]
 }

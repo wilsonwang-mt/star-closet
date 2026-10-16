@@ -10,7 +10,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import LivePhoto from "@/components/live/LivePhoto";
-import { compress, fetchView, preload, readError, sleep, waitFirst } from "@/components/tryon/shared";
+import { compress, readError } from "@/components/tryon/shared";
+import { NANO_STAGES, QUICK_STAGES, stageAt, useQuickTryon, useTicker } from "@/components/tryon/useQuickTryon";
 import { springs } from "@/lib/motion";
 import type { DemoScene } from "@/lib/scene/scenes";
 import type { SceneState } from "@/lib/scene/service";
@@ -41,37 +42,8 @@ const STAGES: { from: number; text: string }[] = [
   { from: 18, text: "正在调光" },
   { from: 28, text: "正在收尾" },
 ];
-// 一键试穿的等待节奏：衣服先由 Kolors 快出图（约 20 秒），鞋包配饰只跑 nano-banana（约 45 秒）；之后的细化另有“正在细化”标签。
-const QUICK_STAGES: { from: number; text: string }[] = [
-  { from: 0, text: "正在读取你的形象" },
-  { from: 4, text: "正在为你换上这件" },
-  { from: 12, text: "正在调整光影" },
-  { from: 20, text: "正在收尾" },
-];
-const NANO_STAGES: { from: number; text: string }[] = [
-  { from: 0, text: "正在读取你的形象" },
-  { from: 6, text: "正在为你换上这件" },
-  { from: 22, text: "正在调整光影" },
-  { from: 38, text: "正在收尾" },
-];
-
-function stageAt(seconds: number, stages = STAGES): number {
-  let i = 0;
-  while (i + 1 < stages.length && seconds >= stages[i + 1].from) i++;
-  return i;
-}
-
-/** 运行中每秒 +1 的计时。 */
-function useTicker(running: boolean) {
-  const [elapsed, setElapsed] = useState(0);
-  useEffect(() => {
-    if (!running) return;
-    setElapsed(0);
-    const t0 = Date.now();
-    const t = window.setInterval(() => setElapsed(Math.round((Date.now() - t0) / 1000)), 1000);
-    return () => window.clearInterval(t);
-  }, [running]);
-  return elapsed;
+function sceneStage(seconds: number) {
+  return stageAt(seconds, STAGES);
 }
 
 export default function LookGallery({
@@ -97,18 +69,17 @@ export default function LookGallery({
   const [agree, setAgree] = useState(false);
   const [showPrep, setShowPrep] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
-  const [quickView, setQuickView] = useState<TryonView | null>(quick?.initial ?? null);
-  const [quickRunning, setQuickRunning] = useState(false);
-  const [quickError, setQuickError] = useState<string | null>(null);
-  const [refining, setRefining] = useState(false);
   const [zoom, setZoom] = useState(false);
-  const alive = useRef(true);
-  useEffect(() => {
-    alive.current = true;
-    return () => {
-      alive.current = false;
-    };
-  }, []);
+  // 一键试穿的请求与两段式轮询与浏览时的一键试穿面板共用（components/tryon/useQuickTryon）。
+  const q = useQuickTryon(quick?.initial ?? null, {
+    onAccepted: () => setState((st) => ({ ...st, consented: true, hasFrontPhoto: true })),
+    onConsentRecorded: () => setState((st) => ({ ...st, consented: true })),
+    onNoBase: () => setState((st) => ({ ...st, hasFrontPhoto: false })),
+  });
+  const quickView = q.view;
+  const quickRunning = q.running;
+  const quickError = q.error;
+  const refining = q.refining;
   const elapsed = useTicker(phase === "running");
   const quickElapsed = useTicker(quickRunning);
 
@@ -179,66 +150,9 @@ export default function LookGallery({
     setPhase("idle");
   }
 
-  async function tryOn() {
-    if (quickRunning) return;
-    setQuickRunning(true);
-    setQuickError(null);
-    try {
-      const res = await fetch("/api/tryon/quick", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemId, consent: !state.consented && agree }),
-      }).catch(() => null);
-      if (!res?.ok) {
-        // 服务端在调用模型之前就记下了同意：只要不是“未同意”，下次不用再勾。
-        if (res && res.status !== 403 && res.status !== 401 && agree) setState((st) => ({ ...st, consented: true }));
-        if (res?.status === 409) setState((st) => ({ ...st, hasFrontPhoto: false }));
-        setQuickError(await readError(res, "试穿失败，请稍后再试"));
-        return;
-      }
-      setState((st) => ({ ...st, consented: true, hasFrontPhoto: true }));
-      // 只提交到队列就返回：轮询到出第一张图（或失败）。
-      const view = await waitFirst((await res.json()) as TryonView, { alive: () => alive.current, pollMs: 1200 });
-      if (!alive.current) return;
-      if (view.status === "failed" || !view.resultUrl) {
-        setQuickError(view.error ?? "试穿失败，请稍后再试");
-        return;
-      }
-      await preload(view.resultUrl);
-      setQuickView(view);
-      if (view.refining) void refine(view.id);
-    } finally {
-      setQuickRunning(false);
-    }
+  function tryOn() {
+    if (!quickRunning) void q.run(itemId, !state.consented && agree);
   }
-
-  /** 细化：每 2 秒查一次，清晰版好了原地替换；细化失败保留快出的那张。 */
-  const refine = useCallback(async (id: string) => {
-    setRefining(true);
-    try {
-      for (let i = 0; i < 100 && alive.current; i++) {
-        await sleep(2000);
-        const r = await fetchView(id);
-        if (r.kind === "gone") return;
-        if (r.kind === "error") continue;
-        const v = r.view;
-        if (v.refining || v.status === "processing") continue;
-        if (v.status === "succeeded" && v.resultUrl) {
-          await preload(v.resultUrl);
-          if (alive.current) setQuickView((cur) => (cur?.id === id ? v : cur));
-        }
-        return;
-      }
-    } finally {
-      if (alive.current) setRefining(false);
-    }
-  }, []);
-
-  // 首屏带来的结果还在细化（刷新了页面）：接着轮询。
-  const initialRefine = useRef(quick?.initial?.refining ? quick.initial.id : null);
-  useEffect(() => {
-    if (initialRefine.current) void refine(initialRefine.current);
-  }, [refine]);
 
   const canGenerate = state.enabled && state.signedIn && state.hasFrontPhoto && (state.consented || agree);
   const running = phase === "running";
@@ -291,7 +205,7 @@ export default function LookGallery({
             type="button"
             className={`sc-cta ${result ? "sc-cta--ghost " : ""}compact`}
             disabled={!(state.consented || agree) || running}
-            onClick={() => void tryOn()}
+            onClick={tryOn}
           >
             {result ? "再试一次" : "一键试穿"}
           </button>
@@ -443,8 +357,8 @@ export default function LookGallery({
           {running ? (
             <>
               {/* key 随阶段变化：每换一段文案就用 .wait-step 淡入浮起一次 */}
-              <p className={`serif-note wait-step ${s.stage}`} key={stageAt(elapsed)} role="status" aria-live="polite">
-                {STAGES[stageAt(elapsed)].text}…
+              <p className={`serif-note wait-step ${s.stage}`} key={sceneStage(elapsed)} role="status" aria-live="polite">
+                {STAGES[sceneStage(elapsed)].text}…
               </p>
               <p className="sc-meta">把你穿上「{itemName}」放进两个场景里 · {elapsed} 秒</p>
             </>
