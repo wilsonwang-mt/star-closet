@@ -1,7 +1,7 @@
 import type { FashnCategory } from "./plan";
 
-// FASHN v1.6 虚拟试穿（fal.ai 托管）。只在服务端调用，浏览器拿不到 key。
-// 启用条件：设置了 FAL_KEY（TRYON_PROVIDER 可不设，设置时必须为 fashn_fal）。没有 key 时不发起任何外部请求。
+// FASHN v1.6 虚拟试穿（fal.ai 托管）：D62 起为备选（TRYON_PROVIDER=fashn_fal），默认改用可灵 Kolors（kolors.ts）。
+// 只在服务端调用，浏览器拿不到 key。是否启用、用哪家由 provider.ts 决定；没有 key 时不发起任何外部请求。
 // 文档：https://fal.ai/models/fal-ai/fashn/tryon/v1.6 ——输入 model_image / garment_image（URL 或 base64 data URI）、
 // category、mode、garment_photo_type、output_format；输出 images[0].url（864×1296）。未实测（没有 key）。
 
@@ -18,12 +18,6 @@ export class TryonError extends Error {
   }
 }
 
-export function isTryonEnabled(): boolean {
-  const provider = process.env.TRYON_PROVIDER;
-  if (provider && provider !== PROVIDER_ID) return false;
-  return !!process.env.FAL_KEY;
-}
-
 /**
  * 生成模式：逐件试穿用 quality（针织纹理、领口更清楚，单件约 30–45 秒）；
  * 旧的整套叠加一次请求最多调用 3 次，用 quality 会超过 120 秒的服务端上限，保持 balanced。
@@ -35,7 +29,7 @@ export type FashnInput = { modelImage: string; garmentImage: string; category: F
 /** 调用一次 FASHN，返回结果图地址（https URL 或 data URI）。 */
 export async function runFashn(input: FashnInput, signal?: AbortSignal): Promise<string> {
   const key = process.env.FAL_KEY;
-  if (!isTryonEnabled() || !key) throw new TryonError(503, "试穿服务未开放");
+  if (!key) throw new TryonError(503, "试穿服务未开放");
   let res: Response;
   try {
     res = await fetch(FASHN_ENDPOINT, {

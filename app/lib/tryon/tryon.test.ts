@@ -77,10 +77,11 @@ before(async () => {
   }) as typeof fetch;
 });
 
+// 本文件覆盖备选的 FASHN 路径（D62 后默认是 Kolors，见 kolors.test.ts）：每项测试固定 TRYON_PROVIDER=fashn_fal。
 beforeEach(() => {
   calls = [];
   delete process.env.FAL_KEY;
-  delete process.env.TRYON_PROVIDER;
+  process.env.TRYON_PROVIDER = "fashn_fal";
 });
 
 after(() => {
