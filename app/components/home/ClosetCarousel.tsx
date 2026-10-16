@@ -397,6 +397,49 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
   const progress = useTransform(pos, (p) => (n ? (clamp(p, 0, n - 1) + 1) / n : 0));
   const geo = useMemo(() => ({ unit, wideMv }), [unit, wideMv]);
 
+  // 筛选衣橱：桌面放在标题右侧；手机（<900px）移出首屏，放到下方「全部衣橱」索引区头部，
+  // 首屏留给刊头、标题与轮播（之后由 AI 对话帮用户定位衣橱）。两处同一份状态，另一处用 CSS display:none 隐藏（不进焦点与读屏）。
+  const renderFilters = (placement: "top" | "index") => (
+    <div className={`${styles.filters} ${placement === "top" ? styles.filtersTop : styles.filtersIndex}`} role="toolbar" aria-label="筛选衣橱" onKeyDown={onToolbarKey}>
+            <button type="button" className={styles.chip} aria-pressed={!gender} onClick={() => setGender(null)}>
+              全部
+            </button>
+            {genders.map((g) => (
+              <button
+                key={g}
+                type="button"
+                className={styles.chip}
+                aria-pressed={gender === g}
+                aria-disabled={(gender !== g && countWith(g, ctype) === 0) || undefined}
+                title={gender !== g && countWith(g, ctype) === 0 ? "这个组合下暂时没有衣橱" : undefined}
+                onClick={() => {
+                  if (gender !== g && countWith(g, ctype) === 0) return;
+                  setGender(gender === g ? null : g);
+                }}
+              >
+                {g}
+              </button>
+            ))}
+            <span className={styles.sep} aria-hidden="true" />
+            {types.map((t) => (
+              <button
+                key={t}
+                type="button"
+                className={styles.chip}
+                aria-pressed={ctype === t}
+                aria-disabled={(ctype !== t && countWith(gender, t) === 0) || undefined}
+                title={ctype !== t && countWith(gender, t) === 0 ? "这个组合下暂时没有衣橱" : undefined}
+                onClick={() => {
+                  if (ctype !== t && countWith(gender, t) === 0) return;
+                  setCtype(ctype === t ? null : t);
+                }}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+  );
+
   return (
     <>
       <div className={styles.ambient} aria-hidden="true">
@@ -436,44 +479,7 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
               想走进谁的衣橱？
             </h1>
           </div>
-          <div className={styles.filters} role="toolbar" aria-label="筛选衣橱" onKeyDown={onToolbarKey}>
-            <button type="button" className={styles.chip} aria-pressed={!gender} onClick={() => setGender(null)}>
-              全部
-            </button>
-            {genders.map((g) => (
-              <button
-                key={g}
-                type="button"
-                className={styles.chip}
-                aria-pressed={gender === g}
-                aria-disabled={(gender !== g && countWith(g, ctype) === 0) || undefined}
-                title={gender !== g && countWith(g, ctype) === 0 ? "这个组合下暂时没有衣橱" : undefined}
-                onClick={() => {
-                  if (gender !== g && countWith(g, ctype) === 0) return;
-                  setGender(gender === g ? null : g);
-                }}
-              >
-                {g}
-              </button>
-            ))}
-            <span className={styles.sep} aria-hidden="true" />
-            {types.map((t) => (
-              <button
-                key={t}
-                type="button"
-                className={styles.chip}
-                aria-pressed={ctype === t}
-                aria-disabled={(ctype !== t && countWith(gender, t) === 0) || undefined}
-                title={ctype !== t && countWith(gender, t) === 0 ? "这个组合下暂时没有衣橱" : undefined}
-                onClick={() => {
-                  if (ctype !== t && countWith(gender, t) === 0) return;
-                  setCtype(ctype === t ? null : t);
-                }}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
+          {renderFilters("top")}
         </header>
 
         {n === 0 ? (
@@ -615,6 +621,7 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
               <span className="sc-kicker">Index</span>
               <span className="sc-meta">{n} 间衣橱</span>
             </div>
+            {renderFilters("index")}
             <div className={styles.rows}>
               {list.map((c, i) => (
                 <button

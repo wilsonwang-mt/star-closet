@@ -98,7 +98,7 @@
   /* 字体 */
   --sc-font-didone: "Bodoni Moda", "Didot", serif;   /* 刊头、N° 编号、价格数字、英文斜体引题 */
   --sc-font-serif: "Noto Serif SC", "Songti SC", serif; /* 中文标题、风格说明 */
-  --sc-font-sans: "Noto Sans SC", -apple-system, "PingFang SC", sans-serif; /* 界面文字 */
+  --sc-font-sans: "SC Sans", "Noto Sans SC", -apple-system, "PingFang SC", sans-serif; /* 界面文字：思源黑体 Light 300 自托管子集（"SC Sans"） */
 
   /* 字号（手机基准） */
   --sc-fs-masthead: 15px;   /* 刊头，字距 .42em */

@@ -3,7 +3,7 @@
 :root {
   --sc-font-didone: var(--font-didone), "Didot", serif;
   --sc-font-serif: var(--font-serif), "Songti SC", serif;
-  --sc-font-sans: var(--font-sans), -apple-system, "PingFang SC", sans-serif;
+  --sc-font-sans: "SC Sans", -apple-system, "PingFang SC", sans-serif; /* 自托管思源黑体 Light，见 app/fonts.css */
   --danger: #e0806c;
 }
 :root[data-theme="light"] { --danger: #a5402d; }

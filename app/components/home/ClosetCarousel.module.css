@@ -37,6 +37,13 @@
   mask-image: linear-gradient(90deg, transparent, #000 8px, #000 calc(100% - 12px), transparent);
 }
 .filters::-webkit-scrollbar { display: none; }
+/* 手机：筛选移出首屏，放在索引区头部；桌面：留在标题右侧 */
+.filtersTop { display: none; }
+.filtersIndex { margin: 0 -8px 14px; }
+@media (min-width: 900px) {
+  .filtersTop { display: flex; }
+  .filtersIndex { display: none; }
+}
 .chip {
   position: relative; flex: none; min-height: 32px; padding: 0 10px; border: 0; background: none; cursor: pointer;
   font-size: 12px; letter-spacing: .1em; color: var(--sc-ink-3); white-space: nowrap;
