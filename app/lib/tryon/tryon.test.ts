@@ -159,3 +159,16 @@ test("一键删除清空用户前缀后，旧的试穿记录读取为 404 并被
   assert.equal(await m.svc.getTryon("u1", view.id), null);
   assert.equal((await m.db.db.select().from(m.db.schema.tryon)).length, 0);
 });
+
+test("3D 形象一键删除同时删除试穿记录、结果图与试穿同意", async () => {
+  process.env.FAL_KEY = "test-key";
+  // 上一项测试清空了用户前缀：重新放回正面照文件（代码生成的纯色 PNG）
+  await m.storage.getStorage().put(m.storage.photoKey("u1", "front1", "png"), pngWithMetadata(64, 96), "image/png");
+  const view = await m.svc.createTryon("u1", { itemIds: ["T1"], consent: true });
+  assert.ok(view.resultUrl);
+  const avatar = await import("@/lib/avatar/service");
+  await avatar.deleteAll("u1");
+  assert.equal((await m.db.db.select().from(m.db.schema.tryon)).length, 0);
+  assert.equal((await m.db.db.select().from(m.db.schema.tryonConsent)).length, 0);
+  assert.equal(await m.svc.getTryon("u1", view.id), null);
+});

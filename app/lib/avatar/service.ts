@@ -28,6 +28,7 @@ import {
 } from "./purge";
 import { checkAvatarCode, downloadExport, metapersonEnabled } from "./metaperson";
 import { stripMetadata } from "./strip";
+import { deleteAllTryons } from "@/lib/tryon/service";
 
 // 3D 形象：同意 → 上传照片 → 生成（draft → queued → processing → succeeded / failed，可 canceled）→ 查看 → 删除。
 // 所有函数都以当前登录用户 userId 为界，只读写本人数据。
@@ -541,6 +542,8 @@ export async function deleteAll(userId: string): Promise<AvatarState & { remoteP
     .set({ deletedAt: now })
     .where(and(eq(schema.avatarPhoto.userId, userId), isNull(schema.avatarPhoto.deletedAt)));
   await Promise.all(active.map(safeCancel));
+  // 试穿结果图由本人照片生成，一键删除时一并删除记录、结果图与试穿同意（D47）。
+  await deleteAllTryons(userId);
   await getStorage().removeUserPrefix(userId);
   const summary: RemoteSummary = { sent: 0, failed: 0, pending: 0 };
   for (const j of jobs) {
