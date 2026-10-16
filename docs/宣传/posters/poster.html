@@ -36,6 +36,7 @@
   .vblock { position: absolute; top: var(--vtop); right: var(--vright); writing-mode: vertical-rl; text-orientation: mixed; }
   .h1 { font-weight: 900; font-size: var(--h1); line-height: 1.12; letter-spacing: .03em; text-shadow: 0 6px 60px rgba(0,0,0,.7); }
   .h1 .num { text-combine-upright: all; font-family: var(--latin); font-weight: 700; font-size: 1.12em; color: var(--champ); }
+  .h1 .mark { color: var(--champ); }
   .sub { position: absolute; top: var(--stop); writing-mode: vertical-rl; font-size: var(--sub); font-weight: 700; line-height: 1.5; letter-spacing: .12em; color: var(--ink-2); text-shadow: 0 4px 30px rgba(0,0,0,.7); }
 
   /* 左下：口号（唯一的横排大字）+ 时间地点 */
@@ -46,13 +47,13 @@
   .event .dot { padding: 0 .45em; }
 
   /* 3:4 竖版 */
-  body.portrait { --w: 1080px; --h: 1440px; --vtop: 96px; --vright: 64px; --h1: 124px; --sub: 32px; --stop: 100px;
+  body.portrait { --w: 1080px; --h: 1440px; --vtop: 96px; --vright: 64px; --h1: 148px; --sub: 32px; --stop: 100px;
     --fx: 64px; --fy: 72px; --slogan: 76px; --foot-s: 24px; }
   body.portrait .sub { left: 60px; }
   /* 16:9 横版 */
-  body.wide { --w: 1920px; --h: 1080px; --vtop: 84px; --vright: 104px; --h1: 104px; --sub: 30px; --stop: 92px;
+  body.wide { --w: 1920px; --h: 1080px; --vtop: 76px; --vright: 104px; --h1: 112px; --sub: 30px; --stop: 92px;
     --fx: 104px; --fy: 84px; --slogan: 72px; --foot-s: 24px; }
-  body.wide .sub { right: 372px; }
+  body.wide .sub { right: 276px; }
   body.wide .fade-side { background: linear-gradient(270deg, rgba(11,13,16,.9) 0%, rgba(11,13,16,.5) 22%, transparent 40%); }
 </style>
 </head>
@@ -75,8 +76,8 @@
   const POSTERS = {
     1: {
       img: { portrait: "img/p1-portrait.jpg", wide: "img/p1-wide.jpg" },
-      h1: '第<span class="num">7</span>家店<br>还是没有你的款？',
-      sub: "你的周末，为什么总耗在没有结果的电商平台和试衣间？",
+      h1: '还是没有你的款<span class="mark">？</span>',
+      sub: "你的周末，为什么总耗在没有结果的试衣间？",
       flip: true,
       slogan: "别再用脚买衣服了。",
     },
