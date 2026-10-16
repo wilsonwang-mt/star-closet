@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>SEEN logo 草图 v3 · 拱形穿衣镜</title>
+<!--
+  v3：沿用 v2 的 B（镜面 + SEEN），镜子改为平底拱顶的穿衣镜，避免胶囊形像鼠标。
+  B1 拱镜 + 偏右高光点；B2 拱镜立在地平线上；B3 拱镜 + 两道斜向反光；B4 拱镜内有顶灯光晕。
+  上半为横向组合，下半为 App 图标（大 / 小）。
+-->
+<style>
+  :root { --bg: #0b0d10; --panel: #111318; --ink: #f4f2ed; --ink-3: #8a8378; --champ: #e8cf9c; --rule: rgba(244,242,237,.12); }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 2000px; height: 1100px; background: var(--rule); display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: 1.5fr 1fr; gap: 2px; color: var(--ink); }
+  .panel { position: relative; background: var(--panel); display: flex; align-items: center; justify-content: center; }
+  .tag { position: absolute; left: 24px; top: 22px; font-family: "Didot", serif; font-size: 20px; letter-spacing: .2em; color: var(--ink-3); }
+  .tag b { color: var(--champ); font-weight: 400; margin-right: .6em; }
+  .tag span { font-family: "Songti SC", serif; letter-spacing: .08em; }
+  .lockup { display: flex; align-items: flex-end; gap: 26px; }
+  .seen { font-family: "Didot", "Bodoni 72", serif; font-size: 84px; letter-spacing: .12em; line-height: .78; }
+  .icons { display: flex; align-items: center; gap: 30px; }
+  .icon { width: 190px; height: 190px; border-radius: 44px; background: var(--bg); border: 1px solid rgba(244,242,237,.16); display: flex; align-items: center; justify-content: center; }
+  .icon.small { width: 56px; height: 56px; border-radius: 13px; }
+  svg { display: block; overflow: visible; }
+</style>
+</head>
+<body>
+  <div class="panel"><div class="tag"><b>B1</b><span>拱镜 · 高光点</span></div><div class="lockup"><svg class="m" data-v="1" data-h="130"></svg><div class="seen">SEEN</div></div></div>
+  <div class="panel"><div class="tag"><b>B2</b><span>拱镜 · 落地</span></div><div class="lockup"><svg class="m" data-v="2" data-h="130"></svg><div class="seen">SEEN</div></div></div>
+  <div class="panel"><div class="tag"><b>B3</b><span>拱镜 · 反光</span></div><div class="lockup"><svg class="m" data-v="3" data-h="130"></svg><div class="seen">SEEN</div></div></div>
+  <div class="panel"><div class="tag"><b>B4</b><span>拱镜 · 顶灯</span></div><div class="lockup"><svg class="m" data-v="4" data-h="130"></svg><div class="seen">SEEN</div></div></div>
+
+  <div class="panel"><div class="icons"><div class="icon"><svg class="m" data-v="1" data-h="118"></svg></div><div class="icon small"><svg class="m" data-v="1" data-h="36" data-sw="9"></svg></div></div></div>
+  <div class="panel"><div class="icons"><div class="icon"><svg class="m" data-v="2" data-h="118"></svg></div><div class="icon small"><svg class="m" data-v="2" data-h="36" data-sw="9"></svg></div></div></div>
+  <div class="panel"><div class="icons"><div class="icon"><svg class="m" data-v="3" data-h="118"></svg></div><div class="icon small"><svg class="m" data-v="3" data-h="36" data-sw="9"></svg></div></div></div>
+  <div class="panel"><div class="icons"><div class="icon"><svg class="m" data-v="4" data-h="118"></svg></div><div class="icon small"><svg class="m" data-v="4" data-h="36" data-sw="9"></svg></div></div></div>
+<script>
+  const INK = "#f4f2ed", CHAMP = "#e8cf9c";
+  // 局部坐标：镜宽 60、高 150（平底，顶部半圆）
+  function draw(svg) {
+    const v = +svg.dataset.v, H = +svg.dataset.h, sw = +(svg.dataset.sw || 4.6);
+    const s = H / 150, W = 60 * s, ext = v === 2 ? 22 * s : 0;
+    svg.setAttribute("width", W + ext * 2); svg.setAttribute("height", H);
+    svg.setAttribute("viewBox", `${-ext / s} 0 ${60 + ext * 2 / s} 150`);
+    const arch = "M 0 150 L 0 30 A 30 30 0 0 1 60 30 L 60 150";
+    let inner = "";
+    if (v === 1) inner = `<circle cx="41" cy="40" r="6.2" fill="${CHAMP}"/>`;
+    if (v === 2) inner = `<circle cx="41" cy="40" r="6.2" fill="${CHAMP}"/><line x1="-22" y1="150" x2="82" y2="150" stroke="${INK}" stroke-width="${sw}" stroke-linecap="round"/>`;
+    if (v === 3) inner = `<line x1="15" y1="74" x2="40" y2="49" stroke="${CHAMP}" stroke-width="${sw}" stroke-linecap="round"/><line x1="15" y1="96" x2="28" y2="83" stroke="${CHAMP}" stroke-width="${sw}" stroke-linecap="round"/>`;
+    if (v === 4) inner = `<defs><radialGradient id="g${H}" cx="50%" cy="0%" r="95%"><stop offset="0" stop-color="${CHAMP}" stop-opacity=".95"/><stop offset=".45" stop-color="${CHAMP}" stop-opacity=".28"/><stop offset="1" stop-color="${CHAMP}" stop-opacity="0"/></radialGradient></defs><path d="M 0 150 L 0 30 A 30 30 0 0 1 60 30 L 60 150 Z" fill="url(#g${H})"/>`;
+    const close = v === 2 ? arch : arch + " Z";
+    svg.innerHTML = inner + `<path d="${close}" fill="none" stroke="${INK}" stroke-width="${sw}" stroke-linejoin="round" stroke-linecap="round"/>`;
+  }
+  document.querySelectorAll("svg.m").forEach(draw);
+</script>
+</body>
+</html>
