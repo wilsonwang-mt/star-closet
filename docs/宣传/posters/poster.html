@@ -29,21 +29,31 @@
   .grain { position: absolute; inset: 0; opacity: .14; mix-blend-mode: overlay;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 
-  .content { position: absolute; inset: 0; display: flex; flex-direction: column; padding: var(--pad); }
-  .h1 { margin-top: var(--gap-top); font-weight: 900; font-size: var(--h1); line-height: 1.08; letter-spacing: -.02em; text-shadow: 0 6px 60px rgba(0,0,0,.7); }
-  .h1 .num { font-family: var(--latin); font-weight: 700; font-size: 1.32em; line-height: 0; color: var(--champ); padding: 0 .02em 0 .04em; vertical-align: -.04em; }
-  .footer { margin-top: auto; }
-  .slogan { font-size: var(--slogan); font-weight: 900; color: var(--ink); letter-spacing: .02em; line-height: 1.25; }
+  .media.flip { transform: scaleX(-1); }
+  .fade-side { position: absolute; inset: 0; background: linear-gradient(270deg, rgba(11,13,16,.88) 0%, rgba(11,13,16,.55) 26%, transparent 48%); }
+
+  /* 竖排主文案：两列大字立在右侧，小字为第三列 */
+  .vblock { position: absolute; top: var(--vtop); right: var(--vright); writing-mode: vertical-rl; text-orientation: mixed; }
+  .h1 { font-weight: 900; font-size: var(--h1); line-height: 1.12; letter-spacing: .03em; text-shadow: 0 6px 60px rgba(0,0,0,.7); }
+  .h1 .num { text-combine-upright: all; font-family: var(--latin); font-weight: 700; font-size: 1.12em; color: var(--champ); }
+  .sub { position: absolute; top: var(--stop); writing-mode: vertical-rl; font-size: var(--sub); font-weight: 700; line-height: 1.5; letter-spacing: .12em; color: var(--ink-2); text-shadow: 0 4px 30px rgba(0,0,0,.7); }
+
+  /* 左下：口号（唯一的横排大字）+ 时间地点 */
+  .footer { position: absolute; left: var(--fx); bottom: var(--fy); }
+  .slogan { font-size: var(--slogan); font-weight: 900; color: var(--ink); letter-spacing: .02em; line-height: 1.2; }
   .event { margin-top: .9em; font-size: var(--foot-s); font-weight: 700; color: var(--champ); letter-spacing: .12em; white-space: nowrap; }
   .event .latin { font-family: var(--latin); font-weight: 700; letter-spacing: .08em; }
-  .event .dot { color: var(--champ); padding: 0 .45em; }
+  .event .dot { padding: 0 .45em; }
 
-  /* 3:4 竖版：大字压满版宽 */
-  body.portrait { --w: 1080px; --h: 1440px; --pad: 0 64px 72px; --gap-top: 150px; --h1: 152px; --slogan: 62px; --foot-s: 24px; }
-  /* 16:9 横版：文字放左侧 */
-  body.wide { --w: 1920px; --h: 1080px; --pad: 0 104px 88px; --gap-top: 120px; --h1: 168px; --slogan: 64px; --foot-s: 24px; }
-  body.wide .fade-top { inset: 0 auto 0 0; width: 72%; height: 100%; background: linear-gradient(90deg, rgba(11,13,16,.92) 0%, rgba(11,13,16,.65) 55%, transparent 100%); }
-  body.wide .fade-bottom { height: 36%; }
+  /* 3:4 竖版 */
+  body.portrait { --w: 1080px; --h: 1440px; --vtop: 96px; --vright: 64px; --h1: 124px; --sub: 32px; --stop: 100px;
+    --fx: 64px; --fy: 72px; --slogan: 76px; --foot-s: 24px; }
+  body.portrait .sub { left: 60px; }
+  /* 16:9 横版 */
+  body.wide { --w: 1920px; --h: 1080px; --vtop: 84px; --vright: 104px; --h1: 104px; --sub: 30px; --stop: 92px;
+    --fx: 104px; --fy: 84px; --slogan: 72px; --foot-s: 24px; }
+  body.wide .sub { right: 372px; }
+  body.wide .fade-side { background: linear-gradient(270deg, rgba(11,13,16,.9) 0%, rgba(11,13,16,.5) 22%, transparent 40%); }
 </style>
 </head>
 <body>
@@ -52,21 +62,23 @@
   <div class="vignette"></div>
   <div class="fade-top"></div>
   <div class="fade-bottom"></div>
+  <div class="fade-side"></div>
   <div class="grain"></div>
-  <div class="content">
-    <div class="h1" id="h1"></div>
-    <div class="footer">
-      <div class="slogan" id="slogan"></div>
-      <div class="event"><span class="latin">2026.10.17&nbsp;09:30</span><span class="dot">·</span>imToken 杭州<span class="dot">·</span><span class="latin">Nova</span> 新品发布会</div>
-    </div>
+  <div class="vblock"><div class="h1" id="h1"></div></div>
+  <div class="sub" id="sub"></div>
+  <div class="footer">
+    <div class="slogan" id="slogan"></div>
+    <div class="event"><span class="latin">2026.10.17&nbsp;09:30</span><span class="dot">·</span>imToken 杭州<span class="dot">·</span><span class="latin">Nova</span> 新品发布会</div>
   </div>
 </div>
 <script>
   const POSTERS = {
     1: {
       img: { portrait: "img/p1-portrait.jpg", wide: "img/p1-wide.jpg" },
-      h1: '第 <span class="num">7</span> 家店，<br>没有你的码。',
-      slogan: "这一次，让衣橱走向你。",
+      h1: '第<span class="num">7</span>家店<br>还是没有你的款？',
+      sub: "你的周末，为什么总耗在没有结果的电商平台和试衣间？",
+      flip: true,
+      slogan: "别再用脚买衣服了。",
     },
   };
   const q = new URLSearchParams(location.search);
@@ -74,9 +86,11 @@
   const f = q.get("f") || "portrait";
   const p = POSTERS[n];
   document.body.className = f;
+  if (p.flip) document.getElementById("media").classList.add("flip");
   document.getElementById("media").style.backgroundImage = `url(${p.img[f]})`;
   if (p.mediaPos) document.getElementById("media").style.backgroundPosition = p.mediaPos[f] || "center";
   document.getElementById("h1").innerHTML = p.h1;
+  document.getElementById("sub").innerHTML = p.sub || "";
   document.getElementById("slogan").textContent = p.slogan;
 </script>
 </body>
