@@ -98,3 +98,6 @@
   font: 300 13px/1.6 var(--sc-font-sans);
   color: var(--sc-champ-text);
 }
+
+/* 生成中的阶段文案：紧贴标题，比秒数醒目一级 */
+.stage { margin: 0 0 2px; }

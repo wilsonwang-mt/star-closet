@@ -58,3 +58,25 @@ test("demoScenesFor：只接受 /demo/ 下的本站路径，缺视频为 null", 
     process.chdir(cwd);
   }
 });
+
+test("compressSceneImage：2K 场景图缩到长边 1600 的 JPEG，体积变小", async () => {
+  const { default: sharp } = await import("sharp");
+  const { compressSceneImage, SCENE_MAX_EDGE } = await import("./compress");
+  const { sniffImage } = await import("@/lib/avatar/image");
+  // 程序生成的噪声图（不含任何人像），模拟 2K 竖图的体积
+  const w = 1536;
+  const h = 2048;
+  const raw = Buffer.alloc(w * h * 3);
+  for (let i = 0; i < raw.length; i++) raw[i] = (Math.imul(i, 2654435761) >>> 24) & 0xff;
+  const big = new Uint8Array(await sharp(raw, { raw: { width: w, height: h, channels: 3 } }).jpeg({ quality: 95 }).toBuffer());
+  const out = await compressSceneImage(big);
+  assert.ok(out, "应返回压缩结果");
+  assert.equal(out.mime, "image/jpeg");
+  assert.ok(out.bytes.byteLength < big.byteLength);
+  const info = sniffImage(out.bytes);
+  assert.ok(info);
+  assert.equal(Math.max(info.width, info.height), SCENE_MAX_EDGE);
+  // 已经很小的图：不放大、不变大，返回 null 由调用方保留原图
+  const tiny = new Uint8Array(await sharp({ create: { width: 64, height: 64, channels: 3, background: "#777777" } }).jpeg({ quality: 60 }).toBuffer());
+  assert.equal(await compressSceneImage(tiny), null);
+});

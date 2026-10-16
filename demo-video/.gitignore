@@ -1,0 +1,7 @@
+node_modules/
+out/
+# 由 scripts/sync-assets.mjs 从 docs/ 与 app/public/demo/ 复制，不重复提交
+public/brand/
+public/demo/
+# 录屏素材（T4 填入，体积大，不进仓库）
+public/recordings/*.mp4

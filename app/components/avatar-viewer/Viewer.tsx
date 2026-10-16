@@ -3,7 +3,7 @@
 import { ContactShadows, OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Box3, Vector3, type Group, type Mesh, type Object3D } from "three";
+import { AnimationMixer, Box3, LoopRepeat, Vector3, type AnimationClip, type Group, type Mesh, type Object3D } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
@@ -32,6 +32,12 @@ function dropOffset(elapsed: number): number {
   const u = (elapsed - FALL_T) / BOUNCE_T;
   if (u >= 1) return 0;
   return BOUNCE_HEIGHT * 4 * u * (1 - u); // 抛物线回弹
+}
+
+/** GLB 带多段动画时优先选待机（Idle），否则第一段。 */
+export function pickIdleClip(clips: AnimationClip[]): AnimationClip | null {
+  if (!clips.length) return null;
+  return clips.find((c) => /idle/i.test(c.name)) ?? clips[0];
 }
 
 export function clearModelCache(src: string) {
@@ -70,6 +76,32 @@ function Model({ src, animate, onProgress, onLoaded, onSettled }: ModelProps) {
   const group = useRef<Group>(null);
   const start = useRef<number | null>(null);
   const settled = useRef(!animate);
+
+  // 待机动画：MetaPerson 桌面版导出时带上 Idle 动画（见 metaperson-protocol.ts idlePoseParams），这里循环播放。
+  // 减弱动态时不播放，停在绑定姿势（导出时已用动画首帧代替 T 字）。只动骨骼矩阵，不触发布局。
+  const mixer = useMemo(() => {
+    if (!animate) return null;
+    const clip = pickIdleClip(gltf.animations);
+    if (!clip) return null;
+    const m = new AnimationMixer(fitted.object);
+    const action = m.clipAction(clip);
+    action.setLoop(LoopRepeat, Infinity);
+    action.play();
+    return m;
+  }, [animate, gltf, fitted]);
+
+  useEffect(() => {
+    if (!mixer) return;
+    return () => {
+      mixer.stopAllAction();
+      mixer.uncacheRoot(mixer.getRoot());
+    };
+  }, [mixer]);
+
+  useFrame((_, delta) => {
+    // 掉帧或切回标签页时 delta 可能很大，封顶避免动作跳变
+    mixer?.update(Math.min(delta, 1 / 20));
+  });
 
   useEffect(() => {
     onLoaded();

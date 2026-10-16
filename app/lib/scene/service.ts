@@ -7,13 +7,14 @@ import type { Item } from "@/lib/catalog";
 import { avatarKey, getStorage } from "@/lib/storage";
 import { sniffImage } from "@/lib/avatar/image";
 import { CONSENT_VERSION as TRYON_CONSENT_VERSION, recordConsent } from "@/lib/tryon/service";
+import { compressSceneImage } from "./compress";
 import { isSceneId, pickScenes, SCENES, type SceneId } from "./scenes";
 
 // 商品详情页“上身效果”（T3）：本人穿着这件单品出现在 2 个场景里，并在后台生成 Live 视频。
 // - 前提：已登录；有本人正面全身照（avatar_photo.slot = front，与 2D 试穿共用）；已勾选试穿同意（tryon_consent，D47）；设置了 FAL_KEY。
 // - 场景图：fal-ai/nano-banana-pro/edit，输入本人正面照 + 单品图 + 场景描述；要求单品颜色款式材质与商品图一致、人物长相不变。
 // - Live：场景图生成后提交 fal queue（Kling 2.5 Turbo Pro image-to-video，5 秒、细微动作、无声）；GET 时推进一次轮询。
-// - 存储：`<userId>/avatars/scene-<id>.jpg|mp4`（一键删除 3D 形象时随用户前缀清理，见 lib/avatar/service.ts deleteAll）。
+// - 存储：`<userId>/avatars/scene-<id>.jpg|mp4`；场景图入库前用 sharp 压到长边 1600、JPEG q82（compress.ts）（一键删除 3D 形象时随用户前缀清理，见 lib/avatar/service.ts deleteAll）。
 // - 同一用户同一件单品只保留最新一组：重新生成前删除旧记录与文件。
 // - 请求头 X-Fal-Store-IO: 0：请 fal 不保存本次请求的输入输出（与 2D 试穿一致）。
 
@@ -262,8 +263,11 @@ export async function createScenes(userId: string, item: Item, opts: { consent?:
         const bytes = await generateImage(model, garment, item, sceneId, signal);
         const info = sniffImage(bytes);
         if (!info) throw new SceneError(502, "生成结果无法读取，请稍后再试");
-        const key = avatarKey(userId, `scene-${id}`, info.ext);
-        await getStorage().put(key, bytes, info.mime);
+        // 入库前压缩到长边 1600、JPEG q82（原图 2K 约 1.5MB/张）；Live 视频仍用原图作输入，画质不受影响。
+        const small = await compressSceneImage(bytes);
+        const stored = small ?? { bytes, mime: info.mime, ext: info.ext };
+        const key = avatarKey(userId, `scene-${id}`, stored.ext);
+        await getStorage().put(key, stored.bytes, stored.mime);
         const videoStatusUrl = await submitVideo(`data:${info.mime};base64,${Buffer.from(bytes).toString("base64")}`);
         await db.update(schema.sceneRender).set({ status: "succeeded", imageKey: key, videoStatusUrl }).where(eq(schema.sceneRender.id, id));
         return null;

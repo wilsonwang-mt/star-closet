@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import LinkPending from "./LinkPending";
+import OfflineNotice from "./OfflineNotice";
 import ThemeToggle, { type ThemePref } from "./ThemeToggle";
 
 // 顶部悬浮玻璃胶囊导航（视觉规范 6.1）。
@@ -187,6 +188,8 @@ export default function SiteNav({ initialTheme }: { initialTheme: ThemePref }) {
         </div>
       </header>
 
+      {/* 断网提示挂在导航里（全站都有导航），自己用 portal 放到 body，不受导航收起的 transform 影响 */}
+      <OfflineNotice />
       {/* 点外部关闭：透明遮罩吃掉这次点击，避免误触下面的内容 */}
       <div className="site-menu__scrim" data-open={open} onClick={() => closeMenu(false)} aria-hidden="true" />
 

@@ -15,12 +15,14 @@ export default async function AvatarPage() {
     <>
       <Scene dim />
       <section className="hero sc-rise" style={{ minHeight: "28dvh" }}>
-        <span className="sc-kicker">3D Avatar</span>
-        <h1 className="sc-display" style={{ margin: "6px 0 8px" }}>我的 3D 形象</h1>
+        <span className="sc-kicker">{state.mode === "twin" ? "Digital Twin" : "3D Avatar"}</span>
+        <h1 className="sc-display" style={{ margin: "6px 0 8px" }}>{state.mode === "twin" ? "我的形象" : "我的 3D 形象"}</h1>
         <p className="serif-note">
-          {state.mode === "metaperson"
-            ? "上传正脸自拍与全身照，生成你本人的 3D 形象，可 360° 旋转查看。"
-            : "上传正面、侧面、背面三张全身照，AI 为你生成可 360° 旋转查看的 3D 形象。"}
+          {state.mode === "twin"
+            ? "上传几张照片，得到你的数字分身：一组正面、侧面、背面的标准形象照。之后每件衣服都可以直接穿在你身上看。"
+            : state.mode === "metaperson"
+              ? "上传正脸自拍与全身照，生成你本人的 3D 形象，可 360° 旋转查看。"
+              : "上传正面、侧面、背面三张全身照，AI 为你生成可 360° 旋转查看的 3D 形象。"}
         </p>
       </section>
       <AvatarStudio initial={state} />

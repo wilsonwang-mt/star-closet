@@ -258,6 +258,9 @@ export const avatarJob = pgTable(
     // 外部生成服务的任务编号与状态查询地址（持久化，替代进程内存；服务重启后可继续轮询）。
     providerTaskId: text("provider_task_id"),
     providerStatusUrl: text("provider_status_url"),
+    // 数字分身（D63）：一组标准形象照的私有存储 key 与分析结果
+    // { front, side, back, summary, traits, gender }；其他模式为 null。
+    resultImages: jsonb("result_images").$type<Record<string, unknown>>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
