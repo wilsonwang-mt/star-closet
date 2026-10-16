@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>顶灯衣架 logo 精修 v6</title>
+<!--
+  v6：精修 H5 顶灯衣架。
+  - 问号的点变成灯泡，位于挂钩与斜肩交汇处；光从灯泡向下径向散开，到横杆附近消失。
+  - 衣架比例约 3:1，斜肩微拱，避免“金字塔”。
+  - 版本：主视觉（光束落地）/ 标准 / 横竖组合（LOOK、衣见）/ App 图标 / 单色 / 揭幕分镜。
+  局部坐标 240×200：灯泡 (120,92)，横杆 y=148，宽 36→204。
+-->
+<style>
+  :root { --bg: #0b0d10; --panel: #111318; --ink: #f4f2ed; --ink-3: #8a8378; --champ: #e8cf9c; --cream: #f4efe6; --rule: rgba(244,242,237,.12); }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 2400px; height: 1500px; background: var(--rule); display: grid; grid-template-columns: 1.15fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 2px; color: var(--ink); }
+  .panel { position: relative; background: var(--panel); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; overflow: hidden; }
+  .panel.hero { grid-row: span 2; background: #08090b; }
+  .tag { position: absolute; left: 26px; top: 22px; font-family: "Didot", serif; font-size: 20px; letter-spacing: .2em; color: var(--ink-3); z-index: 2; }
+  .tag b { color: var(--champ); font-weight: 400; margin-right: .6em; }
+  .tag span { font-family: "Songti SC", serif; letter-spacing: .08em; }
+  .look { font-family: "Didot", "Bodoni 72", serif; letter-spacing: .34em; padding-left: .34em; line-height: 1; }
+  .yj { font-family: "Songti SC", serif; font-weight: 900; letter-spacing: .5em; padding-left: .5em; line-height: 1; }
+  .row { display: flex; align-items: center; gap: 30px; }
+  .icon { background: var(--bg); border: 1px solid rgba(244,242,237,.16); display: flex; align-items: center; justify-content: center; }
+  .tiles { display: flex; gap: 22px; }
+  .tile { width: 300px; height: 230px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+  .tile.light { background: var(--cream); color: #1a150d; }
+  .tile.dark { background: var(--bg); border: 1px solid rgba(244,242,237,.12); }
+  .frames { display: flex; gap: 18px; }
+  .frame { width: 190px; height: 190px; border-radius: 14px; background: #08090b; border: 1px solid rgba(244,242,237,.1); display: flex; align-items: center; justify-content: center; position: relative; }
+  .frame i { position: absolute; bottom: 10px; font-style: normal; font-family: "Songti SC", serif; font-size: 15px; color: var(--ink-3); letter-spacing: .1em; }
+  svg { display: block; overflow: visible; }
+</style>
+</head>
+<body>
+  <div class="panel hero" id="hero"><div class="tag"><b>01</b><span>主视觉版 · 光落到地面</span></div></div>
+  <div class="panel" id="std"><div class="tag"><b>02</b><span>标准版 · 竖排组合</span></div></div>
+  <div class="panel" id="lock"><div class="tag"><b>03</b><span>横排组合 · LOOK / 衣见</span></div></div>
+  <div class="panel" id="icons"><div class="tag"><b>04</b><span>App 图标 · 192 / 96 / 48</span></div></div>
+  <div class="panel" id="mono"><div class="tag"><b>05</b><span>单色版 · 深底 / 浅底 · 揭幕分镜</span></div></div>
+<script>
+  const INK = "#f4f2ed", CHAMP = "#e8cf9c", DARK = "#1a150d";
+  let uid = 0;
+
+  // 衣架几何（局部坐标 240×200）
+  const BX = 120, BY = 92;            // 灯泡
+  const L = 36, R = 204, BAR = 148;   // 横杆
+  const HOOK = `M 99 42 A 21 21 0 1 1 132 58 Q 120 66 120 76`;               // 问号弧 + 竖，止于 y=76，与灯泡留出间隙
+  const SHOULDERS = `M ${L} ${BAR} Q 74 110 ${BX} ${BY} Q 166 110 ${R} ${BAR}`;  // 微拱的斜肩
+  const BODY = `${SHOULDERS} Z`;
+
+  /**
+   * mode: "hero" | "std" | "mono"
+   * ink / accent：单色版用同一种颜色
+   */
+  function mark({ mode = "std", sw = 5.5, ink = INK, accent = CHAMP, glow = true } = {}) {
+    const id = `m${++uid}`;
+    const parts = [];
+    parts.push(`<defs>
+      <radialGradient id="${id}b" cx="${BX}" cy="${BY}" r="78" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="${accent}" stop-opacity=".78"/>
+        <stop offset=".35" stop-color="${accent}" stop-opacity=".32"/>
+        <stop offset="1" stop-color="${accent}" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="${id}c" x1="0" y1="${BAR}" x2="0" y2="330" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="${accent}" stop-opacity=".16"/>
+        <stop offset="1" stop-color="${accent}" stop-opacity="0"/>
+      </linearGradient>
+      <radialGradient id="${id}f">
+        <stop offset="0" stop-color="${accent}" stop-opacity=".32"/>
+        <stop offset="1" stop-color="${accent}" stop-opacity="0"/>
+      </radialGradient>
+      <filter id="${id}g" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="7"/></filter>
+    </defs>`);
+    if (mode === "hero") {
+      // 横杆之下继续落下的光束与地面光斑
+      parts.push(`<path d="M ${L + 6} ${BAR} L ${R - 6} ${BAR} L ${R + 70} 330 L ${L - 70} 330 Z" fill="url(#${id}c)"/>`);
+      parts.push(`<ellipse cx="${BX}" cy="330" rx="150" ry="33" fill="url(#${id}f)"/>`);
+    }
+    if (mode !== "mono") parts.push(`<path d="${BODY}" fill="url(#${id}b)"/>`);
+    else parts.push(`<path d="${BODY}" fill="${accent}" opacity=".16"/>`);
+    parts.push(`<path d="${SHOULDERS}" fill="none" stroke="${ink}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/>`);
+    parts.push(`<line x1="${L}" y1="${BAR}" x2="${R}" y2="${BAR}" stroke="${ink}" stroke-width="${sw}" stroke-linecap="round"/>`);
+    parts.push(`<path d="${HOOK}" fill="none" stroke="${accent}" stroke-width="${sw}" stroke-linecap="round"/>`);
+    if (glow && mode !== "mono") parts.push(`<circle cx="${BX}" cy="${BY}" r="13" fill="${accent}" opacity=".7" filter="url(#${id}g)"/>`);
+    parts.push(`<circle cx="${BX}" cy="${BY}" r="${sw * 1.35}" fill="${mode === "mono" ? accent : "#fff6e0"}"/>`);
+    if (mode !== "mono") parts.push(`<circle cx="${BX}" cy="${BY}" r="${sw * 1.35}" fill="none" stroke="${accent}" stroke-width="${sw * .5}"/>`);
+    return parts.join("");
+  }
+  const svg = (w, h, inner, vb = "0 0 240 200") => `<svg width="${w}" height="${h}" viewBox="${vb}">${inner}</svg>`;
+
+  // 01 主视觉
+  hero.insertAdjacentHTML("beforeend",
+    svg(620, 760, mark({ mode: "hero", sw: 4.6 }), "0 10 240 330") +
+    `<div class="look" style="font-size:64px;margin-top:-90px">LOOK</div>`);
+
+  // 02 标准版竖排
+  std.insertAdjacentHTML("beforeend", svg(300, 250, mark({ sw: 5.5 })) + `<div class="look" style="font-size:52px;margin-top:-30px">LOOK</div>`);
+
+  // 03 横排组合
+  lock.insertAdjacentHTML("beforeend",
+    `<div class="row">${svg(170, 142, mark({ sw: 7 }))}<div class="look" style="font-size:66px">LOOK</div></div>` +
+    `<div class="row" style="margin-top:20px">${svg(170, 142, mark({ sw: 7 }))}<div class="yj" style="font-size:62px">衣见</div></div>`);
+
+  // 04 App 图标：小尺寸加粗笔画
+  icons.insertAdjacentHTML("beforeend",
+    `<div class="row" style="align-items:center">
+      <div class="icon" style="width:192px;height:192px;border-radius:44px">${svg(160, 133, mark({ sw: 8 }), "6 18 228 170")}</div>
+      <div class="icon" style="width:96px;height:96px;border-radius:22px">${svg(80, 67, mark({ sw: 11 }), "6 18 228 170")}</div>
+      <div class="icon" style="width:48px;height:48px;border-radius:11px">${svg(40, 34, mark({ sw: 15, glow: false }), "6 18 228 170")}</div>
+    </div>`);
+
+  // 05 单色版 + 揭幕分镜
+  const q = `<path d="M 99 44 A 21 21 0 1 1 132 60 Q 120 68 120 80" fill="none" stroke="${CHAMP}" stroke-width="7" stroke-linecap="round"/><circle cx="120" cy="96" r="7.5" fill="${CHAMP}"/>`;
+  const lit = `<defs><filter id="lf" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="9"/></filter></defs>${q}<circle cx="120" cy="96" r="18" fill="${CHAMP}" opacity=".8" filter="url(#lf)"/><circle cx="120" cy="96" r="7.5" fill="#fff6e0"/>`;
+  mono.insertAdjacentHTML("beforeend",
+    `<div class="tiles">
+      <div class="tile dark">${svg(170, 142, mark({ mode: "mono", sw: 6.5, ink: INK, accent: INK }))}<div class="look" style="font-size:30px">LOOK</div></div>
+      <div class="tile light">${svg(170, 142, mark({ mode: "mono", sw: 6.5, ink: DARK, accent: DARK }))}<div class="look" style="font-size:30px;color:${DARK}">LOOK</div></div>
+    </div>
+    <div class="frames">
+      <div class="frame">${svg(150, 125, q)}<i>海报里的问号</i></div>
+      <div class="frame">${svg(150, 125, lit)}<i>点亮起来</i></div>
+      <div class="frame">${svg(150, 125, mark({ sw: 6 }))}<i>光照出衣架</i></div>
+    </div>`);
+</script>
+</body>
+</html>
