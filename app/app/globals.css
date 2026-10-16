@@ -232,6 +232,8 @@ section, figure { scroll-margin-top: var(--nav-offset); }
 .container { max-width: 720px; margin: 0 auto; padding: var(--nav-offset) 20px 120px; }
 .footer { text-align: center; padding: 0 20px 40px; }
 body { overflow-x: hidden; }
+/* 场景缓推、胶片颗粒层略宽于视口时，手机上仍可被横向拖动约 4px（工作站 375 宽实测）；clip 不建立滚动容器，不影响 sticky */
+html { overflow-x: clip; }
 
 @media (max-width: 420px) {
   .container { padding-left: 16px; padding-right: 16px; }

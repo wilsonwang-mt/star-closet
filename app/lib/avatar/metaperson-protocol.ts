@@ -77,10 +77,11 @@ export function parseMpMessage(origin: string, data: unknown): MpEvent | null {
 
 /**
  * 隐藏创建器自带的取图入口与示例形象：照片由本站上传界面收集，正脸照经 generate_avatar 发送（D56）。
- * 桌面版字段见官方 JS API 的 set_ui_parameters；手机版只用 isNoPhotoVisible 隐藏“无照片”入口。
+ * 桌面版字段见官方 JS API 的 set_ui_parameters；手机版用 isNoPhotoVisible 隐藏“无照片”入口，
+ * 并用 age 固定为成人：手机版创建器默认提供 10–16 岁选项，而 AGENTS.md 规定未成年人规则未定前不处理未成年人身体照片。
  */
 export function hiddenUiMessage(mobile: boolean): Record<string, unknown> {
-  if (mobile) return { eventName: "set_ui_parameters", isNoPhotoVisible: false };
+  if (mobile) return { eventName: "set_ui_parameters", isNoPhotoVisible: false, age: "adult" };
   return {
     eventName: "set_ui_parameters",
     isExportButtonVisible: false,

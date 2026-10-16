@@ -339,7 +339,7 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
             <motion.div key="done" className="stack" {...swap}>
               <div className={s.compare}>
                 <div>
-                  <span className={`sc-meta ${s.colLabel}`}>原搭配</span>
+                  <span className={`sc-meta ${s.colLabel}`}>这一套</span>
                   <div className={s.collage}>
                     {items
                       .filter((i) => i.image)

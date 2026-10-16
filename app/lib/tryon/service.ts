@@ -13,7 +13,7 @@ import { planTryon, stepFor, wearOn, type TryonLabel, type WornPiece } from "./p
 // 2D 试穿服务：把衣服换到用户自己的正面全身照上（FASHN on fal.ai）。两种请求：
 // - 逐件（试衣间主路径）：一次只穿一件，调用一次 FASHN（mode=quality）。底图是本人正面照，或本人一张成功的试穿结果
 //   （baseTryonId），这样一件一件把整套穿起来。
-// - 整套（旧调用方式，保留兼容）：按 plan.ts 的顺序依次叠加，mode=balanced。
+// - 整套（旧调用方式，保留兼容）：按 plan.ts 的顺序依次叠加；两步以内 mode=quality，三步 balanced。
 // - 照片来源：3D 形象流程已上传的正面全身照（avatar_photo.slot = front）；也可在试穿卡里直接上传一张，
 //   同样去元数据后存私有存储，并作为正面照供 3D 形象复用（每个位置只保留一张）。上传时写 expires_at = 上传时间 + 30 天（D47）。
 // - 同意（D47）：首次试穿前单独勾选“同意把我的正面照发送给 FASHN（fal.ai）生成试穿图”，记录在 tryon_consent。
@@ -379,11 +379,13 @@ async function createOutfitTryon(userId: string, input: TryonInput): Promise<Try
   });
 
   const byId = new Map(items.map((i) => [i.id, i]));
+  // 两步以内用 quality（实测单步 20–30 秒，balanced 会出现多余袖子等瑕疵）；三步时为守住 120 秒上限仍用 balanced。
+  const mode: FashnMode = steps.length <= 2 ? "quality" : "balanced";
   return runAndStore(userId, id, async (signal) => {
     let current = await modelImage(photo);
     for (const step of steps) {
       const garment = await garmentImage(byId.get(step.itemId)!.image!);
-      current = await runFashn({ modelImage: current, garmentImage: garment, category: step.category, mode: "balanced" }, signal);
+      current = await runFashn({ modelImage: current, garmentImage: garment, category: step.category, mode }, signal);
     }
     return current;
   });

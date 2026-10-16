@@ -118,7 +118,7 @@ test("setupMessages / creatorUrl：只发 accessToken；隐藏创建器自带的
   });
   const mobile = setupMessages("tok", true);
   assert.equal(mobile.length, 3);
-  assert.deepEqual(mobile[2], { eventName: "set_ui_parameters", isNoPhotoVisible: false });
+  assert.deepEqual(mobile[2], { eventName: "set_ui_parameters", isNoPhotoVisible: false, age: "adult" });
   assert.ok(!JSON.stringify(desk).includes("secret"));
   assert.deepEqual(creatorUrl(767), { url: "https://mobile.metaperson.avatarsdk.com/generator", mobile: true });
   assert.deepEqual(creatorUrl(768), { url: "https://metaperson.avatarsdk.com/iframe.html", mobile: false });

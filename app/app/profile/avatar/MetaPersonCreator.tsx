@@ -86,6 +86,7 @@ export default function MetaPersonCreator({
   const sawAvailability = useRef(false);
   const importing = useRef(false);
   const exportTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const importedUrl = useRef<string | null>(null);
   const graceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onImportedRef = useRef(onImported);
   onImportedRef.current = onImported;
@@ -129,8 +130,10 @@ export default function MetaPersonCreator({
 
     async function importExport(url: string, avatarCode: string) {
       if (exportTimer.current) clearTimeout(exportTimer.current);
-      if (importing.current) return;
+      // 重发 export_avatar 可能收到多次 model_exported：同一个导出地址只导入一次
+      if (importing.current || importedUrl.current === url) return;
       importing.current = true;
+      importedUrl.current = url;
       setBusy("importing");
       setError(null);
       const res = await fetch("/api/avatar/metaperson/import", {
@@ -141,6 +144,7 @@ export default function MetaPersonCreator({
       importing.current = false;
       if (!alive) return;
       if (!res || !res.ok) {
+        importedUrl.current = null;
         setError(await readError(res, "保存失败，请重试"));
         setBusy(null);
         return;
@@ -268,14 +272,21 @@ export default function MetaPersonCreator({
     if (!t || !canExport) return;
     setError(null);
     setBusy("exporting");
-    (t.win as Window).postMessage(exportMessage(), t.origin);
-    // 导出长时间没有回应时恢复按钮，允许重试。
-    if (exportTimer.current) clearTimeout(exportTimer.current);
-    exportTimer.current = setTimeout(() => {
+    // 创建器在形象还没完全显示时会静默丢掉 export_avatar（工作站实测：报 “Viewer scene isn't loaded” 且不回消息），
+    // 所以每 8 秒重发一次，直到收到 model_exported（importing）；累计 120 秒仍无回应才恢复按钮。
+    const started = Date.now();
+    const send = () => {
       if (importing.current) return;
-      setBusy((b) => (b === "exporting" ? null : b));
-      setError("导出没有响应，请重试");
-    }, 120_000);
+      if (Date.now() - started >= 120_000) {
+        setBusy((b) => (b === "exporting" ? null : b));
+        setError("导出没有响应，请重试");
+        return;
+      }
+      (t.win as Window).postMessage(exportMessage(), t.origin);
+      exportTimer.current = setTimeout(send, 8_000);
+    };
+    if (exportTimer.current) clearTimeout(exportTimer.current);
+    send();
   }
 
   const floatStyle: CSSProperties =
