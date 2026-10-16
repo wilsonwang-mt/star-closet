@@ -387,7 +387,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
       {mp ? (
         <section className="sc-glass card stack sc-rise">
           <div className="spread" style={{ alignItems: "flex-start" }}>
-            <h2 className="section-title">{job?.status === "succeeded" && job.glbUrl && !regenerating ? "我的 3D 形象" : "生成"}</h2>
+            <h2 className="section-title">{job?.status === "succeeded" && job.glbUrl && !regenerating ? "你的形象" : "生成"}</h2>
           </div>
           {job?.status === "succeeded" && job.glbUrl && !regenerating ? (
             <div className="stack" style={{ gap: 12 }}>

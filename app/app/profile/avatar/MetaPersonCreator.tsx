@@ -147,7 +147,7 @@ export default function MetaPersonCreator({ onImported }: { onImported: (state: 
 
   return (
     <div className="stack" style={{ gap: 12 }}>
-      <div className={s.creator} data-loading={phase === "loading" || undefined}>
+      <div className={s.creator} data-loading={phase === "loading" || phase === "error" || undefined}>
         {src ? (
           <iframe
             ref={frame}
