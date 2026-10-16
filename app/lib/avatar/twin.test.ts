@@ -16,6 +16,7 @@ delete process.env.AVATAR3D_PROVIDER;
 delete process.env.AVATARSDK_CLIENT_ID;
 process.env.FAL_KEY = "test-fal-key";
 process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
+process.env.TWIN_QUEUE_POLL_MS = "1";
 
 type Call = { url: string; body: Record<string, unknown> | null };
 let calls: Call[] = [];
@@ -49,13 +50,19 @@ before(async () => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     const body = typeof init?.body === "string" ? (JSON.parse(init.body) as Record<string, unknown>) : null;
     calls.push({ url, body });
-    if (url === "https://fal.run/fal-ai/nano-banana-pro/edit") {
+    if (url === "https://queue.fal.run/fal-ai/nano-banana-pro/edit") {
       const prompt = String(body?.prompt ?? "");
       const angle = prompt.includes("front view") ? "front" : prompt.includes("three-quarter view") ? "side" : "back";
       if (angle === failAngle && failTimes > 0) {
         failTimes--;
         return new Response("err", { status: 500 });
       }
+      const base = `https://queue.fal.run/fal-ai/nano-banana-pro/requests/${angle}`;
+      return Response.json({ status: "IN_QUEUE", status_url: `${base}/status`, response_url: base });
+    }
+    if (url.startsWith("https://queue.fal.run/fal-ai/nano-banana-pro/requests/")) {
+      if (url.endsWith("/status")) return Response.json({ status: "COMPLETED" });
+      const angle = url.split("/").at(-1);
       return Response.json({ images: [{ url: `https://v3.fal.media/files/${angle}.png` }] });
     }
     if (url.startsWith("https://v3.fal.media/files/")) return new Response(Buffer.from(RESULT()));
@@ -135,7 +142,7 @@ test("上传：数字分身模式收 face/front/extra/side/back，照片自上�
 test("generateTwin：分析 + 三张并行生成，存私有存储并可经契约函数读取", async () => {
   await userWithPhotos("u1", ["face", "front", "extra"]);
   const { jobId } = await m.twin.generateTwin("u1", { gender: "female" }, { analyze });
-  const fal = calls.filter((c) => c.url.startsWith("https://fal.run/"));
+  const fal = calls.filter((c) => c.url === "https://queue.fal.run/fal-ai/nano-banana-pro/edit");
   assert.equal(fal.length, 3);
   for (const c of fal) {
     assert.equal((c.body!.image_urls as string[]).length, 3, "参考图为全部已上传照片");
@@ -178,7 +185,7 @@ test("重新生成：侧面失败一次会重试；成功后删除旧分身文�
   failAngle = "side";
   failTimes = 1;
   await m.twin.generateTwin("u1", { gender: "female" }, { analyze });
-  const sideCalls = calls.filter((c) => c.url.startsWith("https://fal.run/") && String(c.body?.prompt).includes("three-quarter view"));
+  const sideCalls = calls.filter((c) => c.url === "https://queue.fal.run/fal-ai/nano-banana-pro/edit" && String(c.body?.prompt).includes("three-quarter view"));
   assert.equal(sideCalls.length, 2);
   const now = (await m.twin.getTwin("u1"))!;
   assert.notEqual(now.jobId, old.jobId);
@@ -218,7 +225,7 @@ test("未同意照片分析：不调用分析；未选性别时报错", async ()
   const t = (await m.twin.getTwin("u2"))!;
   assert.equal(t.summary, null);
   assert.equal(t.gender, "male");
-  const prompt = String(calls.filter((c) => c.url.startsWith("https://fal.run/")).at(-1)?.body?.prompt);
+  const prompt = String(calls.filter((c) => c.url === "https://queue.fal.run/fal-ai/nano-banana-pro/edit").at(-1)?.body?.prompt);
   assert.match(prompt, /SAME man/);
   assert.match(prompt, /plain white sneakers/);
   assert.match(prompt, /Reference 1 is his frontal face close-up, reference 2 his full body\./);
@@ -250,7 +257,7 @@ test("删除这个形象 / 一键删除：清掉分身图片与记录", async ()
   assert.equal((await m.service.getAvatarState("u1")).twin, null);
 });
 
-test("生成中的分身作业：轮询 tickJob 不会把它改成失败；超过 150 秒视为中断；进行中再次生成返回 409", async () => {
+test("生成中的分身作业：轮询 tickJob 不会把它改成失败；超过 270 秒视为中断；进行中再次生成返回 409", async () => {
   const { db, schema } = m.db;
   await db.insert(schema.user).values({ id: "u4", name: "测试", email: "u4@example.test" });
   await m.service.recordConsent("u4", { store: true, thirdParty: true, offerVersion: m.providers.offerVersion() });
@@ -261,7 +268,7 @@ test("生成中的分身作业：轮询 tickJob 不会把它改成失败；超�
   await assert.rejects(m.twin.generateTwin("u4", { gender: "female" }), /正在生成/);
   await db
     .update(schema.avatarJob)
-    .set({ updatedAt: new Date(Date.now() - 200_000), createdAt: new Date(Date.now() - 200_000) })
+    .set({ updatedAt: new Date(Date.now() - 300_000), createdAt: new Date(Date.now() - 300_000) })
     .where(eq(schema.avatarJob.id, id));
   const st = await m.service.getAvatarState("u4");
   assert.equal(st.job?.status, "failed");

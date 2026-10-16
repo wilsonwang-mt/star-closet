@@ -9,7 +9,7 @@ import s from "./AvatarStudio.module.css";
 import t from "./TwinStudio.module.css";
 
 // 数字分身（D63）：上传 2–5 张照片 → 生成一组标准形象照（正面、侧面、背面）→ 左右滑动查看。
-// 生成走 POST /api/avatar/twin（同步，约 30–60 秒）；等待态只显示真实秒数与阶段文案，不伪造百分比。
+// 生成走 POST /api/avatar/twin（后台执行，页面轮询；fal 排队时约 40–120 秒）；等待态只显示真实秒数与阶段文案，不伪造百分比。
 
 type Gender = "female" | "male";
 
@@ -121,8 +121,8 @@ export default function TwinStudio({
     const next = (await res.json()) as AvatarState;
     setStartedAt(null);
     setRegenerating(false);
-    onState(next);
-    onNote("你的形象已生成");
+    onState(next); // 仍在生成时（processing）由上面的轮询接着显示等待态
+    if (!(next.job?.provider === "twin" && next.job.status === "processing")) onNote("你的形象已生成");
   }
 
   async function removeTwin(v: TwinView) {
