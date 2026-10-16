@@ -1,0 +1,25 @@
+{
+  "name": "star-closet-demo-video",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Star Closet 比赛演示视频（Remotion）。90 秒，1920×1080 横屏与 1080×1920 竖屏两版。",
+  "scripts": {
+    "assets": "node scripts/sync-assets.mjs",
+    "studio": "npm run assets && remotion studio",
+    "typecheck": "tsc --noEmit",
+    "preview": "npm run assets && remotion render DemoLandscape out/preview-landscape.mp4 --scale=0.5 --crf=28 && remotion render DemoPortrait out/preview-portrait.mp4 --scale=0.5 --crf=28",
+    "render": "npm run assets && remotion render DemoLandscape out/star-closet-1920x1080.mp4 && remotion render DemoPortrait out/star-closet-1080x1920.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.524",
+    "@remotion/google-fonts": "4.0.524",
+    "@remotion/transitions": "4.0.524",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.524"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.2",
+    "typescript": "5.9.3"
+  }
+}
