@@ -7,30 +7,32 @@ import { avatarKey, getStorage } from "@/lib/storage";
 import { MAX_PHOTO_BYTES, sniffImage } from "@/lib/avatar/image";
 import { PHOTO_RETENTION_DAYS } from "@/lib/avatar/purge";
 import { stripMetadata } from "@/lib/avatar/strip";
-import { isAccessory, runAccessoryTryon } from "./accessory";
-import { baseInfo, fileUrl, identityRefs, resolveBase, storedImage, type BaseSource } from "./base";
+import { accessoryKind } from "./accessory";
+import { baseInfo, fileUrl, identityExtras, resolveBase, storedImage, type BaseSource } from "./base";
 import { fetchResultImage, TryonError, type FashnMode } from "./fashn";
+import { runNanoTryon } from "./nano";
 import { isTryonEnabled, providerId, providerName, runTryonStep } from "./provider";
 import { planTryon, stepFor, wearOn, type TryonLabel, type WornPiece } from "./plan";
 
-// 2D 试穿服务：把衣服换到用户自己的形象上（D62 起默认可灵 Kolors on fal.ai，TRYON_PROVIDER=fashn_fal 时用 FASHN）。
+// 2D 试穿服务：把衣服换到用户自己的形象上。模型见 provider.ts：默认 nano-banana 多参考（失败或超时回退可灵 Kolors），
+// 可切 kolors_fal / fashn_fal。
 // - 底图（D63）：优先用数字分身的正面标准形象照；没有分身时退回本人正面全身照（avatar_photo.slot = front），见 base.ts。
+//   有分身时再加一张正脸参考，提示词按分身性别换代词。
 // - 逐件（试衣间主路径）：一次只穿一件，调用一次模型。底图是本人形象，或本人一张成功的试穿结果
 //   （baseTryonId），这样一件一件把整套穿起来。
 // - 整套（旧调用方式，保留兼容）：按 plan.ts 的顺序依次叠加。
-// - 一键试穿（商品详情页）：上装 / 下装 / 外套 / 连衣裙走试穿模型；鞋、包、配饰改用 nano-banana-pro/edit，
-//   以多张身份参考 + 商品图生成同一个人穿戴这件的全身照（accessory.ts）。
+// - 一键试穿（商品详情页）：上装 / 下装 / 外套 / 连衣裙按当前模型；鞋、包、配饰始终走 nano-banana（同一提示词，动词改为穿 / 拿）。
 // - 也可在试穿卡里直接上传一张正面全身照（兜底），去元数据后存私有存储；上传时写 expires_at = 上传时间 + 30 天（D47）。
-// - 同意（D47）：首次试穿前单独勾选“同意把我的形象照片发送给 fal.ai（可灵 Kolors）生成试穿图”，记录在 tryon_consent；
-//   版本号带模型名，换模型或旧版本（v1）都需要重新同意。
+// - 同意（D47）：首次试穿前单独勾选“同意把我的形象照片发送给 fal.ai 上的 AI 模型生成试穿图”，记录在 tryon_consent，
+//   版本 tryon-consent-v2:fal；旧版本（v1:fashn_fal）需要重新同意。
 // - 结果：服务端取回结果图存 `<userId>/avatars/tryon-<id>.png`，浏览器经 /api/avatar/files/<key> 读取（他人 404）。
 
 export { TryonError } from "./fashn";
 
-/** 当前同意版本：tryon-consent-v2:<模型>。旧的 v1（FASHN）或换了模型都视为未同意。 */
-export const consentVersion = () => `tryon-consent-v2:${providerId() ?? "none"}`;
-/** 服务端整体超时：所有步骤（含下载与存储）必须在此之内完成。 */
-export const TOTAL_TIMEOUT_MS = 120_000;
+/** 当前同意版本：处理方为 fal.ai（不区分 fal 上的具体模型）；旧的 v1（FASHN）视为未同意。 */
+export const consentVersion = () => "tryon-consent-v2:fal";
+/** 服务端整体超时：nano 最多 100 秒，失败时回退 Kolors 约 20 秒，含下载与存储必须在此之内完成（路由 maxDuration 180）。 */
+export const TOTAL_TIMEOUT_MS = 175_000;
 
 export type SnapshotItem = {
   id: string;
@@ -335,9 +337,10 @@ async function createItemTryon(userId: string, input: TryonInput): Promise<Tryon
     appliedCategories: after.map((w) => w.label),
     status: "processing",
   });
+  const extras = await identityExtras(userId);
   return runAndStore(userId, id, async (signal) => {
     const garment = await garmentImage(item.image!);
-    return runTryonStep({ modelImage: model, garmentImage: garment, category: step.category, mode: "quality" }, signal);
+    return runTryonStep({ modelImage: model, garmentImage: garment, category: step.category, mode: "quality", ...extras }, signal);
   });
 }
 
@@ -364,11 +367,12 @@ async function createOutfitTryon(userId: string, input: TryonInput): Promise<Try
   const byId = new Map(items.map((i) => [i.id, i]));
   // 两步以内用 quality（实测单步 20–30 秒，balanced 会出现多余袖子等瑕疵）；三步时为守住 120 秒上限仍用 balanced。
   const mode: FashnMode = steps.length <= 2 ? "quality" : "balanced";
+  const extras = await identityExtras(userId);
   return runAndStore(userId, id, async (signal) => {
     let current = firstBase;
     for (const step of steps) {
       const garment = await garmentImage(byId.get(step.itemId)!.image!);
-      current = await runTryonStep({ modelImage: current, garmentImage: garment, category: step.category, mode }, signal);
+      current = await runTryonStep({ modelImage: current, garmentImage: garment, category: step.category, mode, ...extras }, signal);
     }
     return current;
   });
@@ -376,8 +380,8 @@ async function createOutfitTryon(userId: string, input: TryonInput): Promise<Try
 
 /**
  * 商品详情页“一键试穿”：把这一件穿到本人形象上（不属于任何搭配）。
- * - 上装 / 下装 / 外套 / 连衣裙：走试穿模型（默认 Kolors），底图为分身正面照或正面全身照。
- * - 鞋、包、配饰（试穿模型不支持）：nano-banana-pro/edit，身份参考（分身多张，没有时为底图）+ 商品图。
+ * - 上装 / 下装 / 外套 / 连衣裙：按当前模型（默认 nano-banana，失败回退 Kolors），底图为分身正面照或正面全身照。
+ * - 鞋、包、配饰（Kolors / FASHN 不支持）：始终走 nano-banana，[底图, 正脸（有则加）, 商品图]。
  */
 export async function createQuickTryon(userId: string, itemId: string, opts: { consent?: boolean } = {}): Promise<TryonView> {
   if (!isTryonEnabled()) throw new TryonError(503, "试穿服务未开放");
@@ -387,11 +391,12 @@ export async function createQuickTryon(userId: string, itemId: string, opts: { c
   if (!item) throw new TryonError(404, "没有找到这件单品");
   if (!item.image) throw new TryonError(422, "这件单品没有可用的图片");
   if (stepFor(item)) return createItemTryon(userId, { itemIds: [item.id] });
-  if (!isAccessory(item)) throw new TryonError(422, "这件单品暂不支持试穿");
+  const kind = accessoryKind(item);
+  if (!kind) throw new TryonError(422, "这件单品暂不支持试穿");
 
-  const refs = await identityRefs(userId);
-  if (!refs.length) throw new TryonError(409, NO_BASE);
-  const meta: StepMeta = { kind: "step", wornItemId: item.id, baseTryonId: null, mode: "quality", provider: "nano_banana" };
+  const model = await requireBase(userId);
+  const extras = await identityExtras(userId);
+  const meta: StepMeta = { kind: "step", wornItemId: item.id, baseTryonId: null, mode: "quality", provider: "nano_fal" };
   const id = crypto.randomUUID();
   await db.insert(schema.tryon).values({
     id,
@@ -404,7 +409,9 @@ export async function createQuickTryon(userId: string, itemId: string, opts: { c
     appliedCategories: [],
     status: "processing",
   });
-  return runAndStore(userId, id, async (signal) => runAccessoryTryon({ refs, garment: await garmentImage(item.image!), item }, signal));
+  return runAndStore(userId, id, async (signal) =>
+    runNanoTryon({ base: model, face: extras.face, gender: extras.gender, garment: await garmentImage(item.image!), kind }, signal),
+  );
 }
 
 /** 本人这件单品最新的一键试穿结果（详情页首屏用）；没有时为 null。 */

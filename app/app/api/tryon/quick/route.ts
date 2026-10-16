@@ -3,9 +3,10 @@ import { json, withTryonUser } from "@/lib/tryon/http";
 import { createQuickTryon, TryonError } from "@/lib/tryon/service";
 
 // 商品详情页“一键试穿”：POST { itemId, consent? }，把这一件穿到本人形象上（数字分身正面照优先，否则正面全身照）。
-// 上装 / 下装 / 外套 / 连衣裙走试穿模型（默认可灵 Kolors，约 10 秒）；鞋、包、配饰走 nano-banana-pro/edit（约 30 秒）。
+// 默认 nano-banana 多参考（约 45 秒，衣服与商品图一致）；上装 / 下装 / 外套 / 连衣裙在 nano 失败或超时（>100 秒）时回退可灵 Kolors；
+// 鞋、包、配饰始终走 nano-banana。整体上限 175 秒。
 // 返回 TryonView；首次可带 consent: true 记录同意（与试衣间同一项，D47）。
-export const maxDuration = 120;
+export const maxDuration = 180;
 
 const ITEM_RE = /^[A-Za-z0-9_-]{1,40}$/;
 

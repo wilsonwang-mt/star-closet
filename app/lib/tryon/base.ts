@@ -78,6 +78,15 @@ export async function baseInfo(userId: string): Promise<{ url: string | null; so
   return photo ? { url: fileUrl(photo.storageKey), source: "photo" } : { url: null, source: null };
 }
 
+/** nano 试穿的补充参考：分身的正脸（getIdentityRefs 第 2 张，契约顺序为 正面 / 正脸 / 侧脸）与性别；没有分身时都为空。 */
+export async function identityExtras(userId: string): Promise<{ face: string | null; gender: "female" | "male" | null }> {
+  const twin = await findTwin(userId);
+  if (!twin) return { face: null, gender: null };
+  const refs = await twinApi.getIdentityRefs(userId).catch(() => [] as string[]);
+  const face = typeof refs?.[1] === "string" && refs[1] ? refs[1] : null;
+  return { face, gender: twin.gender ?? null };
+}
+
 /** 身份参考图：分身的多张参考（最多 4 张）；没有分身时退回底图一张；都没有时为空数组。 */
 export async function identityRefs(userId: string): Promise<string[]> {
   const refs = await twinApi.getIdentityRefs(userId).catch(() => [] as string[]);
