@@ -47,7 +47,8 @@
 - `GET /api/avatar/metaperson/token`：需登录且已同意第三方处理，返回 `{ accessToken, expiresIn }`。服务端 `POST https://api.avatarsdk.com/o/token/`（Basic auth `CLIENT_ID:CLIENT_SECRET`，表单 `grant_type=client_credentials`），缓存到过期前 60 秒；secret 不出服务端。
 - `POST /api/avatar/metaperson/import`（body `{ url, avatarCode }`）：同样要求同意；`avatarCode` 只允许 `[A-Za-z0-9_-]{1,128}`；导出地址只允许 https、默认端口、主机为 `avatarsdk.com` 及其子域或 `AVATARSDK_EXPORT_HOSTS`（逗号追加）中的主机及其子域；手动跟随最多 3 次重定向、每一跳重新校验；限制 100MB 并校验 glTF 二进制头。存入 `<userId>/avatars/<jobId>.glb`，写一条 `avatar_job`（status succeeded、provider metaperson、`provider_task_id = avatarCode`），并删除本人旧形象的 GLB。主机不在白名单时返回 400，错误信息含主机名——首次实测若报错，把该主机加进 `AVATARSDK_EXPORT_HOSTS`。
 - 删除：删除单个形象和一键删除时，对 metaperson 作业调用 `DELETE https://api.avatarsdk.com/avatars/<avatarCode>/`（Bearer 令牌）。该接口对创建器生成的形象是否生效**未核实**；失败只记日志（不含响应体），不在界面提示。本站存储里的文件照常删除。
-- 照片：MetaPerson 模式下自拍只在创建器内上传给 MetaPerson，本站不接收照片（照片上传与生成任务接口返回 400），因此没有本站原图需要 30 天删除。
+- 照片：MetaPerson 模式下自拍只在创建器内上传给 MetaPerson，本站不接收照片（照片上传与生成任务接口返回 400），因此没有本站原图需要 30 天删除。同时开启 2D 试穿时，试穿用的正面照只能在试穿卡里上传（`POST /api/tryon/photo`，不受上述 400 限制）。
+- 未配置时：未登录请求 `GET /api/avatar/metaperson/token` 返回 401；已登录返回 409 `{"error":"MetaPerson 未启用，请刷新页面"}`，导入接口同样 409，不访问外部服务（2026-10-16 生产构建冒烟实测）。
 
 - 同意卡分两项：(a) 同意上传并存储本人照片用于生成 3D 形象（必选）；(b) 同意把照片发送给 fal.ai（Tripo 3D）处理——只在配置了真实服务 key 时出现，可选，不勾选只能生成示意模型，之后可在“修改授权”里改。`avatar_job.consent_version` 同时记录两项：`avatar-consent-v2:store` 或 `avatar-consent-v2:store+tripo_fal`（旧版 v1 同意失效，需重新确认）。提交时带上卡片版本（`offerVersion`），处理方变了会要求刷新重读。
 - 照片：只收正面 / 侧面 / 背面三张全身照。面部特写与补充照片不参与生成，已不再收集（以前上传的仍可查看、删除）。浏览器端压缩到最长边 1600px 并重新编码为 JPEG；服务端在解析前限制请求体（8MB + 表单开销，按实际读取字节计，覆盖 chunked 与谎报长度），再剥离元数据后存储（`lib/avatar/strip.ts`：JPEG 去 EXIF/GPS/XMP/IPTC/注释，PNG 只留图像与色彩块，WebP 去 EXIF/XMP；EXIF 里非默认的方向会写回一个只含方向的最小 EXIF，其余字段不保留）。按文件头识别 JPG/PNG/WebP，质量提示写入 `quality_flags`。
@@ -75,7 +76,7 @@ API：`GET /api/avatar/metaperson/token`、`POST /api/avatar/metaperson/import`�
 - 启用：设置 `FAL_KEY`（`TRYON_PROVIDER` 可留空，设置时必须为 `fashn_fal`）。没有 key 时不显示入口，也不发任何外部请求。
 - 入口：搭配页改编结果卡、试衣间每套 LookCard 上的「穿在我身上」（`components/tryon/TryOn.tsx`）。未登录跳转登录。面板流程：准备（正面照 + 首次同意）→ 生成（本人照片压暗，光束扫过）→ 结果（淡入 + 轻微推近，与原搭配并排，点击放大）；可删除这张。
 - 叠加顺序（`lib/tryon/plan.ts`）：有连衣裙 → `one-pieces`，再叠外套；否则 上装内搭（`tops`）→ 下装（`bottoms`）→ 外套（`tops`），各取第一件；上一步结果作为下一步 `model_image`。鞋、包、配饰不试穿，结果卡一行写“已试穿：上装、下装、外套”。参数 `mode=balanced`、`garment_photo_type=flat-lay`、`output_format=png`，请求头带 `X-Fal-Store-IO: 0`（对同步端点是否生效未核实）。服务端整体超时 120 秒，失败返回中文错误。
-- 照片：复用 3D 形象流程的正面全身照（`avatar_photo.slot = front`）；也可在试穿卡里直接上传（浏览器压缩为 JPEG，服务端去元数据后存私有存储，并替换为新的正面照）。发给 FASHN 时，Supabase 存储用 15 分钟签名 URL，本地存储用 data URI；单品图读 `public/` 转 data URI。
+- 照片：复用 3D 形象流程的正面全身照（`avatar_photo.slot = front`；MetaPerson 模式下 3D 流程不收照片，只能在试穿卡里上传）；也可在试穿卡里直接上传（浏览器压缩为 JPEG，服务端去元数据后存私有存储，并替换为新的正面照）。发给 FASHN 时，Supabase 存储用 15 分钟签名 URL，本地存储用 data URI；单品图读 `public/` 转 data URI。
 - 同意（D47）：首次试穿前单独勾选“同意把我的正面照发送给 FASHN（fal.ai）生成试穿图”，记录在 `tryon_consent`（`tryon-consent-v1:fashn_fal`）。
 - 结果：服务端取回结果图存 `<userId>/avatars/tryon-<id>.png`（沿用现有 key 规则，未改 `lib/storage`），经 `GET /api/avatar/files/<key>` 读取，他人 404。一键删除 3D 形象会清空用户存储前缀（含试穿图）；对应的 `tryon` 记录在下次读取时发现文件不存在即删除（`lib/avatar/service.ts` 本任务不改，`deleteAllTryons()` 已提供，待接入）。
 - API：`POST /api/tryon`（`{ lookId }` 或 `{ outfitId, itemIds }`，首次带 `consent: true`）、`GET|DELETE /api/tryon/[id]`（非本人 404）、`POST /api/tryon/photo`（multipart：file）。
@@ -107,19 +108,19 @@ npm run db:setup
 npm run dev                  # http://localhost:3000
 ```
 
-检查：`npm run typecheck`、`npm run lint`、`npm test`、`npm run build`。没有 `.env.local` 时构建会因 better-auth 默认密钥打印报错（退出码仍为 0），可在命令行临时设置 `BETTER_AUTH_SECRET` 再构建。
+检查：`npm run typecheck`、`npm run lint`、`npm test`、`npm run build`。没有 `.env.local` 时构建会因 better-auth 默认密钥打印报错（退出码仍为 0），可在命令行临时设置 `BETTER_AUTH_SECRET` 再构建。构建时 `next/font/google` 要从 Google Fonts 下载 Noto Serif SC（标题衬线字）的上百个分片；生产构建的这类请求没有超时，网络（含本机代理）把大量并发连接重置时，构建会停在 “Retrying 1/3…” 不动。2026-10-16 实测的绕法：不改代码，用 `NODE_OPTIONS="--require <脚本>"` 预加载一行 `require("node:https").globalAgent.maxSockets = 6`，并在该命令的环境里去掉 `HTTPS_PROXY`/`HTTP_PROXY`，构建约 4 分钟完成。
 
 ### 在 Supabase 上需要执行的步骤（发起用户本人操作）
 
 目录 v0.2、个人档案与 3D 形象之后，据各开发会话的记录，以下步骤都还没有在发起用户的 Supabase 上执行过（这些会话只用本地 PGlite，没有连接用户的 Supabase）：
 
 1. `.env.local` 设置 `DATABASE_URL`（transaction pooler 即可）；迁移需要会话模式连接，可另设 `DATABASE_MIGRATE_URL`（5432 端口）。
-2. 运行 `npm run db:setup`：按顺序执行迁移 0001（profile / avatar_photo / avatar_job）与 0002（目录 v0.2 字段、`avatar_photo.expires_at`、外部任务字段），再写入目录 v0.2。衣橱、搭配、单品都做 upsert，搭配与单品的对应关系整体重写；不删除旧行（试衣间引用单品编号），所以 v0.1 中编号不再使用的旧单品会留在库里。
+2. 运行 `npm run db:setup`：按顺序执行尚未执行的迁移——0001（profile / avatar_photo / avatar_job）、0002（目录 v0.2 字段、`avatar_photo.expires_at`、外部任务字段）、0003（2D 试穿 `tryon` / `tryon_consent`），再写入目录 v0.2。MetaPerson 不需要新表（沿用 `avatar_job`，provider 为 `metaperson`）。衣橱、搭配、单品都做 upsert，搭配与单品的对应关系整体重写；不删除旧行（试衣间引用单品编号），所以 v0.1 中编号不再使用的旧单品会留在库里。
 3. 在 SQL Editor 再执行一次 `supabase/rls.sql`，为新表开启 RLS 并收回 Data API 权限。
 4. 如需把照片和 GLB 存到 Supabase：在 SQL Editor 执行 `supabase/storage.sql` 建私有桶 `avatar-private`，并在 `.env.local` 设置 `SUPABASE_URL` 与 `SUPABASE_SERVICE_ROLE_KEY`（只在服务端使用）。两项都有才启用，否则仍写本地 `.data/uploads/`。
 5. 每天运行一次 `npm run avatar:purge` 的定时任务（见上文“30 天删除”）。
 
-可选：`ANTHROPIC_API_KEY`（AI 改编）；`AVATAR3D_PROVIDER=tripo_fal` + `FAL_KEY`（真实 3D 生成，未实测）。
+可选：`ANTHROPIC_API_KEY`（AI 改编）；`AVATAR3D_PROVIDER=metaperson` + `AVATARSDK_CLIENT_ID` + `AVATARSDK_CLIENT_SECRET`（MetaPerson 3D 形象，可选 `AVATARSDK_EXPORT_HOSTS`）；`FAL_KEY`（2D 试穿 FASHN；若同时设 `AVATAR3D_PROVIDER=tripo_fal` 则也用于 Tripo 3D）。以上真实服务均未实测。
 
 ### 2026-10-16 早先的 Supabase 实测（目录 v0.1）
 
