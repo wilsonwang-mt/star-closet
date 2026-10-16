@@ -18,6 +18,9 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 8,
   },
+  // 会话 cookie 缓存：5 分钟内已登录请求只验 cookie 签名，不再查库（慢链路上省约 0.6 s）。
+  // 代价：别处撤销的会话，旧 cookie 最多再有效 5 分钟；本站没有改密 / 退出所有设备入口，同浏览器退出立即失效。
+  session: { cookieCache: { enabled: true, maxAge: 300 } },
   plugins: [nextCookies()],
 });
 
