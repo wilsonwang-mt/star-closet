@@ -175,6 +175,45 @@
   .flow li::before { content: "0" counter(s); position: absolute; left: 0; top: 50%; transform: translateY(-50%); font-family: var(--latin); color: var(--champ); font-size: 1.05em; }
   .flow li small { display: block; margin-top: .25em; font-size: var(--t-m); color: var(--ink-3); }
 
+  /* —— 谁是穿搭主理人 —— */
+  .curators { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(12px, 1.4vw, 26px); margin-top: clamp(26px, 5vh, 60px); }
+  .cur { border-radius: clamp(14px, 1.4vw, 22px); overflow: hidden; border: 1px solid var(--rule); background: var(--glass); }
+  .cur .pic { position: relative; aspect-ratio: 4 / 3; overflow: hidden; }
+  .cur .pic img { width: 100%; height: 100%; object-fit: cover; object-position: center 35%; filter: saturate(.9) brightness(.85); }
+  .cur .pic::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(11,13,16,.9), transparent 60%); }
+  .cur .pic .no { position: absolute; left: clamp(14px, 1.4vw, 24px); bottom: clamp(10px, 1vw, 18px); z-index: 1; font-family: var(--latin); font-size: clamp(32px, 3vw, 56px); line-height: 1; color: var(--champ); }
+  .cur .txt { padding: clamp(14px, 1.5vw, 26px) clamp(16px, 1.6vw, 28px) clamp(18px, 2vw, 32px); }
+  .cur h3 { font-size: var(--h-m); }
+  .cur p { margin-top: .7em; font-size: var(--t-m); line-height: 1.75; color: var(--ink-2); }
+  .cur .eg { margin-top: .9em; font-size: var(--t-s); color: var(--champ); letter-spacing: .06em; line-height: 1.7; }
+
+  .agent-split { grid-template-columns: minmax(0, 1.25fr) minmax(0, .85fr); }
+
+  /* —— 智能试衣镜 —— */
+  .mirror-split { grid-template-columns: minmax(0, 1fr) minmax(0, .95fr); }
+  .mirror-room { position: relative; padding: clamp(16px, 2vw, 36px) 0; display: flex; justify-content: center;
+    background: radial-gradient(55% 60% at 50% 45%, rgba(232,190,130,.28), transparent 72%); }
+  .mirror { position: relative; width: clamp(220px, 24vw, 430px); aspect-ratio: 1 / 2.05; border-radius: 22% / 11%; padding: clamp(9px, .9vw, 16px);
+    background: linear-gradient(100deg, #6d5532 0%, #d9bd8a 18%, #f3e2bd 30%, #a88757 52%, #e7cf9f 76%, #7a6038 100%);
+    box-shadow: inset 0 0 0 1px rgba(255,240,210,.5), 0 70px 120px -40px rgba(0,0,0,.95), 0 0 140px -20px rgba(232,190,130,.45); }
+  .mirror .glass-in { position: relative; width: 100%; height: 100%; border-radius: 19% / 9.5%; overflow: hidden; background: #1a1611;
+    box-shadow: inset 0 0 0 2px rgba(60,45,25,.6), inset 0 0 40px rgba(0,0,0,.5); }
+  .mirror .glass-in img.reflect { width: 100%; height: 100%; object-fit: cover; object-position: center 40%; filter: sepia(.18) saturate(.95) brightness(.95); }
+  .mirror .glass-in::before { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    background: linear-gradient(118deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,0) 30%, rgba(255,255,255,0) 64%, rgba(255,255,255,.09) 72%, rgba(255,255,255,0) 82%); }
+  .mirror .glass-in::after { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(20,15,10,.35), transparent 26%, transparent 78%, rgba(20,15,10,.55)); }
+  .mirror .items { position: absolute; left: 7%; right: 7%; top: 6%; z-index: 3; display: grid; grid-template-columns: repeat(4, 1fr); gap: 5%; }
+  .mirror .it { position: relative; aspect-ratio: 3 / 4; border-radius: 12%; padding: 7%; background: rgba(255,248,236,.18); border: 1px solid rgba(255,240,210,.45); backdrop-filter: blur(6px);
+    box-shadow: 0 8px 18px -8px rgba(0,0,0,.6); }
+  .mirror .it img { width: 100%; height: 100%; object-fit: contain; background: #f6f2ea; border-radius: 9%; padding: 8%; }
+  .mirror .it.on::after { content: "✓"; position: absolute; top: -14%; right: -12%; width: 1.6em; height: 1.6em; display: grid; place-items: center; border-radius: 50%;
+    font-size: clamp(8px, .6vw, 11px); background: var(--champ); color: #1a150d; font-weight: 700; }
+  .mirror .hud { position: absolute; left: 8%; right: 8%; bottom: 5%; z-index: 3; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .mirror .chip { font-size: clamp(10px, .75vw, 13px); letter-spacing: .08em; padding: .45em .9em; border-radius: 999px; background: rgba(11,13,16,.5); border: 1px solid rgba(244,242,237,.3); backdrop-filter: blur(8px); white-space: nowrap; }
+  .mirror .chip.gold { background: linear-gradient(180deg, #f1dcae, #d9bc83); color: #1a150d; border-color: transparent; font-weight: 700; }
+  .mirror .turn { position: absolute; right: 7%; top: 24%; z-index: 3; font-family: var(--latin); font-size: clamp(10px, .75vw, 13px); letter-spacing: .2em; color: #fff3d6; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
+  .soon { display: inline-block; font-size: var(--t-s); letter-spacing: .3em; color: var(--bg); background: var(--champ); padding: .3em .9em; border-radius: 4px; font-weight: 700; }
+
   /* —— 商业模式 —— */
   .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(12px, 1.4vw, 24px); margin-top: clamp(28px, 5vh, 60px); }
   .card { padding: clamp(20px, 2vw, 36px); }
@@ -247,6 +286,9 @@
     .closets { grid-template-columns: repeat(5, 1fr); }
     .closet span { display: none; }
     .cards { grid-template-columns: 1fr 1fr; }
+    .curators { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .mirror { width: min(64vw, 300px); }
+    .cur .pic { aspect-ratio: 16 / 10; }
     .nums { grid-template-columns: repeat(3, 1fr); row-gap: 26px; }
     .two { grid-template-columns: 1fr; }
     .hook .copy { left: var(--pad-x); right: var(--pad-x); max-width: none; top: auto; bottom: calc(env(safe-area-inset-bottom) + 110px); transform: none; }
@@ -257,6 +299,7 @@
   }
   @media (max-width: 520px) {
     .cards { grid-template-columns: 1fr; }
+    .curators { grid-template-columns: 1fr; }
     .card { padding: 18px 20px; }
   }
   @media (prefers-reduced-motion: reduce) { .slide, .slide .rise { transition: none !important; } }
@@ -309,11 +352,26 @@
   <section class="slide solution" data-title="解决方案">
     <p class="kicker rise"><b>02</b>The Answer</p>
     <div class="wm rise d1">{{svg:docs/宣传/logo/final/svg/seen-wordmark.svg}}</div>
-    <h2 class="h-l rise d2" style="margin-top:clamp(22px,4vh,44px)"><span class="nb">一家开满主理人衣橱的</span><span class="nb">线上买手店</span></h2>
+    <h2 class="h-l rise d2" style="margin-top:clamp(22px,4vh,44px)"><span class="nb">一家开满穿搭主理人衣橱的</span><span class="nb">线上买手店</span></h2>
     <div class="triad">
       <div class="rise d3"><strong>逛得到</strong><span>走进有审美的衣橱</span></div>
       <div class="rise d4"><strong>试得上</strong><span>穿在你自己身上</span></div>
       <div class="rise d5"><strong>买得到</strong><span>整套直达购买</span></div>
+    </div>
+  </section>
+
+  <!-- 05 谁是穿搭主理人 -->
+  <section class="slide" data-title="谁是穿搭主理人">
+    <div class="center-y">
+      <p class="kicker rise"><b>02</b>The Curators</p>
+      <h2 class="h-xl rise d1">谁是穿搭主理人？</h2>
+      <p class="lead rise d2" style="margin-top:.8em">会穿、有人想跟着穿的人，都可以在 Seen 开一间衣橱。</p>
+      <div class="curators">
+        <div class="cur rise d2"><div class="pic"><img alt="" src="{{img:app/public/catalog/curators/C06-cover.webp|520}}"><span class="no">01</span></div><div class="txt"><h3>明星</h3><p>邀请当下最受欢迎的明星入驻，把私服衣橱搬进来。</p></div></div>
+        <div class="cur rise d3"><div class="pic"><img alt="" src="{{img:app/public/catalog/curators/C02-cover.webp|520}}"><span class="no">02</span></div><div class="txt"><h3>网红与穿搭博主</h3><p>尤其是时尚穿搭博主。笔记里的每一套，都变成能试、能买的衣橱。</p></div></div>
+        <div class="cur rise d4"><div class="pic"><img alt="" src="{{img:app/public/catalog/curators/C10-cover.webp|520}}"><span class="no">03</span></div><div class="txt"><h3>品牌主题衣橱</h3><p>品牌按主题建橱，一场秀、一个系列，就是一整间衣橱。</p><p class="eg">例：山本耀司 2026 时装秀衣橱</p></div></div>
+        <div class="cur rise d5"><div class="pic"><img alt="" src="{{img:app/public/catalog/curators/C01-cover.webp|520}}"><span class="no">04</span></div><div class="txt"><h3>风格衣橱</h3><p>某一种风格穿得最好的个人穿搭主理人。</p><p class="eg">休闲风 · 老钱风 · 运动达人……</p></div></div>
+      </div>
     </div>
   </section>
 
@@ -323,7 +381,7 @@
       <p class="kicker rise"><b>03</b>The Journey</p>
       <h2 class="h-xl rise d1">从心动，到穿上身。</h2>
       <div class="journey">
-        <div class="step rise d1"><div class="dot"></div><p class="no">N°01</p><h3>走进衣橱</h3><p>选一位主理人，走进她的衣橱</p></div>
+        <div class="step rise d1"><div class="dot"></div><p class="no">N°01</p><h3>走进衣橱</h3><p>选一位穿搭主理人，走进 TA 的衣橱</p></div>
         <div class="step rise d2"><div class="dot"></div><p class="no">N°02</p><h3>一句话改编</h3><p>说出场合和预算，整套改成你的</p></div>
         <div class="step rise d3"><div class="dot"></div><p class="no">N°03</p><h3>随时问一句</h3><p>悬浮 AI 搭配助手，想去哪儿就问</p></div>
         <div class="step rise d4"><div class="dot"></div><p class="no">N°04</p><h3>穿在我身上</h3><p>数字分身，一键试穿</p></div>
@@ -338,7 +396,7 @@
       <div class="stack">
         <p class="kicker rise"><b>N°01</b>The Closets</p>
         <h2 class="h-xl rise d1">走进一间衣橱，<br>不是一排货架。</h2>
-        <p class="lead rise d2">每间衣橱都是一个人的审美：穿搭博主、风格主题、个人主理人、品牌。电影感的场景，左右滑动，一步走进去。</p>
+        <p class="lead rise d2">每间衣橱都出自一位穿搭主理人的审美。电影感的场景，左右滑动，一步走进去。</p>
         <div class="stats rise d3">
           <div class="stat"><b>10</b><span>间衣橱</span></div>
           <div class="stat"><b>60</b><span>套整搭</span></div>
@@ -347,7 +405,7 @@
       </div>
       <div class="phones rise d2">
         <div class="phone dim"><img alt="首页衣橱轮播" src="{{img:docs/pitch/assets/app-01-home.webp|720}}"></div>
-        <div class="phone lg"><img alt="主理人衣橱" src="{{img:docs/pitch/assets/app-02-closet.webp|780}}"></div>
+        <div class="phone lg"><img alt="穿搭主理人衣橱" src="{{img:docs/pitch/assets/app-02-closet.webp|780}}"></div>
         <div class="phone dim"><img alt="衣橱里的搭配" src="{{img:docs/pitch/assets/app-02b-closet-looks.webp|720}}"></div>
       </div>
     </div>
@@ -425,18 +483,18 @@
   </section>
 
   <!-- 11 供给侧 -->
-  <section class="slide" data-title="主理人与 Agent 建橱">
-    <div class="split">
+  <section class="slide" data-title="穿搭主理人与 Agent 建橱">
+    <div class="split agent-split">
       <div class="stack">
         <p class="kicker rise"><b>04</b>For Curators</p>
-        <h2 class="h-xl rise d1">主理人只管审美，<br>衣橱交给 Agent。</h2>
+        <h2 class="h-xl rise d1"><span class="nb">穿搭主理人只管审美，</span><br>衣橱交给 Agent。</h2>
         <ol class="flow rise d2">
           <li>说出你的风格和人群<small>一段话、几张参考图</small></li>
           <li>Agent 选品、搭配、写文案<small>按场合、预算、季节成套组织</small></li>
           <li>生成衣橱场景与上身图<small>每间衣橱都有自己的空间</small></li>
-          <li>主理人确认，开张<small>流量来自主理人，成交在 Seen</small></li>
+          <li>穿搭主理人确认，开张<small>流量来自穿搭主理人，成交在 Seen</small></li>
         </ol>
-        <p class="body rise d3">今天这 10 间衣橱，正是用 AI 调研与生成搭起来的。下一步，把这条流水线交到主理人手里。</p>
+        <p class="body rise d3">今天这 10 间衣橱，正是用 AI 调研与生成搭起来的。下一步，把这条流水线交到穿搭主理人手里。</p>
       </div>
       <div class="closets rise d2">
         <div class="closet"><img alt="" src="{{img:app/public/catalog/curators/C01-cover.webp|300}}"><span>静奢通勤</span></div>
@@ -457,16 +515,46 @@
   <section class="slide" data-title="商业模式">
     <div class="center-y">
       <p class="kicker rise"><b>05</b>Business Model</p>
-      <h2 class="h-xl rise d1">主理人带来人，<br>Seen 让它成交。</h2>
+      <h2 class="h-xl rise d1">穿搭主理人带来人，<br>Seen 让它成交。</h2>
       <div class="cards">
-        <div class="card glass key rise d2"><p class="no">01</p><h3>成交分成</h3><p>每一笔成交，平台与主理人分成。主理人越会搭，赚得越多。</p></div>
-        <div class="card glass rise d3"><p class="no">02</p><h3>入驻两档</h3><p>入场费 + 较低抽成，或零入场费 + 较高抽成，主理人自己选。</p></div>
-        <div class="card glass rise d4"><p class="no">03</p><h3>粉丝打赏</h3><p>粉丝为喜欢的衣橱送出虚拟礼物，平台与主理人分成。</p></div>
+        <div class="card glass key rise d2"><p class="no">01</p><h3>成交分成</h3><p>每一笔成交，平台与穿搭主理人分成。越会搭，赚得越多。</p></div>
+        <div class="card glass rise d3"><p class="no">02</p><h3>入驻两档</h3><p>入场费 + 较低抽成，或零入场费 + 较高抽成，穿搭主理人自己选。</p></div>
+        <div class="card glass rise d4"><p class="no">03</p><h3>粉丝打赏</h3><p>粉丝为喜欢的衣橱送出虚拟礼物，平台与穿搭主理人分成。</p></div>
         <div class="card glass rise d5"><p class="no">04</p><h3>私密衣橱</h3><p>收藏多了，开通只属于自己的私密衣橱，按需付费。</p></div>
       </div>
       <div class="band rise d5">
         <p class="lead">逛、存、试，对消费者免费。</p>
         <p class="small">一次 AI 试穿的生成成本，不到 2 元</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 智能试衣镜 -->
+  <section class="slide" data-title="智能试衣镜">
+    <div class="split mirror-split">
+      <div class="stack">
+        <p class="kicker rise"><b>05</b>Hardware · Seen Mirror</p>
+        <p class="rise d1"><span class="soon">即将发布</span></p>
+        <h2 class="h-xl rise d1">站到镜子前，<br>穿上整个试衣间。</h2>
+        <ul class="checks rise d2">
+          <li>试衣间里选中的衣服，镜前一键整体试穿</li>
+          <li>镜面即屏幕，看到的就是穿上身的你</li>
+          <li>转身、侧身，画面跟着你，效果不变</li>
+        </ul>
+        <p class="body rise d3">从手机里的试衣间，走到家里和门店的全身镜前。</p>
+      </div>
+      <div class="rise d2">
+        <div class="mirror-room"><div class="mirror">
+          <div class="glass-in"><img class="reflect" alt="镜中的上身效果" src="{{img:app/public/demo/scenes/I113-gallery.jpg|700}}"></div>
+          <div class="items">
+            <div class="it on"><img alt="" src="{{img:app/public/catalog/items/I113.webp|200}}"></div>
+            <div class="it on"><img alt="" src="{{img:app/public/catalog/items/I120.webp|200}}"></div>
+            <div class="it on"><img alt="" src="{{img:app/public/catalog/items/I123.webp|200}}"></div>
+            <div class="it on"><img alt="" src="{{img:app/public/catalog/items/I127.webp|200}}"></div>
+          </div>
+          <span class="turn">360°</span>
+          <div class="hud"><span class="chip">我的试衣间 · 4 件</span><span class="chip gold">一键整体试穿</span></div>
+        </div></div>
       </div>
     </div>
   </section>
@@ -477,7 +565,7 @@
       <p class="kicker rise"><b>06</b>Where we are</p>
       <h2 class="h-xl rise d1">5 天，从一句想法<br>到一个能用的产品。</h2>
       <div class="nums">
-        <div class="num rise d2"><b>10</b><span>间主理人衣橱</span></div>
+        <div class="num rise d2"><b>10</b><span>间穿搭主理人衣橱</span></div>
         <div class="num rise d2"><b>60</b><span>套整搭</span></div>
         <div class="num rise d3"><b>209</b><span>件单品</span></div>
         <div class="num rise d3"><b>190+</b><span>次代码提交</span></div>
@@ -501,13 +589,13 @@
             <li><div><b>站内下单</b><small>购物袋、结算、我的订单，接入支付</small></div></li>
             <li><div><b>合身参考</b><small>用身材档案对照尺码表，告诉你选哪一码</small></div></li>
             <li><div><b>拍一下就试</b><small>门店里拍一张，马上穿在自己身上</small></div></li>
-            <li><div><b>Agent 建橱开放</b><small>主理人自助开一间衣橱</small></div></li>
+            <li><div><b>Agent 建橱开放</b><small>穿搭主理人自助开一间衣橱</small></div></li>
           </ol>
         </div>
         <div class="col rise d3">
           <h3>We need</h3>
           <ol>
-            <li><div><b>首批主理人与品牌</b><small>真实衣橱、真实商品，从公司内外的穿搭达人开始</small></div></li>
+            <li><div><b>首批穿搭主理人入驻</b><small>明星、博主、品牌与风格达人，从公司内外的穿搭达人开始</small></div></li>
             <li><div><b>AI 生成预算</b><small>试穿、分身与场景生成的模型调用</small></div></li>
             <li><div><b>上线合规支持</b><small>隐私与个人影像、AI 生成内容标识、公开发布</small></div></li>
           </ol>
@@ -527,7 +615,7 @@
 <div class="grain"></div>
 <p class="hint" id="hint">← → 翻页 · F 全屏</p>
 <nav class="nav" aria-label="翻页">
-  <span id="count">01 / 15</span>
+  <span id="count">01 / 17</span>
   <button id="prev" aria-label="上一页">‹</button>
   <button id="next" aria-label="下一页">›</button>
 </nav>
