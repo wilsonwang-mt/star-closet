@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, beforeEach, test } from "node:test";
 import sharp from "sharp";
-import { composeFaceDetail, ellipseMask, FACE_DETAIL_EDGE, locateHead, refineFace, transferTone } from "./twin-face";
+import { composeFaceDetail, ellipseMask, FACE_DETAIL_EDGE, FACE_ELLIPSE, faceDetailPrompt, locateHead, refineFace, transferTone } from "./twin-face";
 import { figurePng, pngWithMetadata } from "./testing";
 
 // 数字分身脸部精修（D68）：全部用合成的几何人形示意图与 mock fetch，不访问 fal，不含任何真人图像。
@@ -176,4 +176,42 @@ test("refineFace：送 2K 方图与正脸、侧脸参考；构图被改动时重
   const noHead = await refineFace(pngWithMetadata(300, 400), refs, "female", AbortSignal.timeout(10_000));
   assert.equal(noHead.reason, "no-head");
   assert.equal(calls.length, 0);
+});
+
+test("faceDetailPrompt：正面不传角度与传 front 逐字相同、不提转头；侧面要求保持四分之三侧的转头；refineFace 按角度送提示词", async () => {
+  for (const g of ["female", "male"] as const) {
+    for (const h of [true, false]) {
+      assert.equal(faceDetailPrompt(g, h), faceDetailPrompt(g, h, "front"));
+      assert.doesNotMatch(faceDetailPrompt(g, h), /three-quarter|head turn/);
+      const side = faceDetailPrompt(g, h, "side");
+      assert.match(side, /in a three-quarter view\./);
+      assert.match(side, /Keep exactly the same three-quarter head turn; do not rotate the face toward the camera\./);
+      assert.match(side, /Do not beautify/);
+    }
+  }
+  assert.deepEqual(FACE_ELLIPSE.front, { cx: 0.5, cy: 0.45, rx: 0.23, ry: 0.29 }, "正面椭圆不变");
+
+  const refs = { face: "data:image/jpeg;base64,RkFDRQ==" };
+  const r = await refineFace(FIGURE, refs, "male", AbortSignal.timeout(10_000), Infinity, "side");
+  assert.equal(r.applied, true);
+  const submit = calls.find((c) => c.url === "https://queue.fal.run/fal-ai/nano-banana-pro/edit")!;
+  assert.equal(String(submit.body!.prompt), faceDetailPrompt("male", false, "side"));
+});
+
+test("composeFaceDetail：侧面椭圆左移、更大，画面左侧脸颊处用精修结果，正面同一位置基本保留原图", async () => {
+  const box = (await locateHead(FIGURE))!;
+  const crop = await sharp(FIGURE).extract({ left: box.left, top: box.top, width: box.size, height: box.size }).resize(FACE_DETAIL_EDGE, FACE_DETAIL_EDGE).png().toBuffer();
+  // 模拟模型在方块 (0.29, 0.45) 处画了一块蓝色：侧面椭圆的全用区里，正面椭圆的淡出带外缘
+  const n = FACE_DETAIL_EDGE;
+  const patch = { left: Math.round(0.27 * n), top: Math.round(0.41 * n), width: Math.round(0.04 * n), height: Math.round(0.08 * n) };
+  const blue = await sharp({ create: { width: patch.width, height: patch.height, channels: 3, background: { r: 30, g: 60, b: 230 } } }).png().toBuffer();
+  const out = await sharp(crop).composite([{ input: blue, left: patch.left, top: patch.top }]).png().toBuffer();
+  const at = (k: number) => Math.round(box.left + k * box.size);
+  const region = { x0: at(0.28), y0: Math.round(box.top + 0.43 * box.size), x1: at(0.3), y1: Math.round(box.top + 0.47 * box.size) };
+  const [side, front] = await Promise.all([composeFaceDetail(FIGURE, box, out, "side"), composeFaceDetail(FIGURE, box, out, "front")]);
+  assert.equal(side.applied, true);
+  assert.equal(front.applied, true);
+  const ds = await regionDiff(side.bytes, FIGURE, region);
+  const df = await regionDiff(front.bytes, FIGURE, region);
+  assert.ok(ds > 2 * df && ds > 15, `侧面贴回了左侧脸颊处的改动（侧面 ${ds.toFixed(1)}，正面 ${df.toFixed(1)}）`);
 });
