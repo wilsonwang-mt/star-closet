@@ -1,4 +1,4 @@
--- Star Closet · Supabase 行级安全（RLS）与访问权限
+-- SEEN.（原工作名 Star Closet）· Supabase 行级安全（RLS）与访问权限
 --
 -- 表结构的唯一来源是 app/lib/db/schema.ts（Drizzle），本文件不建表。
 -- 用法：Drizzle 迁移在 Supabase 上建好表之后，在 Supabase SQL Editor 里整份执行一次；
@@ -69,6 +69,12 @@ revoke all on table public.tryon, public.tryon_consent from anon, authenticated;
 -- 商品详情页“上身效果”（scene_render 指向用本人正面照生成的场景图与 Live 视频，迁移 0004）：同样不对 Data API 开放。
 alter table public.scene_render enable row level security;
 revoke all on table public.scene_render from anon, authenticated;
+-- 每用户每日调用计数（usage_counter，迁移 0006，D64 防滥用与花费上限）：只由服务端读写，不对 Data API 开放。
+alter table public.usage_counter enable row level security;
+revoke all on table public.usage_counter from anon, authenticated;
+-- 购物袋（bag_item，迁移 0007，D67）：本人加入购物袋的单品与尺码，只由服务端按当前登录用户读写，不对 Data API 开放。
+alter table public.bag_item enable row level security;
+revoke all on table public.bag_item from anon, authenticated;
 
 -- 5. 建项目时勾选“Enable automatic RLS”会生成 public.rls_auto_enable()（SECURITY DEFINER 的事件触发器函数）。
 --    它只该由建表事件触发，收回 Data API 角色的调用权限；不影响自动开启 RLS。

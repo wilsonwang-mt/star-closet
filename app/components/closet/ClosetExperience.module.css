@@ -119,17 +119,27 @@
 @media (min-width: 1100px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; } }
 .lookWrap { scroll-margin-top: var(--nav-offset); }
 .look {
-  display: block; overflow: hidden; text-decoration: none; color: inherit;
+  display: block; overflow: hidden; color: inherit;
   transition: transform var(--spring-dur) var(--spring), box-shadow .3s ease;
 }
-.look:active { transform: scale(.985); }
-.look:focus-visible { outline: 1px solid var(--sc-champ); outline-offset: 3px; }
+/* 卡片上半部分（封面 + 标题）是进入搭配页的链接；单品与按钮在链接之外（D67） */
+.lookLink { position: relative; display: block; color: inherit; text-decoration: none; transition: transform var(--spring-dur) var(--spring); }
+.lookLink:active { transform: scale(.985); }
+.lookLink:focus-visible { outline: 1px solid var(--sc-champ); outline-offset: -3px; }
+.lookHead { padding: 16px 18px 0; }
+.pieces { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 12px 8px; }
+.piece { display: grid; justify-items: center; align-content: start; gap: 8px; min-width: 0; }
+.pieceThumb { position: relative; display: block; width: 100%; max-width: 76px; transition: transform .35s cubic-bezier(.34, 1.56, .64, 1); }
+.pieceThumb :global(.thumb) { width: 100%; height: auto; aspect-ratio: 1; }
+.pieceOn .pieceThumb { transform: scale(.94); }
+.pieceOn .pieceThumb :global(.thumb) { box-shadow: 0 0 0 2px var(--sc-champ); }
+.pieceTry { min-height: 32px; padding: 0 10px; font-size: 11px; letter-spacing: .04em; gap: 4px; }
 .cover { position: relative; aspect-ratio: 900 / 1117; overflow: hidden; background: var(--sc-bg-raised); }
 .cover img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 1.2s var(--sc-ease-cine); }
 /* 点下后新页面还没到（弱网）：封面轻轻压暗，底部细线扫动（components/LinkPending.tsx） */
 .cover { transition: opacity .3s ease; }
-.look:has(:global(.link-pending[data-on="true"])) .cover { opacity: .8; transition-delay: .12s; }
-@media (hover: hover) { .look:hover .cover img { transform: scale(1.035); } }
+.lookLink:has(:global(.link-pending[data-on="true"])) .cover { opacity: .8; transition-delay: .12s; }
+@media (hover: hover) { .lookLink:hover .cover img { transform: scale(1.035); } }
 /* 底部 30% 固定暗渐变：N° 编号与合规标签不依赖图片本身够暗（雪地、白墙也能看清） */
 .cover::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, transparent 58%, rgba(0, 0, 0, .28) 70%, rgba(0, 0, 0, .62)); }
 .coverEmpty { position: absolute; inset: 0; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 8px; padding: 24px; }
@@ -194,12 +204,13 @@
   }
   .lookWrap:hover::before { opacity: 1; }
   .look:hover { transform: translateY(-4px); }
-  .look:active { transform: translateY(-2px) scale(.985); }
+  .lookLink:active { transform: scale(.99); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .introScene, .layer img, .cue i { animation: none !important; }
   .cover img, .back, .back svg { transition: none; }
   .look { transition: opacity .2s ease; }
-  .look:hover, .look:active { transform: none; }
+  .look:hover, .lookLink:active, .pieceOn .pieceThumb { transform: none; }
+  .pieceThumb, .lookLink { transition: none; }
 }

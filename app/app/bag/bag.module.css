@@ -1,0 +1,26 @@
+/* 购物袋（D67）：单品行 + 合计。只动 transform / opacity。 */
+.lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.line { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 10px 14px 10px 10px; }
+.info { display: grid; gap: 4px; min-width: 0; }
+.name { color: inherit; text-decoration: none; font-size: 14px; overflow-wrap: anywhere; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 4px; }
+.select {
+  min-height: 36px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--sc-rule);
+  background: var(--sc-glass-bg); color: var(--sc-ink); font: inherit; font-size: 12px;
+}
+.fixed { font-size: 12px; color: var(--sc-ink-2); padding: 0 4px; }
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--sc-rule); border-radius: 999px; overflow: hidden; }
+.stepper button {
+  width: 36px; height: 36px; border: 0; background: transparent; color: var(--sc-ink); font-size: 16px; cursor: pointer;
+  transition: transform .2s cubic-bezier(.2, .7, .2, 1), opacity .2s;
+}
+.stepper button:disabled { opacity: .35; cursor: default; }
+.stepper button:not(:disabled):active { transform: scale(.88); }
+.stepper span { min-width: 22px; text-align: center; font-variant-numeric: tabular-nums; font-size: 13px; }
+.end { display: grid; justify-items: end; gap: 4px; }
+.summary { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.totalRow { display: inline-flex; align-items: baseline; gap: 10px; }
+@media (prefers-reduced-motion: reduce) {
+  .stepper button { transition: opacity .2s; }
+  .stepper button:not(:disabled):active { transform: none; }
+}

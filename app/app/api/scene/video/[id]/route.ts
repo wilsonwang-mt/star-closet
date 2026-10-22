@@ -1,5 +1,7 @@
 import { getCurrentUser } from "@/lib/auth";
-import { readSceneVideo } from "@/lib/scene/service";
+import { sceneVideoKey } from "@/lib/scene/service";
+import { getStorage } from "@/lib/storage";
+import { SIGNED_URL_TTL, signedRedirect } from "@/lib/storage/redirect";
 
 // 本人上身效果的 Live 视频。支持 Range（iOS Safari 播放视频必须），他人或不存在一律 404。
 const ID_RE = /^[0-9a-f-]{36}$/;
@@ -11,7 +13,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (!user) return notFound();
   const { id } = await params;
   if (!ID_RE.test(id)) return notFound();
-  const obj = await readSceneVideo(user.id, id).catch(() => null);
+  const key = await sceneVideoKey(user.id, id).catch(() => null);
+  if (!key) return notFound();
+  // Supabase 存储：302 到短时签名链接（签名链接本身支持 Range），不经函数转发 14–17 MB 的视频（Vercel 响应上限 4.5 MB，D64）。
+  // 本地驱动走下面原来的整段 / Range 返回。
+  const storage = getStorage();
+  const redirect = await signedRedirect(storage, key, SIGNED_URL_TTL.video);
+  if (redirect) return redirect;
+  const obj = await storage.get(key).catch(() => null);
   if (!obj) return notFound();
   const size = obj.bytes.byteLength;
   const range = req.headers.get("range");

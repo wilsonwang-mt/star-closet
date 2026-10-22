@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Adapter from "@/components/Adapter";
 import LinkPending from "@/components/LinkPending";
 import Scene from "@/components/Scene";
+import { QuickTryonProvider } from "@/components/tryon/QuickTryOn";
 import { getAllItems, getOutfit, getOutfitsByCurator } from "@/lib/catalog";
 import { hasAiKey } from "@/lib/adapt/ai";
 import { buildCandidatePool } from "@/lib/adapt/rules";
@@ -22,7 +23,8 @@ export default async function OutfitPage({ params }: { params: Promise<{ id: str
   const idx = siblings.findIndex((o) => o.id === outfit.id);
   const tryon = await getTryonContext(user?.id ?? null);
   return (
-    <>
+    // 一键试穿（D67）：这一页所有单品行共用一个试穿面板
+    <QuickTryonProvider ctx={tryon}>
       {/* 场景用这套搭配自己的封面照片，与衣橱页的搭配卡衔接 */}
       <Scene dim cover={outfit.cover} />
       <section className="hero sc-rise" style={{ minHeight: "42dvh" }}>
@@ -51,7 +53,7 @@ export default async function OutfitPage({ params }: { params: Promise<{ id: str
           {outfit.styleNote}
         </p>
       </section>
-      <Adapter outfit={outfit} catalog={catalog} aiEnabled={hasAiKey()} tryon={tryon} />
-    </>
+      <Adapter outfit={outfit} catalog={catalog} aiEnabled={hasAiKey()} tryon={tryon} signedIn={Boolean(user)} />
+    </QuickTryonProvider>
   );
 }

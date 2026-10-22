@@ -89,10 +89,10 @@ const INFO: Record<ProviderId, ProviderInfo> = {
   },
 };
 
-/** 数字分身（D63）：设置了 FAL_KEY，且 AVATAR3D_PROVIDER 未设或为 twin。 */
+/** 数字分身（D63）：设置了 FAL_KEY，且 AVATAR3D_PROVIDER 未设、为 twin，或为已停用的 metaperson（未显式允许 MetaPerson 时）。 */
 export function twinEnabled(): boolean {
   const p = process.env.AVATAR3D_PROVIDER;
-  return !!process.env.FAL_KEY && (!p || p === "twin");
+  return !!process.env.FAL_KEY && (!p || p === "twin" || (p === "metaperson" && !metapersonEnabled()));
 }
 
 // ---------- 同意版本 ----------

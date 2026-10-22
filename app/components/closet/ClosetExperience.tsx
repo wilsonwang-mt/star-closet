@@ -12,6 +12,9 @@ import { motion, useScroll, useTransform, type MotionValue } from "motion/react"
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import ItemThumb from "@/components/ItemThumb";
 import LinkPending from "@/components/LinkPending";
+import { QuickTryButton, QuickTryonProvider } from "@/components/tryon/QuickTryOn";
+import type { TryonContext } from "@/lib/tryon/service";
+import LookActions, { PickCheck, usePick } from "./LookActions";
 import type { ClosetView } from "./data";
 import SceneVideo from "./SceneVideo";
 import { captureHandoff, navigateWithHero, peekArrival, peekHandoff, signalHeroReady } from "./transition";
@@ -28,7 +31,7 @@ export type LookView = {
   budgetTier: string | null;
   season: string | null;
   total: number;
-  items: { id: string; name: string; image: string | null; color: string }[];
+  items: { id: string; name: string; image: string | null; color: string; category: string; displayCategory: string | null; price: number }[];
 };
 
 // 回退路径（无 CSS scroll-driven animations）的浮起区间：同一行里越靠右越晚，形成先后（与 CSS 里 animation-range 对应）
@@ -39,7 +42,16 @@ const STAGGER: Record<2 | 3, Offset[]> = {
 const two = (n: number) => String(n).padStart(2, "0");
 const yuan = (n: number) => `¥${n.toLocaleString("zh-CN")}`;
 
-export default function ClosetExperience({ closet, looks }: { closet: ClosetView; looks: LookView[] }) {
+export default function ClosetExperience({
+  closet,
+  looks,
+  tryon = null,
+}: {
+  closet: ClosetView;
+  looks: LookView[];
+  /** 一键试穿的上下文（D67）：服务未开放时为 null 或 enabled = false，按钮不出现。 */
+  tryon?: TryonContext | null;
+}) {
   const router = useRouter();
   const wide = useMedia(WIDE_QUERY);
   const reduced = useMedia(REDUCED_QUERY) === true;
@@ -94,7 +106,7 @@ export default function ClosetExperience({ closet, looks }: { closet: ClosetView
   };
 
   return (
-    <>
+    <QuickTryonProvider ctx={tryon}>
       <div className={styles.scene} aria-hidden="true">
         <div ref={heroRef} className={styles.hero} data-vt-hero="">
           <motion.div className={styles.media} style={jsScroll ? { scale: sceneScale } : undefined}>
@@ -173,7 +185,7 @@ export default function ClosetExperience({ closet, looks }: { closet: ClosetView
             这间衣橱的 {looks.length} 套搭配
           </h2>
           <p className="sc-meta" style={{ margin: "6px 0 0" }}>
-            点一套，查看单品、一句话改编，再去商家页面购买。
+            每件都能一键试穿；整套或挑几件加入试衣间、购物袋。
           </p>
         </ScrollRise>
         <div className={styles.grid}>
@@ -186,49 +198,68 @@ export default function ClosetExperience({ closet, looks }: { closet: ClosetView
               reduced={reduced}
               offset={STAGGER[cols][i % cols]}
             >
-              <Link href={`/outfit/${o.id}`} className={`sc-glass ${styles.look}`}>
-                <div className={styles.cover}>
-                  {o.cover ? (
-                    <img src={o.cover} alt="" loading={i < 2 ? "eager" : "lazy"} decoding="async" />
-                  ) : (
-                    <div className={styles.coverEmpty}>
-                      {o.items.slice(0, 4).map((it) => (
-                        <ItemThumb key={it.id} name={it.name} image={it.image} color={it.color} />
-                      ))}
-                    </div>
-                  )}
-                  <span className={`sc-number sc-foil ${styles.no}`}>N°{two(i + 1)}</span>
-                </div>
-                <div className={styles.body}>
-                  <div className="spread">
-                    <div style={{ minWidth: 0 }}>
-                      <span className="sc-kicker">The Look</span>
-                      <h3 className={`section-title ${styles.lookName}`}>{o.name.replace(/^占位：/, "")}</h3>
-                    </div>
-                    <span className={styles.total}>{yuan(o.total)}</span>
-                  </div>
-                  <div className={`thumbs ${styles.thumbs}`}>
-                    {o.items.map((it) => (
-                      <ItemThumb key={it.id} name={it.name} image={it.image} color={it.color} />
-                    ))}
-                  </div>
-                  <div className="spread">
-                    <span className="sc-meta">{[...o.occasionTags.slice(0, 3), o.budgetTier].filter(Boolean).join(" · ")}</span>
-                    <span className={styles.go}>
-                      查看与改编
-                      <svg width="12" height="9" viewBox="0 0 14 10" fill="none" aria-hidden="true">
-                        <path d="M1 5h11M8.5 1.5 12 5 8.5 8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </span>
-                  </div>
-                </div>
-                <LinkPending label={`正在打开 ${o.name.replace(/^占位：/, "")}`} />
-              </Link>
+              <LookTile look={o} index={i} />
             </ScrollRise>
           ))}
         </div>
       </section>
-    </>
+    </QuickTryonProvider>
+  );
+}
+
+// 一张搭配卡（D67）：封面与标题是进入搭配页的链接；下面每件单品一个缩略图，可上身的单品下方是“一键试穿”；
+// 底部是放大的“整套加入试衣间”、加入购物袋与多选。交互元素都不嵌在链接里。
+function LookTile({ look: o, index: i }: { look: LookView; index: number }) {
+  const pick = usePick();
+  const name = o.name.replace(/^占位：/, "");
+  return (
+    <div className={`sc-glass ${styles.look}`}>
+      <Link href={`/outfit/${o.id}`} className={styles.lookLink}>
+        <div className={styles.cover}>
+          {o.cover ? (
+            <img src={o.cover} alt="" loading={i < 2 ? "eager" : "lazy"} decoding="async" />
+          ) : (
+            <div className={styles.coverEmpty}>
+              {o.items.slice(0, 4).map((it) => (
+                <ItemThumb key={it.id} name={it.name} image={it.image} color={it.color} />
+              ))}
+            </div>
+          )}
+          <span className={`sc-number sc-foil ${styles.no}`}>N°{two(i + 1)}</span>
+        </div>
+        <div className={`spread ${styles.lookHead}`}>
+          <div style={{ minWidth: 0 }}>
+            <span className="sc-kicker">The Look</span>
+            <h3 className={`section-title ${styles.lookName}`}>{name}</h3>
+          </div>
+          <span className={styles.total}>{yuan(o.total)}</span>
+        </div>
+        <LinkPending label={`正在打开 ${name}`} />
+      </Link>
+      <div className={styles.body}>
+        <ul className={styles.pieces} aria-label={`${name}的单品`}>
+          {o.items.map((it) => (
+            <li key={it.id} className={`${styles.piece} ${pick.selected.has(it.id) ? styles.pieceOn : ""}`}>
+              <span className={styles.pieceThumb}>
+                <ItemThumb name={it.name} image={it.image} color={it.color} href={`/item/${it.id}`} />
+                <PickCheck pick={pick} item={it} />
+              </span>
+              <QuickTryButton item={it} source={{ outfitId: o.id, outfitName: o.name }} className={styles.pieceTry} />
+            </li>
+          ))}
+        </ul>
+        <div className="spread">
+          <span className="sc-meta">{[...o.occasionTags.slice(0, 3), o.budgetTier].filter(Boolean).join(" · ")}</span>
+          <Link href={`/outfit/${o.id}`} className={styles.go}>
+            查看与改编
+            <svg width="12" height="9" viewBox="0 0 14 10" fill="none" aria-hidden="true">
+              <path d="M1 5h11M8.5 1.5 12 5 8.5 8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+        </div>
+        <LookActions items={o.items} pick={pick} outfitId={o.id} outfitName={o.name} compactBag />
+      </div>
+    </div>
   );
 }
 

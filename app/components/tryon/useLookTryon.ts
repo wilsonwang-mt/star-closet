@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { wearableInOrder, type PlanItem } from "@/lib/tryon/plan";
 import type { TryonContext, TryonStage, TryonView } from "@/lib/tryon/service";
-import { compress, fetchView, preload, readError, sleep, waitFirst } from "./shared";
+import { compress, fetchView, pollDelay, preload, readError, sleep, waitFirst } from "./shared";
 
 // 试衣间一套搭配的逐件试穿状态。放在 LookCard 里（而不是面板里）：生成途中关掉面板也不丢，
 // 穿好后卡片上的单品直接标“已穿上”。
@@ -12,6 +12,9 @@ import { compress, fetchView, preload, readError, sleep, waitFirst } from "./sha
 // - pending：正在穿的那一件（还没出第一张图）；同一套同一时间只穿一件。出图后在后台等细化，不挡下一件。
 // - 两段式（D62）：先出 performance 的一张，quality 好了以后同一张原地换成清晰的；界面写“正在细化”。
 // - 预热：本次上传正面照、且已同意后，先跑这一套里要穿的那件（只跑 performance），点“穿上”时命中缓存。
+
+/** 整套试穿（D67）：按建议顺序把这一套可上身的单品依次穿上，上一步的结果作下一步的底图。 */
+export type Chain = { step: number; total: number; itemId: string; itemIds: string[] };
 
 export type Pending = { itemId: string; baseId: string | null; startedAt: number; stage: TryonStage | "sending"; queuePosition: number | null };
 
@@ -37,6 +40,7 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
   const [pending, setPending] = useState<Pending | null>(null);
   const [queued, setQueued] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [chain, setChain] = useState<Chain | null>(null);
   const [open, setOpen] = useState(false);
   /** 刚穿好的那张：卡片上的“已穿上”只对它做一次入场动画。 */
   const [fresh, setFresh] = useState<string | null>(null);
@@ -74,11 +78,14 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
     refiningIds.current.add(id);
     void (async () => {
       let misses = 0;
+      let lastMs = 0;
       try {
         while (alive.current) {
-          await sleep(REFINE_POLL_MS);
+          await sleep(pollDelay(REFINE_POLL_MS, lastMs));
           if (!alive.current) return;
+          const startedAt = Date.now();
           const r = await fetchView(id);
+          lastMs = Date.now() - startedAt;
           if (r.kind === "gone") {
             setFrames((f) => f.filter((x) => x.id !== id));
             return;
@@ -114,13 +121,21 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
 
   /** 底图就绪：穿在某张结果上不需要正面照；穿在照片上需要先有照片。 */
   const hasBase = selectedId !== null || !!photoUrl;
+  /** 整套试穿等形象或同意就绪：面板里显示“整套试穿”开始按钮。 */
+  const [chainReady, setChainReady] = useState<string[] | null>(null);
+  const hasBaseRef = useRef(false);
+  hasBaseRef.current = !!photoUrl;
+  const consentedRef = useRef(consented);
+  consentedRef.current = consented;
+  const agreeRef = useRef(agree);
+  agreeRef.current = agree;
   const canAutoStart = hasBase && consented && !uploading;
 
   const run = useCallback(
-    async (itemId: string) => {
-      if (busy.current) return;
+    async (itemId: string, baseOverride?: string | null): Promise<TryonView | null> => {
+      if (busy.current) return null;
       busy.current = true;
-      const baseId = selectedId;
+      const baseId = baseOverride !== undefined ? baseOverride : selectedId;
       const started = Date.now();
       setPending({ itemId, baseId, startedAt: started, stage: "sending", queuePosition: null });
       setQueued(null);
@@ -144,7 +159,7 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
           }
           setError(message);
           setQueued(itemId);
-          return;
+          return null;
         }
         let view = (await res.json()) as TryonView;
         setConsented(true);
@@ -159,11 +174,11 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
           onStage(view);
           view = await waitFirst(view, { alive: () => alive.current, onStage });
         }
-        if (!alive.current) return;
+        if (!alive.current) return null;
         if (view.status === "failed" || !view.resultUrl) {
           setError(view.error ?? "试穿失败，请稍后再试");
           setQueued(itemId);
-          return;
+          return null;
         }
         await preload(view.resultUrl);
         const wait = MIN_WAIT_MS - (Date.now() - started);
@@ -174,6 +189,7 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
         setSelectedId(shown.id);
         setFresh(shown.id);
         if (needsRefine(shown)) refine(shown.id);
+        return shown;
       } finally {
         setPending(null);
         busy.current = false;
@@ -181,6 +197,9 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
     },
     [agree, consented, lookId, refine, selectedId],
   );
+
+  const runRef = useRef(run);
+  runRef.current = run;
 
   /** 预热：只跑这一件的 performance；结果先留在本地，不进穿搭进度，等用户点“穿上”。 */
   const prewarm = useCallback(
@@ -224,11 +243,40 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
       if (!enabled || busy.current) return;
       setOpen(true);
       setError(null);
+      setChainReady(null);
       if (canAutoStart) void run(itemId);
       else setQueued(itemId);
     },
     [canAutoStart, enabled, run],
   );
+
+  /**
+   * 整套试穿：从本人形象开始，按建议顺序（内搭 / 连衣裙 → 下装 → 外套）一件一件穿上，
+   * 每一步都是逐件试穿（baseTryonId 链式），穿搭进度里可以左右回看每一步。中途失败就停下，已穿好的保留。
+   */
+  const wearAll = useCallback(async () => {
+    if (!enabled || busy.current) return;
+    const ids = wearableInOrder(items ?? []).map((x) => x.item.id);
+    if (!ids.length) return;
+    setOpen(true);
+    setError(null);
+    if (!(hasBaseRef.current && (consentedRef.current || agreeRef.current))) {
+      // 形象或同意还没就绪：先在面板里补上，再点“整套试穿”。
+      setQueued(null);
+      setChainReady(ids);
+      return;
+    }
+    let base: string | null = null;
+    for (let i = 0; i < ids.length; i++) {
+      if (!alive.current) break;
+      setChain({ step: i + 1, total: ids.length, itemId: ids[i], itemIds: ids });
+      const v: TryonView | null = await runRef.current(ids[i], base);
+      if (!v) break;
+      base = v.id;
+    }
+    setChain(null);
+    setChainReady(null);
+  }, [enabled, items]);
 
   const startQueued = useCallback(() => {
     if (queued && hasBase && (consented || agree) && !uploading) void run(queued);
@@ -296,6 +344,7 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
   }, [enabled]);
   const close = useCallback(() => {
     setOpen(false);
+    setChainReady(null);
     if (!busy.current) {
       setQueued(null);
       setError(null);
@@ -304,6 +353,9 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
 
   return {
     enabled,
+    chain,
+    chainReady,
+    wearAll,
     lookId,
     frames,
     selectedId,

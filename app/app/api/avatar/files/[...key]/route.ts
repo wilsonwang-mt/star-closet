@@ -1,5 +1,6 @@
 import { getCurrentUser } from "@/lib/auth";
 import { getStorage, isValidKey } from "@/lib/storage";
+import { SIGNED_URL_TTL, signedRedirect } from "@/lib/storage/redirect";
 
 // 读取本人的私有文件（照片、GLB）。key 必须以当前用户 id 为前缀，否则一律 404（不区分“不存在”与“无权限”）。
 export async function GET(_req: Request, { params }: { params: Promise<{ key: string[] }> }) {
@@ -14,7 +15,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ key: st
     return notFound();
   }
   if (!isValidKey(key) || !key.startsWith(`${user.id}/`)) return notFound();
-  const obj = await getStorage()
+  // Supabase 存储：302 到短时签名链接，不经函数转发（Vercel 响应上限 4.5 MB，D64）；本地驱动照旧返回字节。
+  const storage = getStorage();
+  const redirect = await signedRedirect(storage, key, SIGNED_URL_TTL.file);
+  if (redirect) return redirect;
+  const obj = await storage
     .get(key)
     .catch(() => null);
   if (!obj) return notFound();

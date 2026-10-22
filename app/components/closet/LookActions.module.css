@@ -1,0 +1,19 @@
+/* 搭配的加入操作（D67）：主按钮放大到主按钮尺寸（52px 高），移动端易点。 */
+.wrap { display: grid; gap: 8px; container-type: inline-size; }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+.room { min-height: 52px; font-size: 14px; letter-spacing: .12em; white-space: nowrap; }
+.bag { min-height: 52px; gap: 8px; padding: 0 16px; white-space: nowrap; }
+.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; min-height: 28px; }
+/* 按卡片自身宽度换行：衣橱页三列时卡片较窄，主按钮与购物袋上下排，文字不再被挤成多行 */
+@container (max-width: 360px) {
+  .row { grid-template-columns: minmax(0, 1fr); }
+  .room { letter-spacing: .08em; }
+}
+
+.check {
+  position: absolute; top: 4px; right: 4px; z-index: 2; width: 26px; height: 26px; border-radius: 50%; padding: 0; cursor: pointer;
+  display: grid; place-items: center; border: 1.5px solid rgba(255, 255, 255, .85); color: transparent;
+  background: rgba(20, 16, 10, .35); box-shadow: 0 2px 8px rgba(0, 0, 0, .25);
+}
+.check::before { content: ""; position: absolute; inset: -9px; } /* 热区放大到 44px */
+.checkOn { background: var(--sc-champ); border-color: var(--sc-champ); color: #1a150d; }

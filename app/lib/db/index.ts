@@ -4,6 +4,7 @@ import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { drizzle as drizzlePglite } from "drizzle-orm/pglite";
 import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { assertDeployEnv } from "../env";
 import * as schema from "./schema";
 
 // 有 DATABASE_URL 时连 Supabase（Postgres）；没有时用本地内嵌 PGlite 兜底，
@@ -14,6 +15,8 @@ export type DbKind = "postgres" | "pglite";
 const globalForDb = globalThis as unknown as { db?: Db; dbKind?: DbKind };
 
 function create(): { db: Db; kind: DbKind } {
+  // 生产环境缺 DATABASE_URL（Vercel 上还有 Supabase Storage 两个变量）时直接报错，不回落 PGlite（D64，见 lib/env.ts）。
+  assertDeployEnv(process.env, "db");
   const url = process.env.DATABASE_URL;
   if (url) {
     // Supabase transaction pooler（6543）不支持预备语句，需关闭。

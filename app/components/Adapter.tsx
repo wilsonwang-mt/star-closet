@@ -9,6 +9,7 @@ import type { Item, Outfit } from "@/lib/catalog";
 import type { AdaptResult } from "@/lib/adapt/types";
 import type { TryonContext } from "@/lib/tryon/service";
 import TryOn from "./tryon/TryOn";
+import LookActions, { usePick } from "./closet/LookActions";
 
 // 等待卡至少停留这么久：规则模式几乎瞬间返回，等待卡一闪而过会造成闪烁
 const MIN_WAIT_MS = 900;
@@ -41,11 +42,13 @@ export default function Adapter({
   catalog,
   aiEnabled,
   tryon,
+  signedIn,
 }: {
   outfit: Outfit;
   catalog: Item[];
   aiEnabled: boolean;
   tryon?: TryonContext;
+  signedIn?: boolean;
 }) {
   const router = useRouter();
   const [request, setRequest] = useState("");
@@ -61,6 +64,9 @@ export default function Adapter({
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   // 输入为空时点“改编这一套”：不改编，聚焦输入框并给一行提示（按钮不用原生 disabled，点了总有反馈）
   const [needInput, setNeedInput] = useState(false);
+  // 原搭配的整套 / 多选加入试衣间与购物袋（D67）
+  const pick = usePick();
+  const source = { outfitId: outfit.id, outfitName: outfit.name };
 
   function tryAdapt(text: string) {
     if (!text.trim()) {
@@ -79,6 +85,11 @@ export default function Adapter({
   }
 
   async function adapt(text: string) {
+    // 改编需要登录（D64：会调用 Claude，按用户每日限次）；未登录先去登录，登录后回到这套搭配。
+    if (signedIn === false) {
+      router.push(`/login?next=/outfit/${outfit.id}`);
+      return;
+    }
     const current = items ?? outfit.items;
     setBefore(current);
     const started = Date.now();
@@ -92,6 +103,10 @@ export default function Adapter({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ outfitId: outfit.id, request: text }),
       });
+      if (res.status === 401) {
+        router.push(`/login?next=/outfit/${outfit.id}`);
+        return;
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "改编失败");
       const wait = MIN_WAIT_MS - (Date.now() - started);
@@ -183,12 +198,9 @@ export default function Adapter({
           </div>
           <span className="price" style={{ fontSize: 20 }}>¥{outfit.total}</span>
         </div>
-        <ItemList items={outfit.items} />
-        <div className="row" style={{ marginTop: 12 }}>
-          <button className="link-btn" onClick={() => save("original", outfit.items)}>
-            原样加入试衣间
-          </button>
-          {saved === "original" ? <span className="sc-badge">已加入试衣间</span> : null}
+        <ItemList items={outfit.items} pick={pick} source={source} />
+        <div style={{ marginTop: 14 }}>
+          <LookActions items={outfit.items} pick={pick} outfitId={outfit.id} outfitName={outfit.name} />
         </div>
       </section>
 
@@ -304,6 +316,7 @@ export default function Adapter({
             originalIds={originalIds}
             reveal={before}
             ownCuratorId={outfit.curatorId}
+            source={source}
           />
           <p className="sc-meta" style={{ margin: 0 }}>
             {result.mode === "ai"
