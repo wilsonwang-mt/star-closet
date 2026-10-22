@@ -68,6 +68,42 @@ export function pngWithMetadata(width = 64, height = 96, rgb: [number, number, n
   ]);
 }
 
+/** 任意像素的 PNG（RGB，无元数据）。 */
+export function pngFromRgb(width: number, height: number, rgb: Uint8Array): Uint8Array {
+  const raw = Buffer.alloc((width * 3 + 1) * height);
+  for (let y = 0; y < height; y++) Buffer.from(rgb.subarray(y * width * 3, (y + 1) * width * 3)).copy(raw, y * (width * 3 + 1) + 1);
+  return new Uint8Array([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+    ...pngChunk("IHDR", [...be32(width), ...be32(height), 8, 2, 0, 0, 0]),
+    ...pngChunk("IDAT", [...deflateSync(raw)]),
+    ...pngChunk("IEND", []),
+  ]);
+}
+
+/**
+ * 合成的“影棚全身站姿”示意图（几何色块，不是人像）：浅米色背景上，深色椭圆头发包着浅色脸、两点眼睛，
+ * 白色躯干与灰色腿，头顶与脚下留白。用于测试脸部精修的头部定位、对齐与贴回。toBottom 为 true 时人形一直延伸到下边缘（不是完整全身）。
+ */
+export function figurePng(width = 600, height = 800, toBottom = false): Uint8Array {
+  const px = new Uint8Array(width * height * 3);
+  const s = width / 600;
+  const inEllipse = (x: number, y: number, cx: number, cy: number, rx: number, ry: number) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let c = [225, 215, 200];
+      const X = x / s;
+      const Y = (y / height) * 800;
+      if (X >= 240 && X <= 360 && Y >= 190 && Y <= 700) c = [250, 250, 250];
+      if (X >= 255 && X <= 345 && Y > 700 && (toBottom || Y <= 760)) c = [150, 150, 150];
+      if (inEllipse(X, Y, 300, 130, 45, 55)) c = [40, 30, 25];
+      if (inEllipse(X, Y, 300, 145, 33, 42)) c = [210, 170, 140];
+      if (inEllipse(X, Y, 288, 140, 4, 3) || inEllipse(X, Y, 312, 140, 4, 3) || inEllipse(X, Y, 300, 165, 9, 2)) c = [60, 40, 35];
+      px.set(c, (y * width + x) * 3);
+    }
+  }
+  return pngFromRgb(width, height, px);
+}
+
 /** VP8X 扩展格式 WebP 结构，带 EXIF 与 XMP 块（图像块为占位）。 */
 export function webpWithMetadata(width = 100, height = 150): Uint8Array {
   const chunk = (tag: string, data: number[]) => [...bytesOf(tag), ...le32(data.length), ...data, ...(data.length & 1 ? [0] : [])];

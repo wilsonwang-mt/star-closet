@@ -22,6 +22,9 @@ type Call = { url: string; body: Record<string, unknown> | null };
 let calls: Call[] = [];
 let failAngle: string | null = null;
 let failTimes = 0;
+/** 正面生成结果；为 null 时用纯色图（找不到头部，不做脸部精修）。 */
+let frontImage: Uint8Array | null = null;
+let refineCrop: Buffer | null = null;
 const realFetch = globalThis.fetch;
 
 type Mods = {
@@ -52,6 +55,13 @@ before(async () => {
     calls.push({ url, body });
     if (url === "https://queue.fal.run/fal-ai/nano-banana-pro/edit") {
       const prompt = String(body?.prompt ?? "");
+      if (prompt.includes("close-up crop from a full-body studio photo")) {
+        // 脸部精修：原样返回送来的头部裁切
+        const first = String((body?.image_urls as string[])[0]);
+        refineCrop = Buffer.from(first.slice(first.indexOf(",") + 1), "base64");
+        const base = "https://queue.fal.run/fal-ai/nano-banana-pro/requests/refine";
+        return Response.json({ status: "IN_QUEUE", status_url: `${base}/status`, response_url: base });
+      }
       const angle = prompt.includes("front view") ? "front" : prompt.includes("three-quarter view") ? "side" : "back";
       if (angle === failAngle && failTimes > 0) {
         failTimes--;
@@ -65,6 +75,8 @@ before(async () => {
       const angle = url.split("/").at(-1);
       return Response.json({ images: [{ url: `https://v3.fal.media/files/${angle}.png` }] });
     }
+    if (url === "https://v3.fal.media/files/refine.png") return new Response(new Uint8Array(refineCrop!));
+    if (url === "https://v3.fal.media/files/front.png" && frontImage) return new Response(Buffer.from(frontImage));
     if (url.startsWith("https://v3.fal.media/files/")) return new Response(Buffer.from(RESULT()));
     throw new Error(`unexpected fetch ${url}`);
   }) as typeof fetch;
@@ -74,6 +86,8 @@ beforeEach(() => {
   calls = [];
   failAngle = null;
   failTimes = 0;
+  frontImage = null;
+  refineCrop = null;
 });
 
 after(() => {
@@ -210,6 +224,31 @@ test("侧面两次都失败：仍成功，side 为空；正面失败则整次失
   const kept = (await m.twin.getTwin("u1"))!;
   assert.equal(kept.jobId, t.jobId, "失败的重新生成不影响现有形象");
   assert.ok(existsSync(path.join(process.env.UPLOADS_DIR!, kept.images.front)));
+});
+
+test("正面做脸部精修（D68）：多一次调用，参考为正脸与侧脸；精修结果替换正面；TWIN_FACE_DETAIL=0 时不做", async () => {
+  frontImage = m.testing.figurePng();
+  await m.twin.generateTwin("u1", { gender: "female" }, { analyze });
+  const fal = calls.filter((c) => c.url === "https://queue.fal.run/fal-ai/nano-banana-pro/edit");
+  assert.equal(fal.length, 4, "三个角度 + 一次脸部精修");
+  const refine = fal.find((c) => String(c.body?.prompt).includes("close-up crop"))!;
+  assert.equal(refine.body!.aspect_ratio, "1:1");
+  const urls = refine.body!.image_urls as string[];
+  const front = fal.find((c) => String(c.body?.prompt).includes("front view"))!;
+  const refs = front.body!.image_urls as string[];
+  assert.deepEqual(urls.slice(1), [refs[0], refs[1]], "参考为正脸与侧脸（与生成用的同一组 data URI）");
+  const twin = (await m.twin.getTwin("u1"))!;
+  const stored = await m.twin.readTwinImageDataUri(twin.images.front);
+  assert.ok(stored.startsWith("data:image/jpeg;base64,"), "精修后的正面重新编码为 JPEG");
+
+  calls = [];
+  process.env.TWIN_FACE_DETAIL = "0";
+  try {
+    await m.twin.generateTwin("u1", { gender: "female" }, { analyze });
+  } finally {
+    delete process.env.TWIN_FACE_DETAIL;
+  }
+  assert.equal(calls.filter((c) => c.url === "https://queue.fal.run/fal-ai/nano-banana-pro/edit").length, 3);
 });
 
 test("未同意照片分析：不调用分析；未选性别时报错", async () => {

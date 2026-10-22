@@ -14,7 +14,7 @@ import t from "./TwinStudio.module.css";
 type Gender = "female" | "male";
 
 const SLOT_META: { slot: Slot; label: string; tip: string; required: Requirement; icon: ReactNode }[] = [
-  { slot: "face", label: "正脸", tip: "正对镜头，五官清晰", required: "必传", icon: <FaceSilhouette /> },
+  { slot: "face", label: "正脸", tip: "正对镜头，光线均匀，五官无遮挡", required: "必传", icon: <FaceSilhouette /> },
   { slot: "front", label: "全身正面", tip: "面向镜头，头到脚入镜", required: "必传", icon: <BodyFrontSilhouette /> },
   { slot: "extra", label: "侧脸", tip: "转头 45°–90°，发型清楚", required: "选传", icon: <FaceSilhouette /> },
   { slot: "side", label: "全身侧面", tip: "转身 90°，头到脚入镜", required: "选传", icon: <BodySideSilhouette /> },
@@ -36,7 +36,8 @@ async function readError(res: Response | null, fallback: string) {
 function phaseText(sec: number, analysis: boolean) {
   if (sec < 4) return "正在读取你的照片";
   if (analysis && sec < 16) return "正在理解你的身材与发型";
-  return "正在为你拍摄标准照";
+  if (sec < 40) return "正在为你拍摄标准照";
+  return "正在细化脸部细节"; // 正面出图后做脸部精修（D68），约在 30–40 秒开始
 }
 
 export default function TwinStudio({
