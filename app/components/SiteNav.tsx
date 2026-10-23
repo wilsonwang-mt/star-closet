@@ -5,7 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { BAG_EVENT } from "@/lib/bag/client";
+import { useT } from "@/lib/i18n/client";
 import LinkPending from "./LinkPending";
+import LocaleSwitch from "./LocaleSwitch";
 import OfflineNotice from "./OfflineNotice";
 import ThemeToggle, { type ThemePref } from "./ThemeToggle";
 import nav from "./SiteNav.module.css";
@@ -17,8 +19,8 @@ import nav from "./SiteNav.module.css";
 // 动画全部是 CSS transition（只动 transform / opacity），曲线是预先算好的弹簧 linear()，见 globals.css。
 
 const LINKS = [
-  { href: "/", label: "衣橱", kicker: "The Closets" },
-  { href: "/fitting-room", label: "试衣间", kicker: "Fitting Room" },
+  { href: "/", label: "closets", kicker: "closetsKicker" },
+  { href: "/fitting-room", label: "fittingRoom", kicker: "fittingRoomKicker" },
 ] as const;
 
 const SHOW_ON_LOAD_MS = 2000;
@@ -35,6 +37,7 @@ function currentness(pathname: string, href: string): "page" | "true" | undefine
 export default function SiteNav({ initialTheme }: { initialTheme: ThemePref }) {
   const pathname = usePathname();
   const router = useRouter();
+  const t = useT("nav");
   const { data: session, isPending } = authClient.useSession();
   const user = session?.user ?? null;
 
@@ -161,7 +164,7 @@ export default function SiteNav({ initialTheme }: { initialTheme: ThemePref }) {
   }
 
   const accountHref = user ? "/profile" : "/login";
-  const accountLabel = user ? "我的档案" : "登录";
+  const accountLabel = user ? t("profile") : t("signIn");
   const initial = (user?.name?.trim() || user?.email || "").slice(0, 1).toUpperCase();
 
   const navClass = ["sc-nav", "site-nav", hidden && !open ? "sc-nav--hidden" : "", open ? "is-open" : ""]
@@ -171,7 +174,7 @@ export default function SiteNav({ initialTheme }: { initialTheme: ThemePref }) {
   return (
     <>
       <header ref={navRef} className={navClass} onFocus={() => setHidden(false)}>
-        <Link href="/" className="sc-nav__brand site-nav__brand" aria-label="SEEN. 首页">
+        <Link href="/" className="sc-nav__brand site-nav__brand" aria-label={t("homeAria")}>
           {/* 横排标识：深浅主题各一份，按 data-theme / 系统主题切换（globals.css） */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="brand-logo brand-logo--dark" src="/brand/seen-lockup-horizontal.svg" alt="SEEN." width={96} height={26} />
@@ -179,16 +182,16 @@ export default function SiteNav({ initialTheme }: { initialTheme: ThemePref }) {
           <img className="brand-logo brand-logo--light" src="/brand/seen-lockup-horizontal-light.svg" alt="" aria-hidden="true" width={96} height={26} />
         </Link>
         <div className="site-nav__end">
-          <nav aria-label="主导航" className="sc-nav__links site-nav__inline">
+          <nav aria-label={t("mainNav")} className="sc-nav__links site-nav__inline">
             {LINKS.map((l) => (
               <Link key={l.href} href={l.href} className="sc-nav__link" aria-current={currentness(pathname, l.href)}>
-                {l.label}
+                {t(l.label)}
                 <LinkPending />
               </Link>
             ))}
             {isPending ? (
               <span className="sc-nav__link site-nav__placeholder" aria-hidden="true">
-                我的档案
+                {t("profile")}
               </span>
             ) : (
               <Link
@@ -205,7 +208,7 @@ export default function SiteNav({ initialTheme }: { initialTheme: ThemePref }) {
           <Link
             href="/bag"
             className={`sc-nav__icon-btn ${nav.bag}`}
-            aria-label={bagCount ? `购物袋，${bagCount} 件` : "购物袋"}
+            aria-label={bagCount ? t("bagWithCount", { n: bagCount }) : t("bag")}
             aria-current={currentness(pathname, "/bag")}
           >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
@@ -218,6 +221,7 @@ export default function SiteNav({ initialTheme }: { initialTheme: ThemePref }) {
               </span>
             ) : null}
           </Link>
+          <LocaleSwitch />
           <ThemeToggle initial={initialTheme} />
           <button
             ref={buttonRef}
@@ -225,7 +229,7 @@ export default function SiteNav({ initialTheme }: { initialTheme: ThemePref }) {
             className={`sc-nav__icon-btn site-nav__menu-btn${user ? " has-account" : ""}`}
             aria-expanded={open}
             aria-controls="site-menu"
-            aria-label={open ? "关闭菜单" : user ? "打开菜单与账号" : "打开菜单"}
+            aria-label={open ? t("closeMenu") : user ? t("openMenuAccount") : t("openMenu")}
             onClick={() => (open ? closeMenu(false) : setOpen(true))}
           >
             <span className="site-nav__burger" aria-hidden="true">
@@ -252,10 +256,13 @@ export default function SiteNav({ initialTheme }: { initialTheme: ThemePref }) {
         className={`site-menu${user ? " has-account" : ""}`}
         data-open={open}
         inert={!open}
-        aria-label="菜单"
+        aria-label={t("menu")}
       >
-        <nav aria-label="主导航（菜单）" className="site-menu__primary">
-          {[...LINKS, { href: accountHref, label: accountLabel, kicker: user ? "My Profile" : "Sign in" }].map((l, i) => (
+        <nav aria-label={t("mainNavMenu")} className="site-menu__primary">
+          {[
+            ...LINKS.map((l) => ({ href: l.href, label: t(l.label), kicker: t(l.kicker) })),
+            { href: accountHref, label: accountLabel, kicker: user ? t("profileKicker") : t("signInKicker") },
+          ].map((l, i) => (
             <Link
               key={l.href}
               href={l.href}
@@ -275,7 +282,7 @@ export default function SiteNav({ initialTheme }: { initialTheme: ThemePref }) {
               {user.email}
             </span>
             <button type="button" className="site-menu__signout" onClick={signOut}>
-              退出登录
+              {t("signOut")}
             </button>
           </div>
         )}

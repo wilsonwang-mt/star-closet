@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/lib/i18n/client";
 
 export type ThemePref = "dark" | "light" | "system";
 
 const NEXT: Record<ThemePref, ThemePref> = { dark: "light", light: "system", system: "dark" };
-const LABEL: Record<ThemePref, string> = { dark: "夜间", light: "日间", system: "跟随系统" };
 
 function Icon({ pref }: { pref: ThemePref }) {
   if (pref === "dark") {
@@ -31,6 +31,8 @@ function Icon({ pref }: { pref: ThemePref }) {
 // 圆形图标按钮，放在顶部胶囊导航里；图标切换时带一次弹簧旋入。
 export default function ThemeToggle({ initial, className = "" }: { initial: ThemePref; className?: string }) {
   const [pref, setPref] = useState<ThemePref>(initial);
+  const t = useT("nav");
+  const label = (p: ThemePref) => t(`theme.${p}`);
   function cycle() {
     const next = NEXT[pref];
     setPref(next);
@@ -43,8 +45,8 @@ export default function ThemeToggle({ initial, className = "" }: { initial: Them
       type="button"
       className={`sc-nav__icon-btn theme-toggle ${className}`}
       onClick={cycle}
-      aria-label={`显示模式：${LABEL[pref]}，点按切换到${LABEL[NEXT[pref]]}`}
-      title={`显示模式：${LABEL[pref]}`}
+      aria-label={t("theme.aria", { current: label(pref), next: label(NEXT[pref]) })}
+      title={t("theme.title", { current: label(pref) })}
     >
       <svg
         key={pref}
