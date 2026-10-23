@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 import NotFoundView from "@/components/NotFoundView";
+import { getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "找不到这个页面" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT("system");
+  return { title: t("notFound.page.title") };
+}
 
-export default function NotFound() {
-  return <NotFoundView title="找不到这个页面" note="链接可能写错了，或者内容已经下架。" />;
+export default async function NotFound() {
+  const t = await getT("system");
+  return <NotFoundView title={t("notFound.page.title")} note={t("notFound.page.note")} />;
 }

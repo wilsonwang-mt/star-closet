@@ -17,3 +17,6 @@
 }
 .check::before { content: ""; position: absolute; inset: -9px; } /* 热区放大到 44px */
 .checkOn { background: var(--sc-champ); border-color: var(--sc-champ); color: #1a150d; }
+
+/* 英文（D70）：“Add look to Fitting Room”比中文长一倍，主按钮不换行，收窄字距免得在窄卡片里撑出边界 */
+:global(html[lang="en"]) .room { letter-spacing: .02em; }

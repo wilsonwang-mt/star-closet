@@ -1,5 +1,7 @@
-import { json, withUser } from "@/lib/avatar/http";
+import { json, jsonError, withUser } from "@/lib/avatar/http";
+import { localizeAvatarState } from "@/lib/avatar/l10n";
 import { recordConsent } from "@/lib/avatar/service";
+import { getLocale } from "@/lib/i18n/server";
 
 // 记录同意：body { store: true, thirdParty: boolean, offerVersion }。
 // store：同意上传并存储本人照片用于生成 3D 形象（必选）。
@@ -14,14 +16,13 @@ export async function POST(req: Request) {
       offerVersion?: unknown;
       bodyAnalysis?: unknown;
     } | null;
-    if (body?.store !== true) return json({ error: "需要勾选同意保存照片" }, 400);
-    return json(
-      await recordConsent(userId, {
-        store: true,
-        thirdParty: body.thirdParty === true,
-        offerVersion: body.offerVersion,
-        bodyAnalysis: body.bodyAnalysis === true,
-      }),
-    );
+    if (body?.store !== true) return jsonError("需要勾选同意保存照片", 400);
+    const state = await recordConsent(userId, {
+      store: true,
+      thirdParty: body.thirdParty === true,
+      offerVersion: body.offerVersion,
+      bodyAnalysis: body.bodyAnalysis === true,
+    });
+    return json(localizeAvatarState(state, await getLocale()));
   });
 }

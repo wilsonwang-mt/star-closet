@@ -4,6 +4,11 @@ import { preload } from "react-dom";
 import ChatDock from "@/components/chat/ChatDock";
 import SiteNav from "@/components/SiteNav";
 import type { ThemePref } from "@/components/ThemeToggle";
+import { catalogTerms } from "@/lib/i18n/catalog";
+import { I18nProvider } from "@/lib/i18n/client";
+import { LOCALE_META } from "@/lib/i18n/config";
+import { MESSAGES } from "@/lib/i18n/messages";
+import { getLocale, tFor } from "@/lib/i18n/server";
 import { getChatCatalog } from "@/lib/chat/catalog";
 import "./fonts.css";
 import "./fonts-serif.css"; // 标题字体自托管（Vercel 构建机上 next/font/google 解析失败，2026-10-17）
@@ -11,11 +16,15 @@ import "./tokens.css";
 import "./globals.css";
 
 
-export const metadata: Metadata = {
-  title: { default: "SEEN.", template: "%s · SEEN." },
-  description: "把主理人的一整套穿搭，改成适合你、买得起的那一套。",
-  applicationName: "SEEN.",
-};
+// 标题模板与描述按访客语言输出（D70）。
+export async function generateMetadata(): Promise<Metadata> {
+  const t = tFor(await getLocale(), "meta");
+  return {
+    title: { default: t("siteName"), template: t("titleTemplate") },
+    description: t("description"),
+    applicationName: t("siteName"),
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -34,16 +43,20 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   if (process.env.NEXT_PHASE !== "phase-production-build") void getChatCatalog().catch(() => {});
   const saved = (await cookies()).get("sc-theme")?.value;
   const pref: ThemePref = saved === "light" || saved === "system" ? saved : "dark";
+  // 多语言（D70）：cookie sc-locale → 浏览器语言 → 中文。只把当前语言的字典与目录词表交给客户端。
+  const locale = await getLocale();
   return (
     <html
-      lang="zh-CN"
+      lang={LOCALE_META[locale].htmlLang}
       data-theme={pref === "system" ? undefined : pref}
     >
       <body>
-        <SiteNav initialTheme={pref} />
-        <main className="container">{children}</main>
-        {/* 全站悬浮对话（D66）：与导航同级，路由切换不卸载 */}
-        <ChatDock />
+        <I18nProvider locale={locale} messages={MESSAGES[locale]} terms={catalogTerms(locale)}>
+          <SiteNav initialTheme={pref} />
+          <main className="container">{children}</main>
+          {/* 全站悬浮对话（D66）：与导航同级，路由切换不卸载 */}
+          <ChatDock />
+        </I18nProvider>
       </body>
     </html>
   );

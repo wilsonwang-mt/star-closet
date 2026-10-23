@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { useT, useTerm } from "@/lib/i18n/client";
 
 // 有授权图片时显示去背景商品图；没有就用色块和颜色名，不使用任何人的身体照片。
 // 传入 href 时整张缩略图链接到商品详情页（/item/[id]）。
+// color 是目录里的中文颜色词：色块按它查表，显示时再翻译成当前语言。
 const SWATCH: Record<string, string> = {
   米白: "#efe6d6", 白: "#f6f4ef", 黑: "#2a2826", 雾蓝: "#b7c6d3", 香槟: "#e5d3ae", 鼠尾草绿: "#b6c2a7",
   "蓝/白": "#c9d6e6", 燕麦: "#ddd0b8", 浅蓝: "#b9cde0", 驼: "#c19a6b", 灰: "#b5b3ae", 卡其: "#c8b48b",
@@ -10,6 +14,7 @@ const SWATCH: Record<string, string> = {
 };
 
 export default function ItemThumb({ name, image, color, href }: { name: string; image: string | null; color: string; href?: string }) {
+  const t = useT("outfit");
   const thumb = image ? (
     <div className="thumb has-img">
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -20,18 +25,19 @@ export default function ItemThumb({ name, image, color, href }: { name: string; 
   );
   if (!href) return thumb;
   return (
-    <Link href={href} aria-label={`查看单品：${name}`} style={{ display: "block", color: "inherit", borderRadius: "inherit" }}>
+    <Link href={href} aria-label={t("list.viewItem", { name })} style={{ display: "block", color: "inherit", borderRadius: "inherit" }}>
       {thumb}
     </Link>
   );
 }
 
 function Swatch({ name, color }: { name: string; color: string }) {
+  const term = useTerm();
   const bg = SWATCH[color] ?? "#ddd5c8";
   const dark = ["黑", "玳瑁"].includes(color);
   return (
     <div className="thumb" style={{ background: bg, color: dark ? "#f2efe9" : "#3a332b" }} aria-label={name}>
-      {color}
+      {term(color)}
     </div>
   );
 }

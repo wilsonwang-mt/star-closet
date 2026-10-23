@@ -89,3 +89,8 @@
   .btn:hover::after { transform: translateX(-120%); }
   .beam { animation: none; opacity: .5; }
 }
+
+/* 英文（D70）：文案比中文长，收窄为中文设的宽字距；两列按钮放不下时折行居中。 */
+:global(html[lang="en"]) .btn { letter-spacing: .04em; }
+:global(html[lang="en"]) .btnLg { letter-spacing: .08em; }
+:global(html[lang="en"]) .main { padding-inline: 14px; letter-spacing: .06em; line-height: 1.25; text-align: center; }

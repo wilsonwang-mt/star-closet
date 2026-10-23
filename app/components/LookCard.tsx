@@ -4,18 +4,27 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import ItemThumb from "./ItemThumb";
-import { addItemsToBag } from "@/lib/bag/client";
+import { addItemsToBag, useBagErrors } from "@/lib/bag/client";
+import { useLocale, useT, useTerm } from "@/lib/i18n/client";
+import { LOCALE_META } from "@/lib/i18n/config";
 import type { Look } from "@/lib/looks";
 import { isWearable } from "@/lib/tryon/plan";
 import type { TryonContext, TryonView } from "@/lib/tryon/service";
 import { LookTryOnSheet, TryOnPeek, TryOnRowAction, WearAllButton, WornMark } from "./tryon/LookTryOn";
+import { cleanName } from "./tryon/shared";
 import { useLookTryon } from "./tryon/useLookTryon";
 import tr from "./tryon/LookTryOn.module.css";
 
-const MODE_LABEL: Record<string, string> = { original: "主理人原搭配", ai: "AI 改编", offline: "为你改编", pick: "我挑的单品" };
+const MODES = ["original", "ai", "offline", "pick"] as const;
+const isMode = (m: string): m is (typeof MODES)[number] => (MODES as readonly string[]).includes(m);
 
 export default function LookCard({ look, tryon, tryons }: { look: Look; tryon?: TryonContext; tryons?: TryonView[] }) {
   const router = useRouter();
+  const tf = useT("fittingRoom");
+  const term = useTerm();
+  const locale = useLocale();
+  const bagErrors = useBagErrors();
+  const yuan = (n: number) => `¥${n.toLocaleString(LOCALE_META[locale].intl)}`;
   const [selected, setSelected] = useState<Set<string>>(() => new Set(look.items.map((i) => i.id)));
   const [deleting, setDeleting] = useState(false);
   const [bag, setBag] = useState<"idle" | "busy" | "done">("idle");
@@ -36,7 +45,10 @@ export default function LookCard({ look, tryon, tryons }: { look: Look; tryon?: 
   async function toBag() {
     setBag("busy");
     setBagError(null);
-    const r = await addItemsToBag(chosen.map((i) => ({ itemId: i.id })));
+    const r = await addItemsToBag(
+      chosen.map((i) => ({ itemId: i.id })),
+      bagErrors,
+    );
     if (r.ok) setBag("done");
     else {
       setBag("idle");
@@ -54,11 +66,11 @@ export default function LookCard({ look, tryon, tryons }: { look: Look; tryon?: 
     <section className="sc-glass card stack sc-rise">
       <div className="spread">
         <div>
-          <span className="sc-kicker">{MODE_LABEL[look.mode] ?? look.mode}</span>
+          <span className="sc-kicker">{isMode(look.mode) ? tf(`card.mode.${look.mode}`) : look.mode}</span>
           <h2 className="section-title">{look.title}</h2>
         </div>
         <button className="link-btn" onClick={remove} disabled={deleting}>
-          移出
+          {tf("card.remove")}
         </button>
       </div>
       {look.request ? <p className="serif-note">“{look.request}”</p> : null}
@@ -74,14 +86,19 @@ export default function LookCard({ look, tryon, tryons }: { look: Look; tryon?: 
                   <ItemThumb name={it.name} image={it.image} color={it.color} />
                 </WornMark>
                 <span className={tr.rowText}>
-                  <span className="item-name" style={{ display: "block" }}>{it.name.replace(/^占位：/, "")}</span>
+                  <span className="item-name" style={{ display: "block" }}>{cleanName(it.name)}</span>
                   <span className="sc-meta">
-                    {it.displayCategory || it.category} · {it.color}
+                    {term(it.displayCategory || it.category)} · {term(it.color)}
                   </span>
                 </span>
                 <span className={`row ${tr.rowEnd}`} style={{ justifyContent: "flex-end" }}>
-                  <span className="price">¥{it.price}</span>
-                  <input type="checkbox" checked={selected.has(it.id)} onChange={() => toggle(it.id)} aria-label={`选择${it.name}`} />
+                  <span className="price">{yuan(it.price)}</span>
+                  <input
+                    type="checkbox"
+                    checked={selected.has(it.id)}
+                    onChange={() => toggle(it.id)}
+                    aria-label={tf("card.selectAria", { name: cleanName(it.name) })}
+                  />
                 </span>
               </label>
               {wearable ? (
@@ -96,17 +113,17 @@ export default function LookCard({ look, tryon, tryons }: { look: Look; tryon?: 
       <TryOnPeek t={t} items={look.items} />
       <LookTryOnSheet t={t} items={look.items} />
       <div className="spread">
-        <span className="sc-meta">已选 {chosen.length} / {look.items.length} 件</span>
-        <span className="total sc-foil">¥{chosenTotal}</span>
+        <span className="sc-meta">{tf("card.selected", { n: chosen.length, total: look.items.length })}</span>
+        <span className="total sc-foil">{yuan(chosenTotal)}</span>
       </div>
       {chosen.length ? (
         <button className="sc-cta sc-cta--ghost" disabled={bag === "busy"} onClick={() => void toBag()}>
-          {bag === "done" ? "已加入购物袋" : `加入购物袋（${chosen.length} 件）`}
+          {bag === "done" ? tf("card.added") : tf("card.addToBag", { n: chosen.length })}
         </button>
       ) : null}
       {bag === "done" ? (
         <Link href="/bag" className="link-btn fade-in" style={{ justifySelf: "start" }}>
-          查看购物袋
+          {tf("card.viewBag")}
         </Link>
       ) : null}
       {bagError ? (

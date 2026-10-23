@@ -1,0 +1,195 @@
+// 服务端发出的中文提示 → English（gettext 式：以中文原文为键）。
+// 用于 Route Handler 返回的 { error }、存进数据库后再读出的错误文案等：在响应边界按当前语言替换，
+// lib 里的逻辑与测试仍用中文原文。新增一条服务端提示时，同时在这里补英文（i18n 测试会检查 app/api 里的字面量）。
+// 文风：简短、礼貌、可操作；品牌 SEEN. 原样保留；不新增任何免责或“AI”说明（D48）。
+// 带单品名的改编说明不走这里：lib/adapt 按 locale 直接生成（见 lib/adapt/copy.ts）。
+
+/** 原文完全相同时替换。 */
+export const phrases: Record<string, string> = {
+  // ---- 通用（各接口共用） ----
+  请先登录: "Please sign in first.",
+  "服务暂时不可用，请稍后再试": "Something went wrong on our side. Please try again in a moment.",
+  请求格式不对: "That request wasn't in the expected format.",
+  数据格式不对: "Some of that information isn't in the expected format.",
+  没有找到: "We couldn't find that.",
+  不存在: "This look no longer exists.",
+  请求太大: "That request is too large.",
+  请求过大: "That request is too large.",
+
+  // ---- 一句话改编 / 试衣间 / 购物袋 / 档案（app/api/adapt、looks、bag、profile） ----
+  请说一句改编要求: "Tell us in one sentence how you'd like to change this look.",
+  搭配不存在: "This look no longer exists.",
+  没有可保存的单品: "None of these pieces can be saved.",
+  没有可加入的单品: "None of these pieces can be added to your bag.",
+  没有要修改的内容: "There's nothing to change.",
+  预算下限不能高于上限: "Your minimum budget can't be higher than your maximum.",
+
+  // ---- 对话（app/api/chat；对话子任务负责接口，译文统一在这里） ----
+  请说一句你的需求: "Tell us what you're looking for.",
+  "目录暂时读不到，稍后再试": "We can't load the collection right now. Please try again shortly.",
+
+  // ---- 上传照片（3D 形象、试穿共用） ----
+  请用表单上传照片: "Please upload the photo using the upload form.",
+  "单张照片不能超过 8MB": "Each photo must be 8 MB or smaller.",
+  "照片不能超过 8MB": "Photos must be 8 MB or smaller.",
+  缺少照片或位置: "Please choose a photo and where it goes.",
+  缺少照片: "Please choose a photo.",
+  照片是空文件: "That photo file is empty.",
+  "只支持 JPG、PNG、WebP 图片": "Only JPG, PNG and WebP images are supported.",
+  "照片太小，请换一张清晰的正面全身照": "That photo is too small. Please use a clear, full-length photo taken from the front.",
+  照片位置不对: "That photo slot isn't valid.",
+  图片位置不对: "That image location isn't valid.",
+  图片尺寸不对: "We couldn't read that image's dimensions. Please try another photo.",
+  照片不存在: "That photo no longer exists.",
+  "照片文件不存在，请重新上传": "That photo file is missing. Please upload it again.",
+  "只收正脸自拍、全身正面与全身侧面照": "We only need a front-facing selfie, a full-length front photo and a full-length side photo.",
+  "面部特写与补充照片不参与生成，已不再收集": "Face close-ups and extra photos aren't used for generation, so we no longer collect them.",
+  // 照片质量提示（image.ts QUALITY_HINTS）
+  "分辨率偏低，细节可能丢失": "Low resolution; some detail may be lost.",
+  "全身照建议竖拍，让头到脚都在画面里": "Full-length photos work best in portrait, with you in frame from head to toe.",
+  "文件很小，可能过度压缩或画面过于单一": "This file is very small; it may be heavily compressed or lack detail.",
+
+  // ---- 3D 形象 / 数字分身：同意与流程 ----
+  需要勾选同意保存照片: "Please agree to let us store your photos first.",
+  "请先阅读并勾选同意，再上传照片": "Please read and agree to the photo notice before uploading.",
+  "处理方已变更，请刷新页面重新阅读说明": "Who processes your photos has changed. Please refresh the page and read the notice again.",
+  "第三方生成服务未启用，请刷新页面": "The third-party generation service isn't turned on. Please refresh the page.",
+  "体型分析未启用，请刷新页面": "Body-shape analysis isn't turned on. Please refresh the page.",
+  "MetaPerson 未启用，请刷新页面": "MetaPerson isn't turned on. Please refresh the page.",
+  "形象生成服务未启用，请刷新页面": "The twin service isn't turned on. Please refresh the page.",
+  "请先勾选同意由 MetaPerson 生成形象": "Please agree to let MetaPerson create your avatar first.",
+  "请先勾选同意由 fal.ai 上的 AI 图像模型生成你的形象": "Please allow an AI image model on fal.ai to create your twin first.",
+  "请在 MetaPerson 创建器中生成形象": "Please create your avatar in the MetaPerson creator.",
+  "请用“生成我的形象”按钮生成数字分身": "Please use the “Build my twin” button to create your twin.",
+  请在形象页生成数字分身: "Please create your twin on the avatar page.",
+  已有一个正在生成的任务: "Your avatar is already being generated.",
+  任务不存在: "We couldn't find that generation.",
+  形象不存在: "That avatar no longer exists.",
+  "形象照不存在，请重新生成": "Your twin's portraits are missing. Please create it again.",
+  "正在生成你的形象，请稍候": "We're still creating your twin. Hang tight.",
+  请先选择形象性别: "Please choose a gender for your twin first.",
+  形象已被删除: "This twin has been deleted.",
+  // 生成失败与第三方服务（作业 error 存库后随 AvatarState 返回）
+  "生成中断，请重试": "Generation was interrupted. Please try again.",
+  用户已删除全部照片与形象: "You deleted all your photos and avatars.",
+  提交生成任务失败: "We couldn't start the generation. Please try again.",
+  查询生成进度失败: "We couldn't check on the generation. Please try again.",
+  "生成服务未配置，请稍后重试": "The generation service isn't set up yet. Please try again later.",
+  生成服务返回格式异常: "The generation service sent back an unexpected response.",
+  "缺少生成任务编号，请重试": "We lost track of this generation. Please try again.",
+  "生成超时，请重试": "Generation took too long. Please try again.",
+  照片未通过生成服务的安全检查: "This photo didn't pass the generation service's safety check. Please try another one.",
+  "生成结果缺少 3D 模型文件": "The result is missing its 3D model file. Please try again.",
+  下载生成结果失败: "We couldn't download the result. Please try again.",
+  生成结果过大: "The result file is too large.",
+  "生成结果不是 GLB 格式": "The result isn't a GLB file.",
+  "生成服务暂时不可用，请稍后再试": "The generation service is temporarily unavailable. Please try again in a moment.",
+  生成服务未启用: "The generation service isn't turned on.",
+  形象生成服务未启用: "The twin service isn't turned on.",
+  "照片无法用于生成，请换光线充足、五官清晰的照片": "These photos can't be used. Please choose well-lit photos where your face is clearly visible.",
+  "生成的人有点多，请稍后再试": "Lots of people are creating right now. Please try again in a moment.",
+  "生成超时，请稍后再试": "Generation took too long. Please try again in a moment.",
+  "生成服务暂时连不上，请稍后再试": "We can't reach the generation service right now. Please try again in a moment.",
+  "生成服务没有返回任务，请稍后再试": "The generation service didn't start the job. Please try again in a moment.",
+  "生成服务没有返回图片，请稍后再试": "The generation service didn't return an image. Please try again in a moment.",
+  "生成结果下载失败，请稍后再试": "We couldn't download the result. Please try again in a moment.",
+  "生成结果无法读取，请稍后再试": "We couldn't read the result. Please try again in a moment.",
+  生成结果无法读取: "We couldn't read the result.",
+  "生成失败，请稍后再试": "That didn't work. Please try again in a moment.",
+  // MetaPerson 导入
+  导出地址无效: "That export link isn't valid.",
+  "导出地址必须是 https": "The export link must use https.",
+  形象编号无效: "That avatar code isn't valid.",
+  形象文件过大: "The avatar file is too large.",
+  "下载形象文件失败，请重试": "We couldn't download the avatar file. Please try again.",
+  "下载形象文件失败（重定向过多）": "We couldn't download the avatar file (too many redirects).",
+  "导出的文件不是 GLB 格式": "The exported file isn't a GLB file.",
+  // 处理方与说明（AvatarState.offer / provider / job）
+  "本站（示意模式）": "SEEN. (demo mode)",
+  "本站服务器：照片只保存在本站私有存储，不发送给任何第三方 AI 服务；生成结果是通用人台，不是你本人":
+    "SEEN. servers: your photos stay in our private storage and are never sent to any third-party AI service. The result is a generic mannequin, not you.",
+  "示意模型，非本人：未使用照片生成，仅为通用人台。合身未验证。":
+    "Demo model, not you: no photos were used; this is a generic mannequin. Fit not verified.",
+  "fal.ai（Tripo 3D）": "fal.ai (Tripo 3D)",
+  "fal.ai 托管的 Tripo 3D 生成模型（第三方服务，位于境外）：只发送正面、侧面、背面三张全身照":
+    "Tripo 3D model hosted on fal.ai (a third-party service outside mainland China): only your front, side and back full-length photos are sent.",
+  "AI 根据你的照片生成的 3D 形象预览：还原外观轮廓，还原度未验证，不代表精确本人外貌或身体尺寸。合身未验证。":
+    "AI-generated 3D avatar preview based on your photos: it follows your outline, but likeness isn't verified and it doesn't represent your exact appearance or measurements. Fit not verified.",
+  "Avatar SDK 的 MetaPerson 创建器（第三方服务，位于境外）：自拍在创建器内上传并由其生成形象，本站只保存导出的 3D 形象":
+    "Avatar SDK's MetaPerson creator (a third-party service outside mainland China): you upload your selfie inside the creator, which builds the avatar; SEEN. only keeps the exported 3D avatar.",
+  "MetaPerson 根据你的自拍生成的 3D 形象。": "3D avatar created by MetaPerson from your selfie.",
+  "fal.ai 上的 AI 图像模型（第三方服务，位于境外）：根据你上传的照片生成你的一组标准形象照":
+    "AI image models on fal.ai (a third-party service outside mainland China): they create a set of standard portraits of you from the photos you upload.",
+  "AI 根据你的照片生成的形象照。": "Portraits generated by AI from your photos.",
+  "Anthropic（Claude）": "Anthropic (Claude)",
+  演示模型: "Demo model",
+  需要正脸照和全身正面照: "Needs a face photo and a full-length front photo.",
+  "需要正面和侧面全身照，背面可选": "Needs full-length front and side photos; a back photo is optional.",
+  "需要正面全身照，以及侧面或背面全身照至少一张": "Needs a full-length front photo, plus at least one full-length side or back photo.",
+  // 数字分身照片角度（TwinView.shots[].label）
+  正面: "Front",
+  侧面: "Side",
+  背面: "Back",
+
+  // ---- 2D 试穿 ----
+  "fal.ai 上的 AI 模型": "AI models on fal.ai",
+  试穿服务未开放: "Try-on isn't available yet.",
+  "试穿服务配置有误，请稍后再试": "Try-on isn't set up correctly right now. Please try again later.",
+  "这张照片无法试穿，请换一张光线充足的正面全身照": "This photo can't be used for try-on. Please use a well-lit, full-length photo taken from the front.",
+  "试穿的人有点多，请稍后再试": "Lots of people are trying things on right now. Please try again in a moment.",
+  "试穿服务暂时不可用，请稍后再试": "Try-on is temporarily unavailable. Please try again in a moment.",
+  "试穿服务暂时连不上，请稍后再试": "We can't reach the try-on service right now. Please try again in a moment.",
+  "试穿服务没有返回图片，请稍后再试": "The try-on service didn't return an image. Please try again in a moment.",
+  试穿结果无法读取: "We couldn't read the try-on result.",
+  "试穿结果无法读取，请稍后再试": "We couldn't read the try-on result. Please try again in a moment.",
+  "试穿超时，请稍后再试": "The try-on took too long. Please try again in a moment.",
+  "试穿失败，请稍后再试": "The try-on didn't work. Please try again in a moment.",
+  细化失败: "We couldn't refine this image.",
+  单品图片不可用: "This piece's image isn't available.",
+  没有找到这套搭配: "We couldn't find this look.",
+  没有找到这件单品: "We couldn't find this piece.",
+  没有可试穿的单品: "There's nothing here to try on.",
+  "请先勾选同意，再开始试穿": "Please agree to the try-on notice before you start.",
+  一次只能试穿一件: "You can try on one piece at a time.",
+  预热只用于正面照: "Preloading only works on your front photo.",
+  这套搭配里没有这件单品: "This piece isn't part of this look.",
+  "只能试穿上装、下装、连衣裙或外套": "Only tops, bottoms, dresses and outerwear can be tried on.",
+  "这套里没有可试穿的上装、下装、连衣裙或外套": "This look has no tops, bottoms, dresses or outerwear to try on.",
+  这件单品没有可用的图片: "This piece doesn't have a usable image.",
+  这件单品暂不支持试穿: "This piece can't be tried on yet.",
+  "先建立你的形象，再开始试穿": "Set up your avatar first, then start trying on.",
+  没有找到这张试穿图: "We couldn't find that try-on image.",
+
+  // ---- 商品详情页上身效果（scene） ----
+  上身效果暂未开放: "Scene previews aren't available yet.",
+  "这张照片无法生成，请换一张光线充足的正面全身照": "This photo can't be used. Please use a well-lit, full-length photo taken from the front.",
+  "请先勾选同意，再生成上身效果": "Please agree to the try-on notice before creating scene previews.",
+  先建立你的形象: "Set up your avatar first.",
+  周五的咖啡馆: "Friday café",
+  城市街头黄昏: "City street at dusk",
+  户外草坪婚礼: "Garden lawn wedding",
+  美术馆: "Art gallery",
+  海边度假: "Seaside getaway",
+  周末市集: "Weekend market",
+};
+
+/** 带变量的原文：按顺序尝试，$1、$2 引用捕获组。全部以 ^…$ 锚定，先匹配者优先。 */
+export const patterns: ReadonlyArray<readonly [RegExp, string]> = [
+  // 每日上限（lib/usage.ts QuotaError）：标签是中文，必须逐种写，不能用捕获组带过去。
+  [/^今天的改编次数已用完（每天 (\d+) 次），明天再来试试$/, "You've reached today's limit of $1 look edits. Try again tomorrow."],
+  [/^今天的试穿次数已用完（每天 (\d+) 次），明天再来试试$/, "You've reached today's limit of $1 try-ons. Try again tomorrow."],
+  [/^今天的上身效果次数已用完（每天 (\d+) 次），明天再来试试$/, "You've reached today's limit of $1 scene previews. Try again tomorrow."],
+  [/^今天的数字分身生成次数已用完（每天 (\d+) 次），明天再来试试$/, "You've reached today's limit of $1 twin generations. Try again tomorrow."],
+  [/^今天的体型分析次数已用完（每天 (\d+) 次），明天再来试试$/, "You've reached today's limit of $1 body-shape analyses. Try again tomorrow."],
+  // 第三方服务带状态码的失败（providers.ts、metaperson.ts）
+  [/^生成服务暂时不可用（网络错误）$/, "The generation service is temporarily unavailable (network error)."],
+  [/^生成服务暂时不可用（(\d+)）$/, "The generation service is temporarily unavailable ($1)."],
+  [/^生成服务出错（(\d+)）$/, "The generation service ran into an error ($1)."],
+  [/^生成失败（网络错误）$/, "Generation didn't work (network error). Please try again."],
+  [/^生成失败（(\d+)）$/, "Generation didn't work ($1). Please try again."],
+  [/^下载形象文件失败（(\d+)）$/, "We couldn't download the avatar file ($1)."],
+  [
+    /^导出地址的主机 (\S+) 不在白名单中（可在 AVATARSDK_EXPORT_HOSTS 中追加）$/,
+    "The export host $1 isn't on the allowlist (add it to AVATARSDK_EXPORT_HOSTS).",
+  ],
+];

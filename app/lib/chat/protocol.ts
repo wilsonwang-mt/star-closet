@@ -1,4 +1,6 @@
-// 悬浮对话（D66，D68 动态化）的前后端协议：卡片数据与 NDJSON 流事件。客户端与服务端共用，只放类型与常量。
+// 悬浮对话（D66，D68 动态化）的前后端协议：卡片数据与 NDJSON 流事件。客户端与服务端共用，只放类型、常量与无依赖的小函数
+// （客户端会打包本文件，不要在这里引入字典或目录覆盖表）。
+import type { Locale } from "../i18n/config";
 import type { LocateQuery, PageKey } from "../locate/core";
 
 export type ClosetCard = {
@@ -68,3 +70,8 @@ export type ChatRequest = {
 };
 
 export const CHAT_MAX_INPUT = 200;
+
+/** 人民币价格：中文 ¥1280（与原来一致），英文 ¥1,280。 */
+export function formatYuan(n: number, locale: Locale): string {
+  return locale === "zh" ? `¥${n}` : `¥${n.toLocaleString(locale)}`;
+}

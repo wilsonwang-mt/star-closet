@@ -93,6 +93,9 @@
 .caption > span { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; }
 
 .req { color: var(--sc-ink-3); font-size: var(--sc-fs-caption); white-space: nowrap; }
+/* 英文标签比中文长（“Full front Required”）：窄列里允许“必填”折到标签下一行，不撑出格子 */
+:global(html[lang="en"]) .caption { white-space: normal; }
+:global(html[lang="en"]) .caption > span { flex-wrap: wrap; row-gap: 0; }
 
 .small {
   position: relative;

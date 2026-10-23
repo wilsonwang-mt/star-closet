@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { getAllItems, getOutfit } from "@/lib/catalog";
+import { jsonError } from "@/lib/i18n/api";
+import { getCatalogL10n } from "@/lib/i18n/server";
 import { consumeQuota, QuotaError } from "@/lib/usage";
 import { adaptWithAi, hasAiKey } from "@/lib/adapt/ai";
 import { adaptOffline } from "@/lib/adapt/offline";
@@ -20,19 +22,22 @@ export const maxDuration = 60;
 export async function POST(req: Request) {
   // 改编会调用 Claude（付费）：需要登录，并按用户每日限次（D64）。AI 失败或没有 key 时仍走规则兜底。
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "请先登录" }, { status: 401 });
+  if (!user) return jsonError("请先登录", 401);
 
   const parsed = Body.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "请说一句改编要求" }, { status: 400 });
+  if (!parsed.success) return jsonError("请说一句改编要求", 400);
 
   const outfit = await getOutfit(parsed.data.outfitId);
-  if (!outfit) return NextResponse.json({ error: "搭配不存在" }, { status: 404 });
+  if (!outfit) return jsonError("搭配不存在", 404);
   try {
     await consumeQuota(user.id, "adapt");
   } catch (e) {
-    if (e instanceof QuotaError) return NextResponse.json({ error: e.message }, { status: 429 });
+    if (e instanceof QuotaError) return jsonError(e.message, 429);
     throw e;
   }
+  // 多语言（D70）：说明、理由与概括按当前界面语言写；选品与校验仍按中文目录数据，单品在返回前才换成当前语言。
+  const l10n = await getCatalogL10n();
+  const locale = l10n.locale;
   // 候选池：同衣橱 + 同性别/中性单品（男装不换成女装，反之亦然）。
   const pool = buildCandidatePool(outfit, await getAllItems());
 
@@ -40,17 +45,17 @@ export async function POST(req: Request) {
   const extraNotes: string[] = [];
   if (hasAiKey()) {
     try {
-      draft = await adaptWithAi(outfit, parsed.data.request, pool);
+      draft = await adaptWithAi(outfit, parsed.data.request, pool, locale);
     } catch (e) {
       const msg = e instanceof Anthropic.APIError ? `AI 服务错误 ${e.status}` : (e as Error).message;
       console.error("adapt ai failed:", msg);
-      draft = adaptOffline(outfit, parsed.data.request, pool);
+      draft = adaptOffline(outfit, parsed.data.request, pool, locale);
     }
   } else {
-    draft = adaptOffline(outfit, parsed.data.request, pool);
+    draft = adaptOffline(outfit, parsed.data.request, pool, locale);
   }
 
   // 服务端校验、总价与“去掉了…”说明（按原搭配与结果的实际差异生成）见 lib/adapt/finalize.ts。
-  const result: AdaptResult = finalizeAdapt(outfit, draft, pool, parsed.data.request, extraNotes);
-  return NextResponse.json(result);
+  const result: AdaptResult = finalizeAdapt(outfit, draft, pool, parsed.data.request, extraNotes, locale);
+  return NextResponse.json({ ...result, items: result.items.map(l10n.item) });
 }

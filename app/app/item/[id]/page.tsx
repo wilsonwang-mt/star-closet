@@ -7,10 +7,15 @@ import { QuickTryButton, QuickTryonProvider } from "@/components/tryon/QuickTryO
 import LinkPending from "@/components/LinkPending";
 import Scene from "@/components/Scene";
 import { getCurrentUser } from "@/lib/auth";
+import { LOCALE_META } from "@/lib/i18n/config";
+import { localizeServerText } from "@/lib/i18n/phrases";
+import { getCatalogL10n, getT } from "@/lib/i18n/server";
+import { localizeSceneState } from "@/lib/scene/l10n";
 import { demoScenesFor, readDemoManifest } from "@/lib/scene/scenes";
 import { getSceneState } from "@/lib/scene/service";
 import { isAccessory } from "@/lib/tryon/accessory";
 import { isWearable } from "@/lib/tryon/plan";
+import { localizeTryonContext, localizeTryonView } from "@/lib/tryon/l10n";
 import { getItemTryon, getTryonContext, type TryonView } from "@/lib/tryon/service";
 import { getItemDetail } from "./data";
 import s from "./page.module.css";
@@ -30,12 +35,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // 商品详情页（T3）：首屏商品大图与信息、一键试穿（D67 首屏可见）与加入购物袋；“上身效果”画廊（本人 / 演示模特）；这件出现在哪些搭配里。
 export default async function ItemPage({ params }: Props) {
   const { id } = await params;
-  const [detail, user] = await Promise.all([getItemDetail(id), getCurrentUser()]);
+  const [detail, user, l10n, t] = await Promise.all([getItemDetail(id), getCurrentUser(), getCatalogL10n(), getT("item")]);
   if (!detail) notFound();
+  const term = l10n.term;
+  const yuan = (n: number) => `¥${n.toLocaleString(LOCALE_META[l10n.locale].intl)}`;
   const { item, curator, outfits } = detail;
   // 上身效果查询失败（如数据库还没有执行迁移 0004）时不影响页面：退回演示模特画廊，不显示生成入口。
   const sceneFallback = { enabled: false, signedIn: !!user, hasFrontPhoto: false, consented: false, renders: [] };
-  const [sceneState, demo, manifest, tryonCtx, itemTryon] = await Promise.all([
+  const [rawScene, rawDemo, manifest, rawCtx, rawTryon] = await Promise.all([
     getSceneState(user?.id ?? null, item.id).catch((e: unknown) => {
       console.error("[scene]", e instanceof Error ? e.message : "unknown error");
       return sceneFallback;
@@ -45,6 +52,12 @@ export default async function ItemPage({ params }: Props) {
     getTryonContext(user?.id ?? null).catch(() => null),
     user ? getItemTryon(user.id, item.id).catch(() => null as TryonView | null) : Promise.resolve(null),
   ]);
+  // 服务端给出的文字（处理方名称、场景标题、存库的失败说明、单品名）按当前语言换，与接口返回的一致。
+  const { locale } = l10n;
+  const sceneState = localizeSceneState(rawScene, locale);
+  const demo = rawDemo.map((d) => ({ ...d, title: localizeServerText(locale, d.title) }));
+  const tryonCtx = rawCtx ? localizeTryonContext(rawCtx, locale) : null;
+  const itemTryon = rawTryon ? localizeTryonView(rawTryon, locale) : null;
   // 一键试穿（D63）：上装 / 下装 / 外套 / 连衣裙 / 鞋 / 包 / 配饰，有单品图才显示。
   const accessory = isAccessory(item);
   const quick = tryonCtx
@@ -60,12 +73,13 @@ export default async function ItemPage({ params }: Props) {
     : null;
   const demoModel = manifest?.items?.[item.id]?.model;
   const name = clean(item.name);
+  // 颜色、材质、尺码、版型、季节都是目录固定词：显示时按当前语言翻译
   const facts: [string, string][] = [
-    ["颜色", item.color],
-    ...(item.material ? ([["材质", item.material]] as [string, string][]) : []),
-    ...(item.sizes.length ? ([["尺码", item.sizes.join(" / ")]] as [string, string][]) : []),
-    ...(item.fit ? ([["版型", item.fit]] as [string, string][]) : []),
-    ...(item.season ? ([["季节", item.season]] as [string, string][]) : []),
+    [t("facts.color"), term(item.color)],
+    ...(item.material ? ([[t("facts.material"), term(item.material)]] as [string, string][]) : []),
+    ...(item.sizes.length ? ([[t("facts.size"), item.sizes.map(term).join(" / ")]] as [string, string][]) : []),
+    ...(item.fit ? ([[t("facts.fit"), term(item.fit)]] as [string, string][]) : []),
+    ...(item.season ? ([[t("facts.season"), term(item.season)]] as [string, string][]) : []),
   ];
 
   return (
@@ -89,18 +103,18 @@ export default async function ItemPage({ params }: Props) {
               // eslint-disable-next-line @next/next/no-img-element
               <img className={s.product} src={item.image} alt={name} fetchPriority="high" decoding="async" />
             ) : (
-              <div className={s.swatch}>{item.color}</div>
+              <div className={s.swatch}>{term(item.color)}</div>
             )}
           </div>
 
           <div className={`sc-glass ${s.info}`}>
-            <span className="sc-kicker">{item.subcategory ?? item.displayCategory ?? item.category}</span>
+            <span className="sc-kicker">{term(item.subcategory ?? item.displayCategory ?? item.category)}</span>
             <h1 id="item-title" className={s.name}>
               {name}
             </h1>
             <div className={s.priceRow}>
-              <span className={`sc-number sc-foil ${s.price}`}>¥{item.price}</span>
-              {item.priceNote ? <span className="sc-meta">参考价</span> : null}
+              <span className={`sc-number sc-foil ${s.price}`}>{yuan(item.price)}</span>
+              {item.priceNote ? <span className="sc-meta">{t("priceNote")}</span> : null}
             </div>
             <dl className={s.facts}>
               {facts.map(([k, v]) => (
@@ -111,7 +125,7 @@ export default async function ItemPage({ params }: Props) {
               ))}
               {curator ? (
                 <div className={s.fact}>
-                  <dt>衣橱</dt>
+                  <dt>{t("facts.closet")}</dt>
                   <dd>
                     <Link href={`/closet/${curator.id}`} className={s.closetLink}>
                       {clean(curator.closetName)} · {curator.displayName}
@@ -134,7 +148,7 @@ export default async function ItemPage({ params }: Props) {
             itemName={name}
             initial={sceneState}
             demo={demo}
-            demoModelLabel={demoModel ? `演示模特 · 由 AI 生成的虚构人物` : "演示模特"}
+            demoModelLabel={demoModel ? t("demoModelAi") : t("demoModel")}
             quick={quick}
           />
         </div>
@@ -143,7 +157,7 @@ export default async function ItemPage({ params }: Props) {
           <section className={s.block} aria-labelledby="item-outfits">
             <span className="sc-kicker">In The Looks</span>
             <h2 id="item-outfits" className={s.blockTitle}>
-              这件出现在哪些搭配里
+              {t("inLooks.title")}
             </h2>
             <ul className={s.looks}>
               {outfits.map((o) => (
@@ -161,7 +175,7 @@ export default async function ItemPage({ params }: Props) {
                         {o.number ? ` · N°${String(o.number).padStart(2, "0")}` : ""}
                       </span>
                       <span className={s.lookName}>{o.name}</span>
-                      <span className="sc-meta">整套 ¥{o.total}</span>
+                      <span className="sc-meta">{t("inLooks.total", { price: yuan(o.total) })}</span>
                     </span>
                     <LinkPending />
                   </Link>

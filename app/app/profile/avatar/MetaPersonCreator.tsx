@@ -15,6 +15,7 @@ import {
   type MpGender,
 } from "@/lib/avatar/metaperson-protocol";
 import { engineProgress, flowReducer, initialFlow, msUntilFallback, shouldSend, type FlowPhase } from "@/lib/avatar/metaperson-flow";
+import { useT } from "@/lib/i18n/client";
 import s from "./AvatarStudio.module.css";
 
 // 嵌入 MetaPerson 创建器（D56）：
@@ -35,8 +36,8 @@ export type EngineState = "loading" | "ready" | "error";
 /** 认证结果迟迟不来时，setup 发出后多久视为可以生成。 */
 const AUTH_GRACE_MS = 8000;
 
-async function readError(res: Response | null, fallback: string) {
-  if (!res) return "网络异常，请稍后再试";
+async function readError(res: Response | null, fallback: string, offline: string) {
+  if (!res) return offline;
   const body = (await res.json().catch(() => null)) as { error?: string } | null;
   return body?.error ?? fallback;
 }
@@ -84,6 +85,11 @@ export default function MetaPersonCreator({
   onPhase?: (phase: FlowPhase, engine: EngineState) => void;
   onImported: (state: AvatarState) => void;
 }) {
+  const tr = useT("avatar");
+  const tc = useT("common");
+  // 挂载时注册的消息与请求回调读最新的翻译函数（切换语言后不用重建 iframe）。
+  const trRef = useRef({ tr, tc });
+  trRef.current = { tr, tc };
   const frame = useRef<HTMLIFrameElement>(null);
   const dock = useRef<HTMLDivElement>(null);
   // 主按钮 + 舞台的外层：滚动定位以它为准，让“保存”按钮与创建器同屏可见。
@@ -135,7 +141,7 @@ export default function MetaPersonCreator({
       .then(async (res) => {
         if (!alive) return;
         if (!res.ok) {
-          setError(await readError(res, "无法连接 MetaPerson，请稍后再试"));
+          setError(await readError(res, trRef.current.tr("metaperson.connectFailed"), trRef.current.tc("networkError")));
           setEngineError(true);
           return;
         }
@@ -145,7 +151,7 @@ export default function MetaPersonCreator({
       })
       .catch(() => {
         if (!alive) return;
-        setError("网络异常，请稍后再试");
+        setError(trRef.current.tc("networkError"));
         setEngineError(true);
       });
 
@@ -166,7 +172,7 @@ export default function MetaPersonCreator({
       if (!alive) return;
       if (!res || !res.ok) {
         importedUrl.current = null;
-        setError(await readError(res, "保存失败，请重试"));
+        setError(await readError(res, trRef.current.tr("metaperson.saveFailed"), trRef.current.tc("networkError")));
         setBusy(null);
         return;
       }
@@ -306,7 +312,7 @@ export default function MetaPersonCreator({
       if (importing.current) return;
       if (Date.now() - started >= 120_000) {
         setBusy((b) => (b === "exporting" ? null : b));
-        setError("导出没有响应，请重试");
+        setError(trRef.current.tr("metaperson.exportTimeout"));
         return;
       }
       (t.win as Window).postMessage(exportMessage({ gender: gender.current, mobile: src?.mobile ?? true }), t.origin);
@@ -330,20 +336,20 @@ export default function MetaPersonCreator({
           <span className={s.engineBar} aria-hidden="true">
             <i style={{ transform: `scaleX(${progress})` }} />
           </span>
-          <span className="sc-meta">{engine === "ready" ? "形象引擎已就绪" : `形象引擎加载中 · ${clock(now - mountedAt)}`}</span>
+          <span className="sc-meta">{engine === "ready" ? tr("metaperson.engineReady") : tr("metaperson.engineLoading", { time: clock(now - mountedAt) })}</span>
         </div>
       ) : null}
 
-      {fallback ? <p className="serif-note">请在下方直接选择你的正脸照片</p> : null}
+      {fallback ? <p className="serif-note">{tr("metaperson.pickFace")}</p> : null}
 
       <div ref={stageWrap} className="stack" style={{ gap: 12 }}>
       {/* 创建器是跨域 iframe，鼠标停在上面时滚轮被它接走：主按钮放在舞台上方，不需要滚过创建器才能保存。 */}
       {shown ? (
         <div className={s.actions}>
           <button type="button" className="sc-cta" disabled={!canExport || busy !== null} onClick={save}>
-            {busy === "exporting" ? "正在导出…" : busy === "importing" ? "保存中…" : "保存为我的 3D 形象"}
+            {busy === "exporting" ? tr("metaperson.exporting") : busy === "importing" ? tr("metaperson.saving") : tr("metaperson.saveAs")}
           </button>
-          {flow.phase === "revealed" ? <span className="sc-meta">可在下方调整发型与服装</span> : null}
+          {flow.phase === "revealed" ? <span className="sc-meta">{tr("metaperson.adjustHint")}</span> : null}
         </div>
       ) : null}
       <div ref={dock} className={s.dock} data-open={open || undefined}>
@@ -359,10 +365,10 @@ export default function MetaPersonCreator({
               <i className={s.waitSweep} aria-hidden="true" />
             </div>
             <div className={s.waitText} role="status" aria-live="polite">
-              <p className={s.waitTitle}>正在用你的照片塑造形象</p>
+              <p className={s.waitTitle}>{tr("metaperson.shaping")}</p>
               {summary ? <p className="serif-note">{summary}</p> : null}
-              <span className="sc-meta">已用 {clock(now - (requestedAt ?? now))}</span>
-              {engine === "loading" ? <span className="sc-meta">形象引擎仍在加载，就绪后自动开始</span> : null}
+              <span className="sc-meta">{tr("metaperson.elapsed", { time: clock(now - (requestedAt ?? now)) })}</span>
+              {engine === "loading" ? <span className="sc-meta">{tr("metaperson.engineStillLoading")}</span> : null}
             </div>
           </div>
         ) : null}
@@ -375,7 +381,7 @@ export default function MetaPersonCreator({
         </p>
       ) : null}
 
-      {shown && summary && flow.phase === "revealed" ? <p className="sc-meta">参考你的照片：{summary}</p> : null}
+      {shown && summary && flow.phase === "revealed" ? <p className="sc-meta">{tr("metaperson.basedOn", { summary })}</p> : null}
 
       {src
         ? createPortal(
@@ -386,13 +392,13 @@ export default function MetaPersonCreator({
               inert={!shown}
               aria-hidden={!shown || undefined}
             >
-              <iframe ref={frame} src={src.url} title="MetaPerson 形象创建器" allow="fullscreen" className={s.creatorFrame} />
+              <iframe ref={frame} src={src.url} title={tr("metaperson.creatorTitle")} allow="fullscreen" className={s.creatorFrame} />
               {busy === "importing" ? (
                 <div className={s.creatorBusy} role="status" aria-live="polite">
                   <div className="wait-bar" aria-hidden="true" style={{ width: 160 }}>
                     <i />
                   </div>
-                  <span className="sc-meta">正在保存你的 3D 形象…</span>
+                  <span className="sc-meta">{tr("metaperson.savingAvatar")}</span>
                 </div>
               ) : null}
             </div>,

@@ -6,10 +6,11 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import ItemThumb from "@/components/ItemThumb";
+import { useT, useTerm } from "@/lib/i18n/client";
 import { reducedFade, springs } from "@/lib/motion";
 import { notWornLabels, planTryon } from "@/lib/tryon/plan";
 import type { TryonContext, TryonView } from "@/lib/tryon/service";
-import { cleanName, CloseIcon, compress, HangerIcon, preload, readError, stageLabel, waitFirst } from "./shared";
+import { cleanName, CloseIcon, compress, HangerIcon, preload, readError, stageLabel, useConsentLabel, waitErrors, waitFirst } from "./shared";
 import s from "./TryOn.module.css";
 
 // “穿在我身上”（整套）：把这一整套依次换到用户自己的形象上（默认可灵 Kolors on fal.ai；底图优先数字分身正面照，D63）。
@@ -46,6 +47,7 @@ export default function TryOn({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const tx = useT("tryon");
   const steps = planTryon(items);
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -70,7 +72,7 @@ export default function TryOn({
         aria-haspopup="dialog"
       >
         <HangerIcon />
-        穿在我身上
+        {tx("onMe")}
       </button>
       {mounted
         ? createPortal(
@@ -86,10 +88,17 @@ export default function TryOn({
 
 function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source: Source; items: TryOnItem[]; onClose: () => void }) {
   const reduce = useReducedMotion();
+  const tx = useT("tryon");
+  const tc = useT("common");
+  const term = useTerm();
+  const consentLabel = useConsentLabel(ctx.providerName);
   const steps = planTryon(items);
   const byId = new Map(items.map((i) => [i.id, i]));
   const pieces = steps.map((st) => ({ ...st, item: byId.get(st.itemId)! }));
-  const chain = steps.map((st) => st.label).join(" → ");
+  // 品类名（上装、下装…）是目录固定词：逻辑用中文，显示时换成当前语言。
+  const labels = steps.map((st) => term(st.label));
+  const chain = labels.join(" → ");
+  const list = (xs: readonly string[]) => xs.map((x) => term(x)).join(tx("listSep"));
 
   const [photoUrl, setPhotoUrl] = useState<string | null>(ctx.frontPhotoUrl);
   const isTwin = ctx.baseSource === "twin" && photoUrl === ctx.frontPhotoUrl;
@@ -157,17 +166,18 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
       body: JSON.stringify({ ...source, itemIds: items.map((i) => i.id), consent: !consented && agree }),
     }).catch(() => null);
     if (!res || !res.ok) {
-      setError(await readError(res, "试穿失败，请稍后再试"));
+      setError(await readError(res, tx("errors.failed"), tx("errors.network")));
       setPhase("error");
       return;
     }
     let data = (await res.json()) as TryonView;
     setConsented(true);
     setLive(data);
-    if (!data.resultUrl && data.status === "processing") data = await waitFirst(data, { alive: () => alive.current, onStage: setLive, pollMs: 1000 });
+    if (!data.resultUrl && data.status === "processing")
+      data = await waitFirst(data, { alive: () => alive.current, onStage: setLive, pollMs: 1000, errors: waitErrors(tx) });
     if (!alive.current) return;
     if (data.status === "failed" || !data.resultUrl) {
-      setError(data.error ?? "试穿失败，请稍后再试");
+      setError(data.error ?? tx("errors.failed"));
       setPhase("error");
       return;
     }
@@ -196,7 +206,7 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
       form.append("file", blob, "front.jpg");
       const res = await fetch("/api/tryon/photo", { method: "POST", body: form }).catch(() => null);
       if (!res || !res.ok) {
-        setError(await readError(res, "上传失败，请稍后再试"));
+        setError(await readError(res, tx("errors.uploadFailed"), tx("errors.network")));
         return;
       }
       const data = (await res.json()) as { frontPhotoUrl: string };
@@ -210,7 +220,7 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
     if (!view) return;
     const res = await fetch(`/api/tryon/${view.id}`, { method: "DELETE" }).catch(() => null);
     if (!res || (!res.ok && res.status !== 404)) {
-      setError(await readError(res, "删除失败，请稍后再试"));
+      setError(await readError(res, tx("errors.deleteFailed"), tx("errors.network")));
       return;
     }
     setView(null);
@@ -254,10 +264,10 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
           <div>
             <span className="sc-kicker">{phase === "done" ? "On You" : "Try It On"}</span>
             <h2 id="tryon-title" className="section-title">
-              {phase === "done" ? "穿上这一身" : phase === "running" ? "正在为你换上这一身" : "穿在我身上"}
+              {phase === "done" ? tx("outfit.titleDone") : phase === "running" ? tx("outfit.titleRunning") : tx("onMe")}
             </h2>
           </div>
-          <button type="button" className={s.close} onClick={onClose} aria-label="关闭">
+          <button type="button" className={s.close} onClick={onClose} aria-label={tc("close")}>
             <CloseIcon />
           </button>
         </div>
@@ -271,17 +281,17 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
                     <>
                       <figure className={s.stage}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={photoUrl} alt={isTwin ? "你的数字分身" : "你的正面全身照"} />
+                        <img src={photoUrl} alt={isTwin ? tx("avatar.twinAlt") : tx("avatar.photoAlt")} />
                         <span className={s.stageLabel}>You</span>
                       </figure>
                       <div className={s.photoActions}>
                         {isTwin ? (
                           <Link href="/profile/avatar" className="link-btn">
-                            管理我的形象
+                            {tx("avatar.manage")}
                           </Link>
                         ) : (
                           <label className={`link-btn ${s.fileBtn}`}>
-                            {uploading ? "上传中…" : "换一张"}
+                            {uploading ? tx("actions.uploading") : tx("outfit.changePhoto")}
                             <input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading} onChange={(e) => upload(e.target.files?.[0])} />
                           </label>
                         )}
@@ -291,26 +301,26 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
                     <>
                       <label className={s.upload}>
                         <span>
-                          <strong>{uploading ? "上传中…" : "上传正面全身照"}</strong>
-                          站直、正面、光线充足
+                          <strong>{uploading ? tx("actions.uploading") : tx("outfit.uploadPhoto")}</strong>
+                          {tx("outfit.uploadHint")}
                         </span>
                         <input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading} onChange={(e) => upload(e.target.files?.[0])} />
                       </label>
                       <Link href="/profile/avatar" className="sc-cta compact">
-                        先建立你的形象
+                        {tx("avatar.createFirst")}
                       </Link>
                     </>
                   )}
                 </div>
                 <div className="stack" style={{ gap: 10 }}>
-                  <span className="sc-meta">这一套 · {chain}</span>
+                  <span className="sc-meta">{tx("outfit.thisLook", { chain })}</span>
                   <div className={s.pieces}>
                     {pieces.map((p) => (
                       <div key={p.itemId} className={`sc-glass sc-glass--row ${s.piece}`}>
                         <ItemThumb name={p.item.name} image={p.item.image} color={p.item.color} />
                         <span>
                           <span className="item-name" style={{ display: "block" }}>{cleanName(p.item.name)}</span>
-                          <span className="sc-meta">{p.label}</span>
+                          <span className="sc-meta">{term(p.label)}</span>
                         </span>
                       </div>
                     ))}
@@ -320,7 +330,7 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
               {!consented ? (
                 <label className={s.consent}>
                   <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
-                  <span>同意把我的形象照片发送给 {ctx.providerName} 生成试穿图</span>
+                  <span>{consentLabel}</span>
                 </label>
               ) : null}
               {error ? (
@@ -330,7 +340,7 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
               ) : null}
               <div className={s.actions}>
                 <button type="button" className="sc-cta" disabled={!ready} onClick={() => void start()}>
-                  {phase === "error" ? "再试一次" : "开始试穿"}
+                  {phase === "error" ? tx("actions.tryAgain") : tx("actions.start")}
                 </button>
               </div>
             </motion.div>
@@ -347,11 +357,15 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
                   </div>
                 </figure>
                 <div className="stack" style={{ gap: 10 }}>
-                  <p className="serif-note wait-step">依次换上{chain.replaceAll(" → ", "、")}</p>
+                  <p className="serif-note wait-step">{tx("outfit.puttingOn", { list: labels.join(tx("listSep")) })}</p>
                   <span className="sc-meta" aria-live="polite">
                     {live?.progress
-                      ? `第 ${live.progress.step}/${live.progress.total} 件 · ${stageLabel(live.stage, live.queuePosition)}`
-                      : stageLabel("sending")}
+                      ? tx("outfit.progress", {
+                          step: live.progress.step,
+                          total: live.progress.total,
+                          stage: stageLabel(tx, live.stage, live.queuePosition),
+                        })
+                      : stageLabel(tx, "sending")}
                   </span>
                   <div className={`${s.pieces} adapt-scan`}>
                     {pieces.map((p) => (
@@ -359,7 +373,7 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
                         <ItemThumb name={p.item.name} image={p.item.image} color={p.item.color} />
                         <span>
                           <span className="item-name" style={{ display: "block" }}>{cleanName(p.item.name)}</span>
-                          <span className="sc-meta">{p.label}</span>
+                          <span className="sc-meta">{term(p.label)}</span>
                         </span>
                       </div>
                     ))}
@@ -371,7 +385,7 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
             <motion.div key="done" className="stack" {...swap}>
               <div className={s.compare}>
                 <div>
-                  <span className={`sc-meta ${s.colLabel}`}>这一套</span>
+                  <span className={`sc-meta ${s.colLabel}`}>{tx("outfit.lookLabel")}</span>
                   <div className={s.collage}>
                     {items
                       .filter((i) => i.image)
@@ -384,36 +398,36 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
                 </div>
                 <div>
                   <span className={`sc-meta ${s.colLabel}`} style={{ color: "var(--sc-champ-text)" }}>
-                    穿在你身上
+                    {tx("outfit.onYou")}
                   </span>
                   <motion.button
                     type="button"
                     className={s.result}
                     onClick={() => setZoom(true)}
-                    aria-label="放大查看试穿图"
+                    aria-label={tx("zoom.enlargeResult")}
                     initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.94, filter: "blur(14px)" }}
                     animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1, filter: "blur(0px)" }}
                     transition={reduce ? reducedFade : { scale: springs.enter, opacity: { duration: 0.9, ease: "easeOut" }, filter: { duration: 1.1, ease: "easeOut" } }}
                   >
                     <figure className={s.stage}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={view.resultUrl} alt="穿上这一身的你" />
+                      <img src={view.resultUrl} alt={tx("outfit.resultAlt")} />
                     </figure>
                   </motion.button>
                 </div>
               </div>
               <p className={`sc-meta ${s.applied}`}>
-                已试穿：{view.applied.join("、")}
+                {tx("outfit.applied", { list: list(view.applied) })}
               </p>
               {/* 鞋、包、配饰不会上身：如实列出，避免与“这一套”的拼图对照时观感矛盾 */}
-              {notWorn.length ? <p className={`sc-meta ${s.applied} ${s.notWorn}`}>未上身：{notWorn.join("、")}</p> : null}
+              {notWorn.length ? <p className={`sc-meta ${s.applied} ${s.notWorn}`}>{tx("outfit.notWorn", { list: list(notWorn) })}</p> : null}
               {error ? <p className="error">{error}</p> : null}
               <div className={s.actions}>
                 <button type="button" className="sc-cta" onClick={onClose}>
-                  完成
+                  {tx("actions.done")}
                 </button>
                 <button type="button" className="sc-cta sc-cta--ghost compact" onClick={() => void remove()}>
-                  删除这张
+                  {tx("actions.deleteImage")}
                 </button>
               </div>
             </motion.div>
@@ -432,11 +446,11 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
             transition={{ duration: 0.25 }}
             onClick={() => setZoom(false)}
             role="dialog"
-            aria-label="试穿图大图"
+            aria-label={tx("zoom.dialog")}
           >
             <motion.img
               src={view.resultUrl}
-              alt="穿上这一身的你"
+              alt={tx("outfit.resultAlt")}
               initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.92 }}
               animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1 }}
               exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}

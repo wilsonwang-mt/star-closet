@@ -9,6 +9,7 @@
 // - 只动 transform 与 opacity（模糊层的 blur 是静态值，只改它的 opacity）。
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
+import { useT } from "@/lib/i18n/client";
 import s from "./LivePhoto.module.css";
 
 const HOVER_DELAY = 150;
@@ -30,6 +31,7 @@ export default function LivePhoto({
   eager?: boolean;
 }) {
   const reduced = useReducedMotion() === true;
+  const t = useT("item");
   const [active, setActive] = useState(false);
   const [src, setSrc] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -94,7 +96,7 @@ export default function LivePhoto({
       data-playing={playing || undefined}
       data-live={hasLive || undefined}
       tabIndex={0}
-      aria-label={hasLive ? `${alt}（实况，悬停或长按播放）` : alt}
+      aria-label={hasLive ? t("live.aria", { alt }) : alt}
       onPointerEnter={(e) => {
         if (e.pointerType !== "mouse") return;
         clear();

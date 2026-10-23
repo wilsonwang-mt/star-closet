@@ -11,7 +11,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import LivePhoto from "@/components/live/LivePhoto";
 import { compress, readError } from "@/components/tryon/shared";
-import { NANO_STAGES, QUICK_STAGES, stageAt, useQuickTryon, useTicker } from "@/components/tryon/useQuickTryon";
+import { NANO_STAGES, QUICK_STAGES, stageAt, useQuickStageText, useQuickTryon, useTicker } from "@/components/tryon/useQuickTryon";
+import { useT } from "@/lib/i18n/client";
+import type { NsKey } from "@/lib/i18n/types";
 import { springs } from "@/lib/motion";
 import type { DemoScene } from "@/lib/scene/scenes";
 import type { SceneState } from "@/lib/scene/service";
@@ -35,12 +37,12 @@ export type QuickTryonProps = {
   initial: TryonView | null;
 };
 
-// 生成约 30 秒：按时间推进的阶段文案，让等待有节奏。只是叙述，不对应真实进度，也不显示百分比。
-const STAGES: { from: number; text: string }[] = [
-  { from: 0, text: "正在布景" },
-  { from: 8, text: "正在为你换上这件" },
-  { from: 18, text: "正在调光" },
-  { from: 28, text: "正在收尾" },
+// 生成约 30 秒：按时间推进的阶段文案，让等待有节奏。只是叙述，不对应真实进度，也不显示百分比。文案在 item 字典 gallery.stages。
+const STAGES: { from: number; key: NsKey<"item"> }[] = [
+  { from: 0, key: "gallery.stages.staging" },
+  { from: 8, key: "gallery.stages.dressing" },
+  { from: 18, key: "gallery.stages.lighting" },
+  { from: 28, key: "gallery.stages.finishing" },
 ];
 function sceneStage(seconds: number) {
   return stageAt(seconds, STAGES);
@@ -63,6 +65,9 @@ export default function LookGallery({
   quick?: QuickTryonProps | null;
 }) {
   const reduced = useReducedMotion() === true;
+  const t = useT("item");
+  const tt = useT("tryon");
+  const stageText = useQuickStageText();
   const [state, setState] = useState(initial);
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -88,7 +93,7 @@ export default function LookGallery({
   const nextPath = `/item/${itemId}`;
   const quickOn = !!quick?.enabled && quick.supported;
   // 同意文案如实写明处理方：试穿与上身效果都经 fal.ai 上的 AI 模型（与试衣间同一项，D47）。
-  const consentLabel = `同意把我的形象照片发送给 ${quick?.providerName ?? "fal.ai 上的 AI 模型"}生成试穿图`;
+  const consentLabel = tt("consent.agree", { provider: quick?.providerName ?? tt("consent.provider") });
 
   const refresh = useCallback(async () => {
     const res = await fetch(`/api/scene?itemId=${encodeURIComponent(itemId)}`, { cache: "no-store" }).catch(() => null);
@@ -124,7 +129,7 @@ export default function LookGallery({
     form.append("file", blob, "front.jpg");
     const res = await fetch("/api/tryon/photo", { method: "POST", body: form }).catch(() => null);
     if (!res?.ok) {
-      setError(await readError(res, "照片上传失败，请再试一次"));
+      setError(await readError(res, t("gallery.uploadError")));
       setPhase("error");
       return;
     }
@@ -141,7 +146,7 @@ export default function LookGallery({
       body: JSON.stringify({ itemId, consent: !state.consented && agree }),
     }).catch(() => null);
     if (!res?.ok) {
-      setError(await readError(res, "生成失败，请稍后再试"));
+      setError(await readError(res, t("gallery.generateError")));
       setPhase("error");
       return;
     }
@@ -159,14 +164,14 @@ export default function LookGallery({
   const hasBase = state.hasFrontPhoto || !!quick?.baseUrl;
 
   // 卡片列表：生成中显示两张等待卡；有本人结果显示本人；否则演示模特。
-  let title = "上身效果";
+  let title = t("gallery.title");
   let note: string | null = null;
   let cards: { key: string; image: string; video: string | null; caption: string }[] = [];
   if (own.length) {
-    title = "你的上身效果";
+    title = t("gallery.titleOwn");
     cards = own.map((r) => ({ key: r.id, image: r.imageUrl!, video: r.videoUrl, caption: r.title }));
   } else if (demo.length) {
-    title = "模特上身";
+    title = t("gallery.titleDemo");
     note = demoModelLabel;
     cards = demo.map((d) => ({ key: d.id, image: d.image, video: d.live, caption: d.title }));
   }
@@ -176,18 +181,20 @@ export default function LookGallery({
     const result = quickView?.resultUrl ?? null;
     const shown = result ?? quick.baseUrl;
     const stages = quick.accessory ? NANO_STAGES : QUICK_STAGES;
-    const verb = quick.accessory ? "穿戴" : "穿上";
+    // 穿戴（鞋包配饰）/ 穿上（衣服）：字典里用 select 按 kind 分支
+    const kind = quick.accessory ? "accessory" : "clothing";
+    const quickStage = stages[stageAt(quickElapsed, stages)];
     let action: React.ReactNode;
     if (!state.signedIn) {
       action = (
         <Link href={`/login?next=${encodeURIComponent(nextPath)}`} className="sc-cta compact">
-          登录后一键试穿
+          {t("quick.signIn")}
         </Link>
       );
     } else if (!hasBase) {
       action = (
         <Link href="/profile/avatar" className="sc-cta compact">
-          先建立你的形象
+          {t("quick.buildAvatar")}
         </Link>
       );
     } else if (quickRunning) {
@@ -207,18 +214,18 @@ export default function LookGallery({
             disabled={!(state.consented || agree) || running}
             onClick={tryOn}
           >
-            {result ? "再试一次" : "一键试穿"}
+            {result ? t("quick.again") : t("quick.tryOn")}
           </button>
         </>
       );
     }
     const desc = !state.signedIn
-      ? "用你的数字分身，一键看这件穿在你身上"
+      ? t("quick.descSignedOut")
       : !hasBase
-        ? "上传 3–5 张照片生成你的数字分身，之后每件衣服都能一键试穿"
+        ? t("quick.descNoBase")
         : result
-          ? `这是你${verb}「${itemName}」的样子 · 点图放大`
-          : `${quick.isTwin ? "用你的数字分身" : "用你的正面全身照"}，${quick.accessory ? "约 45 秒" : "约 20 秒"}看这件${quick.accessory ? "穿戴" : "穿"}在你身上`;
+          ? t("quick.descResult", { kind, name: itemName })
+          : t("quick.descReady", { base: quick.isTwin ? "twin" : "photo", kind });
     return (
       <div className={s.quick}>
         <div className={s.quickStage}>
@@ -227,7 +234,7 @@ export default function LookGallery({
               <motion.img
                 key={shown}
                 src={shown}
-                alt={result ? `${verb}${itemName}的你` : quick.isTwin ? "你的数字分身" : "你的正面全身照"}
+                alt={result ? t("quick.altResult", { kind, name: itemName }) : quick.isTwin ? t("quick.altTwin") : t("quick.altPhoto")}
                 className={`${s.quickImg} ${quickRunning ? s.quickBlur : ""}`}
                 initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 1.025 }}
                 animate={{ opacity: 1, scale: quickRunning ? 1.08 : 1 }}
@@ -236,31 +243,29 @@ export default function LookGallery({
               />
             ) : null}
           </AnimatePresence>
-          {!shown ? <div className={s.quickEmpty}>{state.signedIn ? "还没有你的形象" : "登录后在这里看到你自己"}</div> : null}
+          {!shown ? <div className={s.quickEmpty}>{state.signedIn ? t("quick.emptySignedIn") : t("quick.emptySignedOut")}</div> : null}
           {quickRunning ? <span className={s.beam} aria-hidden="true" /> : null}
           {result && !quickRunning ? (
-            <button type="button" className={s.quickZoom} onClick={() => setZoom(true)} aria-label="放大查看" />
+            <button type="button" className={s.quickZoom} onClick={() => setZoom(true)} aria-label={t("quick.zoom")} />
           ) : null}
           {shown && !quickRunning ? (
             <span className={s.quickLabel} role={refining ? "status" : undefined}>
-              {result ? (refining ? "正在细化" : "On You") : quick.isTwin ? "你的分身" : "You"}
+              {result ? (refining ? t("quick.labelRefining") : "On You") : quick.isTwin ? t("quick.labelTwin") : "You"}
             </span>
           ) : null}
         </div>
         <div className={s.quickText}>
           <span className="sc-kicker">Try It On</span>
-          <h2 className={s.quickTitle}>{quickRunning ? `正在为你${verb}这件` : result ? "穿在你身上" : "一键试穿"}</h2>
+          <h2 className={s.quickTitle}>{quickRunning ? t("quick.titleRunning", { kind }) : result ? t("quick.titleResult") : t("quick.title")}</h2>
           {quickRunning ? (
             <>
-              <p className={`serif-note wait-step ${s.stage}`} key={stageAt(quickElapsed, stages)} role="status" aria-live="polite">
-                {stages[stageAt(quickElapsed, stages)].text}…
+              <p className={`serif-note wait-step ${s.stage}`} key={quickStage.key} role="status" aria-live="polite">
+                {stageText(quickStage)}…
               </p>
-              <p className="sc-meta">
-                把「{itemName}」{verb}到你身上 · {quickElapsed} 秒
-              </p>
+              <p className="sc-meta">{t("quick.running", { name: itemName, kind, s: quickElapsed })}</p>
             </>
           ) : (
-            <p className="sc-meta">{result && refining ? "正在细化：衣长、领型和细节会更贴近商品图，好了自动替换" : desc}</p>
+            <p className="sc-meta">{result && refining ? t("quick.refining") : desc}</p>
           )}
           {action}
           {quickError ? (
@@ -280,7 +285,7 @@ export default function LookGallery({
       if (quickOn) return null;
       return (
         <Link href={`/login?next=${encodeURIComponent(nextPath)}`} className="sc-cta sc-cta--ghost compact">
-          登录后生成我的上身效果
+          {t("gallery.signIn")}
         </Link>
       );
     }
@@ -290,14 +295,14 @@ export default function LookGallery({
       // 形象与同意都已就绪：直接生成；已有本人结果时是次要的“重新生成”。
       return (
         <button type="button" className={`sc-cta ${own.length || quickOn ? "sc-cta--ghost " : ""}compact`} disabled={quickRunning} onClick={() => void generate()}>
-          {own.length ? "重新生成" : "生成我的上身效果"}
+          {own.length ? t("gallery.regenerate") : t("gallery.generate")}
         </button>
       );
     }
     if (!showPrep) {
       return (
         <button type="button" className="sc-cta sc-cta--ghost compact" onClick={() => setShowPrep(true)}>
-          生成我的上身效果
+          {t("gallery.generate")}
         </button>
       );
     }
@@ -306,12 +311,12 @@ export default function LookGallery({
         {!state.hasFrontPhoto ? (
           <div className={s.prepRow}>
             <Link href="/profile/avatar" className="sc-cta compact">
-              先建立你的形象
+              {t("quick.buildAvatar")}
             </Link>
             <button type="button" className="link-btn" onClick={() => fileRef.current?.click()} disabled={phase === "uploading"}>
-              {phase === "uploading" ? "正在上传…" : "或上传一张正面全身照"}
+              {phase === "uploading" ? t("gallery.uploading") : t("gallery.uploadPhoto")}
             </button>
-            <span className="sc-meta">站直、正面、光线充足；与试穿共用，只传一次</span>
+            <span className="sc-meta">{t("gallery.photoTips")}</span>
             <input
               ref={fileRef}
               type="file"
@@ -338,7 +343,7 @@ export default function LookGallery({
           </label>
         ) : null}
         <button type="button" className="sc-cta compact" disabled={!canGenerate} onClick={() => void generate()}>
-          {own.length ? "重新生成我的上身效果" : "生成我的上身效果"}
+          {own.length ? t("gallery.regenerateMine") : t("gallery.generate")}
         </button>
       </div>
     );
@@ -352,22 +357,22 @@ export default function LookGallery({
         <div>
           <span className="sc-kicker">On Me</span>
           <h2 id="look-gallery-title" className={s.title}>
-            {running ? "正在为你生成上身效果" : title}
+            {running ? t("gallery.titleRunning") : title}
           </h2>
           {running ? (
             <>
               {/* key 随阶段变化：每换一段文案就用 .wait-step 淡入浮起一次 */}
               <p className={`serif-note wait-step ${s.stage}`} key={sceneStage(elapsed)} role="status" aria-live="polite">
-                {STAGES[sceneStage(elapsed)].text}…
+                {t(STAGES[sceneStage(elapsed)].key)}…
               </p>
-              <p className="sc-meta">把你穿上「{itemName}」放进两个场景里 · {elapsed} 秒</p>
+              <p className="sc-meta">{t("gallery.running", { name: itemName, s: elapsed })}</p>
             </>
           ) : note ? (
             <p className="sc-meta">{note}</p>
           ) : own.length ? (
-            <p className="sc-meta">{anyPending ? "实况效果正在生成，悬停或长按可先预览" : "悬停或长按，看它动起来"}</p>
+            <p className="sc-meta">{anyPending ? t("gallery.livePending") : t("gallery.liveReady")}</p>
           ) : demo.length ? null : (
-            <p className="sc-meta">用你的形象，看这件穿在你身上、走进不同场景的样子</p>
+            <p className="sc-meta">{t("gallery.empty")}</p>
           )}
         </div>
       </div>
@@ -424,10 +429,10 @@ export default function LookGallery({
             transition={{ duration: 0.25 }}
             onClick={() => setZoom(false)}
             role="dialog"
-            aria-label="试穿图大图"
+            aria-label={t("gallery.lightbox")}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={quickView.resultUrl} alt={`穿上${itemName}的你`} />
+            <img src={quickView.resultUrl} alt={t("gallery.lightboxAlt", { name: itemName })} />
           </motion.div>
         ) : null}
       </AnimatePresence>

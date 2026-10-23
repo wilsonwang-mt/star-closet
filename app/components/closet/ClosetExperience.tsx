@@ -13,6 +13,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import ItemThumb from "@/components/ItemThumb";
 import LinkPending from "@/components/LinkPending";
 import { QuickTryButton, QuickTryonProvider } from "@/components/tryon/QuickTryOn";
+import { useT, useTerm } from "@/lib/i18n/client";
 import type { TryonContext } from "@/lib/tryon/service";
 import LookActions, { PickCheck, usePick } from "./LookActions";
 import type { ClosetView } from "./data";
@@ -53,6 +54,8 @@ export default function ClosetExperience({
   tryon?: TryonContext | null;
 }) {
   const router = useRouter();
+  const t = useT("closet");
+  const term = useTerm();
   const wide = useMedia(WIDE_QUERY);
   const reduced = useMedia(REDUCED_QUERY) === true;
   const cols = useMedia(COLS3_QUERY) ? 3 : 2;
@@ -137,12 +140,12 @@ export default function ClosetExperience({
             <svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true">
               <path d="M13 5H2M5.5 1.5 2 5l3.5 3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            全部衣橱
+            {t("backAll")}
           </Link>
         </motion.div>
         <motion.div className={styles.copy} style={jsScroll ? { opacity: copyOpacity, y: copyY } : undefined}>
           <motion.span className="sc-kicker" {...rise(1)}>
-            The Closet · {closet.closetType} · {closet.gender}
+            The Closet · {term(closet.closetType)} · {term(closet.gender)}
           </motion.span>
           <motion.h1 id="closet-title" className={`sc-display ${styles.title}`} {...rise(2)}>
             {closet.closetName}
@@ -152,7 +155,7 @@ export default function ClosetExperience({
               {closet.avatar ? <img src={closet.avatar} alt="" /> : closet.displayName.slice(0, 1)}
             </span>
             <span className="sc-meta">
-              主理人 · {closet.displayName} · {closet.outfitCount || looks.length} 套搭配
+              {t("byline", { name: closet.displayName, n: closet.outfitCount || looks.length })}
             </span>
           </motion.div>
           <motion.p className={styles.tagline} {...rise(4)}>
@@ -164,16 +167,16 @@ export default function ClosetExperience({
             </motion.p>
           ) : null}
           <motion.div className={styles.tags} {...rise(6)}>
-            {closet.styleTags.map((t) => (
-              <span key={t} className={styles.tag}>
-                {t}
+            {closet.styleTags.map((tag) => (
+              <span key={tag} className={styles.tag}>
+                {term(tag)}
               </span>
             ))}
-            {closet.palette.length ? <span className={styles.palette}>{closet.palette.join(" · ")}</span> : null}
+            {closet.palette.length ? <span className={styles.palette}>{closet.palette.map(term).join(" · ")}</span> : null}
           </motion.div>
         </motion.div>
         <motion.a href="#looks" className={styles.cue} {...rise(8)}>
-          <span>向下浏览 {looks.length} 套搭配</span>
+          <span>{t("cue", { n: looks.length })}</span>
           <i aria-hidden="true" />
         </motion.a>
       </section>
@@ -182,10 +185,10 @@ export default function ClosetExperience({
         <ScrollRise as="header" className={styles.looksHead} js={jsScroll} reduced={reduced} offset={["start end", "end 0.8"]}>
           <span className="sc-kicker">The Looks</span>
           <h2 id="looks-title" className="section-title">
-            这间衣橱的 {looks.length} 套搭配
+            {t("looks.title", { n: looks.length })}
           </h2>
           <p className="sc-meta" style={{ margin: "6px 0 0" }}>
-            每件都能一键试穿；整套或挑几件加入试衣间、购物袋。
+            {t("looks.note")}
           </p>
         </ScrollRise>
         <div className={styles.grid}>
@@ -211,6 +214,8 @@ export default function ClosetExperience({
 // 底部是放大的“整套加入试衣间”、加入购物袋与多选。交互元素都不嵌在链接里。
 function LookTile({ look: o, index: i }: { look: LookView; index: number }) {
   const pick = usePick();
+  const t = useT("closet");
+  const term = useTerm();
   const name = o.name.replace(/^占位：/, "");
   return (
     <div className={`sc-glass ${styles.look}`}>
@@ -234,10 +239,10 @@ function LookTile({ look: o, index: i }: { look: LookView; index: number }) {
           </div>
           <span className={styles.total}>{yuan(o.total)}</span>
         </div>
-        <LinkPending label={`正在打开 ${name}`} />
+        <LinkPending label={t("look.opening", { name })} />
       </Link>
       <div className={styles.body}>
-        <ul className={styles.pieces} aria-label={`${name}的单品`}>
+        <ul className={styles.pieces} aria-label={t("look.pieces", { name })}>
           {o.items.map((it) => (
             <li key={it.id} className={`${styles.piece} ${pick.selected.has(it.id) ? styles.pieceOn : ""}`}>
               <span className={styles.pieceThumb}>
@@ -249,9 +254,9 @@ function LookTile({ look: o, index: i }: { look: LookView; index: number }) {
           ))}
         </ul>
         <div className="spread">
-          <span className="sc-meta">{[...o.occasionTags.slice(0, 3), o.budgetTier].filter(Boolean).join(" · ")}</span>
+          <span className="sc-meta">{[...o.occasionTags.slice(0, 3), o.budgetTier].filter(Boolean).map(term).join(" · ")}</span>
           <Link href={`/outfit/${o.id}`} className={styles.go}>
-            查看与改编
+            {t("look.go")}
             <svg width="12" height="9" viewBox="0 0 14 10" fill="none" aria-hidden="true">
               <path d="M1 5h11M8.5 1.5 12 5 8.5 8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>

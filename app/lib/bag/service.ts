@@ -1,6 +1,8 @@
 import { and, asc, eq, sql } from "drizzle-orm";
 import { getItemsByIds, type Item } from "@/lib/catalog";
 import { db, schema } from "@/lib/db";
+import { catalogText } from "@/lib/i18n/catalog";
+import type { Locale } from "@/lib/i18n/config";
 import { bagTotals, clampQty, mergeLines, normalizeSize, type AddLine } from "./core";
 
 // 购物袋（D67）：登录用户存数据库（bag_item），同一件同一尺码再次加入时数量累加（上限 9）。
@@ -73,6 +75,20 @@ export async function listBag(userId: string): Promise<BagView> {
     ];
   });
   return { lines, ...bagTotals(lines) };
+}
+
+/**
+ * 给人看的单品名换成当前语言（D70）：接口与服务端页面在返回前调用；数量、价格、品类等字段不动。
+ * 品类、颜色是中文固定词，前端用 useTerm 显示。
+ */
+export function localizeBag(view: BagView, locale: Locale): BagView {
+  return {
+    ...view,
+    lines: view.lines.map((l) => {
+      const name = catalogText(locale, "items", l.itemId, "name");
+      return name ? { ...l, name: name.replace(/^占位：/, "") } : l;
+    }),
+  };
 }
 
 /** 改数量或尺码。改尺码时若新尺码已有一行，两行合并（数量相加，上限 9）。不存在返回 false。 */

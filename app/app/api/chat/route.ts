@@ -6,8 +6,12 @@ import { streamChatAi, hasChatAi } from "@/lib/chat/ai";
 import { availablePages, closetCard, getChatCatalog, outfitCard, pageCard, type ChatCatalog } from "@/lib/chat/catalog";
 import { describePage, describeUser, hasOwnSignal, resolvePage, rulesHint } from "@/lib/chat/context";
 import { CHAT_MAX_INPUT, type ChatCard, type ChatEvent } from "@/lib/chat/protocol";
+import { normalizeEnglish } from "@/lib/chat/english";
 import { getChatUser } from "@/lib/chat/user";
-import { emptyQuery, locate, parseQuery, type LocateQuery, type LocateResult } from "@/lib/locate/core";
+import type { Locale } from "@/lib/i18n/config";
+import { getLocale, tFor } from "@/lib/i18n/server";
+import type { Translator } from "@/lib/i18n/types";
+import { emptyQuery, locate, localizeLabels, parseQuery, type LocateQuery, type LocateResult } from "@/lib/locate/core";
 
 export const dynamic = "force-dynamic";
 // 流式回复可能持续十几秒（审美类问题模型会多想）；不设时用平台默认时限，可能在 AI 回来前被掐断
@@ -21,6 +25,8 @@ export const maxDuration = 60;
 // 没有 ANTHROPIC_API_KEY、AI 超时或出错时发 fallback：这句本身有找衣服条件就给规则层结果，追问类给一句“没接上”，
 // 不再拿上一轮的旧卡片充数；已流出半截文字先发 revert 撤回。界面不显示“规则模式”（D48）。
 // 用户的话只在内存里用于这次请求：不落库；日志只记耗时、速度、卡片数等，不记正文。身体数据不读、不发（见 lib/chat/user.ts）。
+// 多语言（D70）：按请求语言（cookie → Accept-Language）输出理解行、兜底回复、卡片译名与错误提示，并让 Claude 用该语言回复；
+// 规则层解析与查询里的值始终是中文，英文输入先由 normalizeEnglish 换成规则层认得的词（只用于规则解析，发给 Claude 的仍是原话）。
 
 // 审美类的话（如“暖一点的颜色”）模型会多想一会儿，实测首字约 10 秒
 const FIRST_TOKEN_MS = 15_000;
@@ -57,22 +63,28 @@ const Body = z.object({
   path: z.string().max(300).optional(),
 });
 
-function rulesCards(r: LocateResult, catalog: ChatCatalog): ChatCard[] {
+function rulesCards(r: LocateResult, catalog: ChatCatalog, locale: Locale): ChatCard[] {
   const cards: ChatCard[] = [];
   const top = r.closets[0];
-  if (top) cards.push(closetCard(top.closet));
-  for (const s of r.outfits.slice(0, 4)) cards.push(outfitCard(s.outfit, catalog.closets));
+  if (top) cards.push(closetCard(top.closet, locale));
+  for (const s of r.outfits.slice(0, 4)) cards.push(outfitCard(s.outfit, catalog.closets, locale));
   const allowed = new Set(availablePages());
-  for (const p of r.pages) if (allowed.has(p)) cards.push(pageCard(p));
+  for (const p of r.pages) if (allowed.has(p)) cards.push(pageCard(p, locale));
   return cards;
 }
 
 /** 没有 AI 或 AI 失败时的回复。追问类（这句本身没有找衣服条件）不拿上一轮的旧卡片充数。 */
-function fallbackReply(rules: LocateResult, catalog: ChatCatalog, own: boolean, followUp: boolean, failed: boolean) {
-  if (own || !followUp) return { text: rules.text, cards: rulesCards(rules, catalog), chips: rules.chips };
-  return failed
-    ? { text: "刚才没接上，再说一次试试？", cards: [], chips: [] }
-    : { text: "这个我暂时答不上来。说说场合、风格或预算，我帮你找搭配。", cards: [], chips: rules.chips };
+function fallbackReply(
+  rules: LocateResult,
+  catalog: ChatCatalog,
+  own: boolean,
+  followUp: boolean,
+  failed: boolean,
+  locale: Locale,
+  t: Translator<"chat">,
+) {
+  if (own || !followUp) return { text: rules.text, cards: rulesCards(rules, catalog, locale), chips: rules.chips };
+  return failed ? { text: t("reply.missed"), cards: [], chips: [] } : { text: t("reply.unsure"), cards: [], chips: rules.chips };
 }
 
 export async function POST(req: Request) {
@@ -81,25 +93,27 @@ export async function POST(req: Request) {
   const userP = getCurrentUser()
     .then((u) => getChatUser(u?.id ?? null))
     .catch(() => null);
+  const locale = await getLocale();
+  const t = tFor(locale, "chat");
   const parsed = Body.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "请说一句你的需求" }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: t("errors.emptyInput") }, { status: 400 });
   const history = parsed.data.messages.map((m) => (m.role === "user" ? { ...m, text: m.text.slice(0, CHAT_MAX_INPUT) } : m));
   const latest = [...history].reverse().find((m) => m.role === "user")?.text.trim();
-  if (!latest) return NextResponse.json({ error: "请说一句你的需求" }, { status: 400 });
+  if (!latest) return NextResponse.json({ error: t("errors.emptyInput") }, { status: 400 });
 
   let catalog: ChatCatalog;
   try {
     catalog = await getChatCatalog();
   } catch (e) {
     console.error("chat catalog failed:", (e as Error).message);
-    return NextResponse.json({ error: "目录暂时读不到，稍后再试" }, { status: 503 });
+    return NextResponse.json({ error: t("errors.catalog") }, { status: 503 });
   }
 
   const prev: LocateQuery | null = parsed.data.query ? { ...emptyQuery(), ...parsed.data.query } : null;
   const lastAssistant = [...history].reverse().find((m) => m.role === "assistant");
   const prevShown = (lastAssistant?.shown ?? []).filter((id) => /^C\d+$/.test(id));
-  const query = parseQuery(latest, catalog.closets, prev, prevShown);
-  const rules = locate(catalog, query);
+  const query = parseQuery(normalizeEnglish(latest), catalog.closets, prev, prevShown);
+  const rules = locate(catalog, query, locale);
   const own = hasOwnSignal(latest, catalog);
   const followUp = Boolean(lastAssistant);
   const page = resolvePage(parsed.data.path, catalog);
@@ -117,11 +131,11 @@ export async function POST(req: Request) {
         } catch {}
       };
       // 理解行：只显示这句话本身带出的条件（追问“为什么”时不重复上一轮的条件）
-      send({ t: "understood", labels: own ? query.labels : [], query });
+      send({ t: "understood", labels: own ? localizeLabels(query, catalog.closets, locale) : [], query });
 
       const tag = `signal=${own ? 1 : 0} page=${page.kind}`;
       if (!hasChatAi()) {
-        const fb = fallbackReply(rules, catalog, own, followUp, false);
+        const fb = fallbackReply(rules, catalog, own, followUp, false, locale, t);
         send({ t: "fallback", ...fb });
       } else {
         let streamed = false;
@@ -135,12 +149,15 @@ export async function POST(req: Request) {
         };
         try {
           const user = await userP;
-          const context = [describePage(page, catalog), describeUser(user), own ? rulesHint(rules) : ""].filter(Boolean).join("\n");
+          const context = [describePage(page, catalog, locale), describeUser(user, locale), own ? rulesHint(rules, catalog.closets, locale) : ""]
+            .filter(Boolean)
+            .join("\n");
           const out = await streamChatAi({
             catalog,
             history,
             context,
             query,
+            locale,
             signal: ctrl.signal,
             onText: (d) => {
               first();
@@ -158,8 +175,8 @@ export async function POST(req: Request) {
           });
           // 模型偶尔只给卡片或追问、一句话都没写：补一句，免得看起来像空回复（保留它给的卡片与追问）
           if (!out.wroteText) {
-            const fb = fallbackReply(rules, catalog, own, followUp, false);
-            const text = out.cards.length ? "先看看这几样：" : fb.text;
+            const fb = fallbackReply(rules, catalog, own, followUp, false, locale, t);
+            const text = out.cards.length ? t("reply.lookAtThese") : fb.text;
             send({ t: "fallback", text, cards: out.cards.length ? out.cards : fb.cards, chips: out.chips.length ? out.chips : fb.chips });
           }
           console.info(
@@ -175,7 +192,7 @@ export async function POST(req: Request) {
                 : (e as Error).name;
           console.error(`chat ai failed (${msg}) first=${firstMs}ms total=${Date.now() - started}ms fallback=1 ${tag}`);
           if (streamed) send({ t: "revert" });
-          send({ t: "fallback", ...fallbackReply(rules, catalog, own, followUp, true) });
+          send({ t: "fallback", ...fallbackReply(rules, catalog, own, followUp, true, locale, t) });
         } finally {
           clearTimeout(firstToken);
           clearTimeout(total);

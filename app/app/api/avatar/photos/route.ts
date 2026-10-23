@@ -1,6 +1,8 @@
 import { json, readBodyLimited, withUser } from "@/lib/avatar/http";
 import { MAX_PHOTO_BYTES } from "@/lib/avatar/image";
+import { localizeAvatarState } from "@/lib/avatar/l10n";
 import { addPhoto, AvatarError } from "@/lib/avatar/service";
+import { getLocale } from "@/lib/i18n/server";
 
 // 上传一张照片：multipart/form-data，字段 slot 与 file。slot：photos 模式 front|side|back；
 // MetaPerson 模式 face|front|side（D56，需已同意由 MetaPerson 处理，照片自上传起保留 30 天）。
@@ -18,6 +20,6 @@ export async function POST(req: Request) {
     const slot = form.get("slot");
     const file = form.get("file");
     if (typeof slot !== "string" || !(file instanceof File)) throw new AvatarError(400, "缺少照片或位置");
-    return json(await addPhoto(userId, slot, file), 201);
+    return json(localizeAvatarState(await addPhoto(userId, slot, file), await getLocale()), 201);
   });
 }

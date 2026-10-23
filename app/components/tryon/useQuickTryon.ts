@@ -1,25 +1,27 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n/client";
+import type { Messages } from "@/lib/i18n/types";
 import type { TryonView } from "@/lib/tryon/service";
-import { fetchView, preload, readError, sleep, waitFirst } from "./shared";
+import { fetchView, preload, readError, sleep, waitErrors, waitFirst } from "./shared";
 
 // 单件“一键试穿”的状态与请求（D63 / D65 两段式），商品详情页的上身效果区与浏览时的一键试穿面板共用：
 // POST /api/tryon/quick 只提交到队列就返回 → 轮询到第一张图 → 预解码后展示 → 还在细化时每 2 秒查一次，清晰版好了原地替换。
 
 // 等待节奏：衣服先由 Kolors 快出图（约 20 秒），鞋包配饰只跑 nano-banana（约 45 秒）。只是叙述，不对应真实进度，也不显示百分比。
-export const QUICK_STAGES: { from: number; text: string }[] = [
-  { from: 0, text: "正在读取你的形象" },
-  { from: 4, text: "正在为你换上这件" },
-  { from: 12, text: "正在调整光影" },
-  { from: 20, text: "正在收尾" },
-];
-export const NANO_STAGES: { from: number; text: string }[] = [
-  { from: 0, text: "正在读取你的形象" },
-  { from: 6, text: "正在为你换上这件" },
-  { from: 22, text: "正在调整光影" },
-  { from: 38, text: "正在收尾" },
-];
+// 文案在字典 tryon.quickStages 里，显示时用 useQuickStageText()（或 t(`quickStages.${stage.key}`)）。
+export type QuickStageKey = keyof Messages["tryon"]["quickStages"];
+export type QuickStage = { from: number; key: QuickStageKey };
+const stage = (from: number, key: QuickStageKey): QuickStage => ({ from, key });
+export const QUICK_STAGES: QuickStage[] = [stage(0, "reading"), stage(4, "dressing"), stage(12, "lighting"), stage(20, "finishing")];
+export const NANO_STAGES: QuickStage[] = [stage(0, "reading"), stage(6, "dressing"), stage(22, "lighting"), stage(38, "finishing")];
+
+/** 阶段文案（当前语言）：const stageText = useQuickStageText(); stageText(stages[stageAt(elapsed, stages)]) */
+export function useQuickStageText() {
+  const t = useT("tryon");
+  return useCallback((s: Pick<QuickStage, "key">) => t(`quickStages.${s.key}`), [t]);
+}
 
 export function stageAt(seconds: number, stages: { from: number }[]): number {
   let i = 0;
@@ -50,6 +52,7 @@ export type QuickTryonEvents = {
 };
 
 export function useQuickTryon(initial: TryonView | null = null, events: QuickTryonEvents = {}) {
+  const t = useT("tryon");
   const [view, setView] = useState<TryonView | null>(initial);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,15 +112,15 @@ export function useQuickTryon(initial: TryonView | null = null, events: QuickTry
         if (!res?.ok) {
           if (res && res.status !== 403 && res.status !== 401 && consent) ev.current.onConsentRecorded?.();
           if (res?.status === 409) ev.current.onNoBase?.();
-          setError(await readError(res, "试穿失败，请稍后再试"));
+          setError(await readError(res, t("errors.failed"), t("errors.network")));
           return null;
         }
         ev.current.onAccepted?.();
         // 只提交到队列就返回：轮询到出第一张图（或失败）。
-        const first = await waitFirst((await res.json()) as TryonView, { alive: () => alive.current, pollMs: 1200 });
+        const first = await waitFirst((await res.json()) as TryonView, { alive: () => alive.current, pollMs: 1200, errors: waitErrors(t) });
         if (!alive.current) return null;
         if (first.status === "failed" || !first.resultUrl) {
-          setError(first.error ?? "试穿失败，请稍后再试");
+          setError(first.error ?? t("errors.failed"));
           return null;
         }
         await preload(first.resultUrl);
@@ -129,7 +132,7 @@ export function useQuickTryon(initial: TryonView | null = null, events: QuickTry
         if (alive.current) setRunning(false);
       }
     },
-    [refine],
+    [refine, t],
   );
 
   return { view, setView, running, error, setError, refining, run };

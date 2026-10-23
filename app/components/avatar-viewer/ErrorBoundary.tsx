@@ -3,7 +3,13 @@
 import { Component, type ReactNode } from "react";
 import styles from "./AvatarViewer.module.css";
 
-type Props = { children: ReactNode; onRetry: () => void };
+type Props = {
+  children: ReactNode;
+  onRetry: () => void;
+  /** 失败提示与重试按钮文案（类组件不能用 useT，由 Viewer 传入当前语言的文案） */
+  message: string;
+  retryLabel: string;
+};
 type State = { error: Error | null };
 
 // R3F 的 Canvas 会把场景里的错误（模型 404、解析失败、WebGL 上下文创建失败）抛回 DOM 树，这里接住。
@@ -22,9 +28,9 @@ export default class ViewerErrorBoundary extends Component<Props, State> {
     if (!this.state.error) return this.props.children;
     return (
       <div className={styles.overlay} role="alert">
-        <p className={styles.message}>3D 形象没有加载出来，可能是网络中断或文件损坏。</p>
+        <p className={styles.message}>{this.props.message}</p>
         <button type="button" className="sc-cta sc-cta--ghost" onClick={this.props.onRetry}>
-          重试
+          {this.props.retryLabel}
         </button>
       </div>
     );

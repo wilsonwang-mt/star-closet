@@ -2,17 +2,23 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState, type CSSProperties } from "react";
+import { useT } from "@/lib/i18n/client";
 import styles from "./avatar-viewer/AvatarViewer.module.css";
+
+function ViewerLoading() {
+  const t = useT("avatar");
+  return (
+    <div className={styles.overlay} role="status" aria-live="polite">
+      <span className={styles.spinner} aria-hidden="true" />
+      <span className="sc-meta">{t("viewer.preparing")}</span>
+    </div>
+  );
+}
 
 // three.js 只在浏览器端按需加载，不进首屏包。
 const Viewer = dynamic(() => import("./avatar-viewer/Viewer"), {
   ssr: false,
-  loading: () => (
-    <div className={styles.overlay} role="status" aria-live="polite">
-      <span className={styles.spinner} aria-hidden="true" />
-      <span className="sc-meta">正在准备 3D 查看器…</span>
-    </div>
-  ),
+  loading: ViewerLoading,
 });
 
 export type AvatarViewerProps = {
@@ -51,10 +57,11 @@ export default function AvatarViewer({
   badges,
   poster,
   height = 420,
-  label = "可旋转的 3D 形象",
+  label,
   showReset = true,
   onReset,
 }: AvatarViewerProps) {
+  const t = useT("avatar");
   const [mode, setMode] = useState<Mode>("pending");
   const [resetSignal, setResetSignal] = useState(0);
   const [moved, setMoved] = useState(false);
@@ -74,7 +81,7 @@ export default function AvatarViewer({
   const show3D = mode === "webgl" || (mode === "reduced" && staticOptIn);
 
   return (
-    <div className={styles.root} style={style} role="group" aria-label={label}>
+    <div className={styles.root} style={style} role="group" aria-label={label ?? t("viewer.label")}>
       {show3D ? (
         <Viewer key={src} src={src} animate={mode === "webgl"} resetSignal={resetSignal} onMoved={setMoved} />
       ) : (
@@ -102,7 +109,7 @@ export default function AvatarViewer({
               strokeLinejoin="round"
             />
           </svg>
-          复位视角
+          {t("viewer.reset")}
         </button>
       )}
       {badges.length > 0 && (
@@ -119,17 +126,14 @@ export default function AvatarViewer({
 }
 
 function Fallback({ mode, poster, onOpen3D }: { mode: Mode; poster?: string; onOpen3D?: () => void }) {
+  const t = useT("avatar");
   if (mode === "pending") {
     // 首屏与服务端渲染：先放海报或空白占位，不阻塞页面
     // eslint-disable-next-line @next/next/no-img-element
     return poster ? <img className={styles.poster} src={poster} alt="" /> : null;
   }
-  const text =
-    mode === "no-webgl"
-      ? "当前浏览器或设备不支持 3D 显示，以下为静态预览。"
-      : "已开启“减弱动态效果”，默认显示静态预览。";
-  const textNoPoster =
-    mode === "no-webgl" ? "当前浏览器或设备不支持 3D 显示。" : "已开启“减弱动态效果”，3D 形象默认不自动播放。";
+  const text = mode === "no-webgl" ? t("viewer.noWebgl") : t("viewer.reduced");
+  const textNoPoster = mode === "no-webgl" ? t("viewer.noWebglNoPoster") : t("viewer.reducedNoPoster");
   return (
     <>
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -138,7 +142,7 @@ function Fallback({ mode, poster, onOpen3D }: { mode: Mode; poster?: string; onO
         <p className={styles.message}>{poster ? text : textNoPoster}</p>
         {onOpen3D && (
           <button type="button" className="sc-cta sc-cta--ghost" onClick={onOpen3D}>
-            查看 3D（无动画）
+            {t("viewer.open3d")}
           </button>
         )}
       </div>

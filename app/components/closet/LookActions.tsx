@@ -9,7 +9,8 @@
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useState } from "react";
-import { addItemsToBag, addToFittingRoom } from "@/lib/bag/client";
+import { addItemsToBag, addToFittingRoom, useBagErrors } from "@/lib/bag/client";
+import { useT } from "@/lib/i18n/client";
 import { reducedFade, springs } from "@/lib/motion";
 import s from "./LookActions.module.css";
 
@@ -38,6 +39,7 @@ export type Pick = ReturnType<typeof usePick>;
 /** 多选时单品上的勾选圆钮。 */
 export function PickCheck({ pick, item, className = "" }: { pick: Pick; item: PickItem; className?: string }) {
   const reduce = useReducedMotion() === true;
+  const t = useT("closet");
   const on = pick.selected.has(item.id);
   return (
     <AnimatePresence initial={false}>
@@ -47,7 +49,7 @@ export function PickCheck({ pick, item, className = "" }: { pick: Pick; item: Pi
           type="button"
           role="checkbox"
           aria-checked={on}
-          aria-label={`选择${item.name.replace(/^占位：/, "")}`}
+          aria-label={t("actions.select", { name: item.name.replace(/^占位：/, "") })}
           className={`${s.check} ${on ? s.checkOn : ""} ${className}`}
           onClick={(e) => {
             e.preventDefault();
@@ -82,6 +84,8 @@ export default function LookActions({
   /** 卡片里空间窄：购物袋按钮只放图标与件数。 */
   compactBag?: boolean;
 }) {
+  const t = useT("closet");
+  const bagErrors = useBagErrors();
   const [room, setRoom] = useState<"idle" | "busy" | "done">("idle");
   const [bag, setBag] = useState<"idle" | "busy" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -93,12 +97,15 @@ export default function LookActions({
   async function toRoom() {
     setRoom("busy");
     setError(null);
-    const r = await addToFittingRoom({
-      kind: partial ? (target.length === 1 ? "single" : "pick") : "outfit",
-      outfitName,
-      sourceOutfitId: outfitId,
-      items: target,
-    });
+    const r = await addToFittingRoom(
+      {
+        kind: partial ? (target.length === 1 ? "single" : "pick") : "outfit",
+        outfitName,
+        sourceOutfitId: outfitId,
+        items: target,
+      },
+      bagErrors,
+    );
     if (r.ok) {
       setRoom("done");
       pick.setMode(false);
@@ -111,7 +118,10 @@ export default function LookActions({
   async function toBag() {
     setBag("busy");
     setError(null);
-    const r = await addItemsToBag(target.map((i) => ({ itemId: i.id })));
+    const r = await addItemsToBag(
+      target.map((i) => ({ itemId: i.id })),
+      bagErrors,
+    );
     if (r.ok) {
       setBag("done");
       pick.setMode(false);
@@ -123,8 +133,19 @@ export default function LookActions({
   }
 
   const roomLabel =
-    room === "done" && !pick.selecting ? "已加入试衣间" : partial ? `加入试衣间（${chosen.length} 件）` : "整套加入试衣间";
-  const bagLabel = bag === "done" ? "已加入购物袋" : partial ? `加入购物袋（${chosen.length} 件）` : compactBag ? "购物袋" : "整套加入购物袋";
+    room === "done" && !pick.selecting
+      ? t("actions.added")
+      : partial
+        ? t("actions.addPicked", { n: chosen.length })
+        : t("actions.addLook");
+  const bagLabel =
+    bag === "done"
+      ? t("actions.addedToBag")
+      : partial
+        ? t("actions.addPickedToBag", { n: chosen.length })
+        : compactBag
+          ? t("actions.bag")
+          : t("actions.addLookToBag");
 
   return (
     <div className={s.wrap}>
@@ -142,7 +163,7 @@ export default function LookActions({
           className={`sc-cta sc-cta--ghost ${s.bag}`}
           disabled={bag === "busy" || emptyPick}
           onClick={() => void toBag()}
-          aria-label={compactBag && !partial ? "整套加入购物袋" : undefined}
+          aria-label={compactBag && !partial ? t("actions.addLookToBag") : undefined}
         >
           <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true">
             <path d="M3.6 6.2h10.8l-.8 9H4.4l-.8-9Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
@@ -153,17 +174,17 @@ export default function LookActions({
       </div>
       <div className={s.meta}>
         <button type="button" className="link-btn" onClick={() => pick.setMode(!pick.selecting)} aria-pressed={pick.selecting}>
-          {pick.selecting ? "取消多选" : "多选单品"}
+          {pick.selecting ? t("actions.cancelSelect") : t("actions.selectPieces")}
         </button>
-        {emptyPick ? <span className="sc-meta fade-in">勾选想要的单品</span> : null}
+        {emptyPick ? <span className="sc-meta fade-in">{t("actions.pickHint")}</span> : null}
         {room === "done" && !pick.selecting ? (
           <Link href="/fitting-room" className="link-btn fade-in">
-            去试衣间
+            {t("actions.goToRoom")}
           </Link>
         ) : null}
         {bag === "done" ? (
           <Link href="/bag" className="link-btn fade-in">
-            查看购物袋
+            {t("actions.viewBag")}
           </Link>
         ) : null}
       </div>

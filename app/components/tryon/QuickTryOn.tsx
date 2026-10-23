@@ -13,13 +13,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { addToFittingRoom } from "@/lib/bag/client";
+import { addToFittingRoom, useBagErrors } from "@/lib/bag/client";
+import { useT } from "@/lib/i18n/client";
 import { reducedFade, springs } from "@/lib/motion";
 import { isAccessory } from "@/lib/tryon/accessory";
 import { isWearable } from "@/lib/tryon/plan";
 import type { TryonContext } from "@/lib/tryon/service";
-import { cleanName, CloseIcon } from "./shared";
-import { NANO_STAGES, QUICK_STAGES, stageAt, useQuickTryon, useTicker } from "./useQuickTryon";
+import { cleanName, CloseIcon, useConsentLabel } from "./shared";
+import { NANO_STAGES, QUICK_STAGES, stageAt, useQuickStageText, useQuickTryon, useTicker } from "./useQuickTryon";
 import s from "./QuickTryOn.module.css";
 
 export type QuickItem = {
@@ -133,6 +134,7 @@ export function QuickTryButton({
   className?: string;
 }) {
   const ctl = useContext(QuickCtx);
+  const tx = useT("tryon");
   if (!ctl || !canQuickTry(item)) return null;
   const name = cleanName(item.name);
   return (
@@ -145,10 +147,10 @@ export function QuickTryButton({
         ctl.open(item, source);
       }}
       aria-haspopup="dialog"
-      aria-label={`一键试穿：${name}`}
+      aria-label={tx("quick.buttonAria", { name })}
     >
       <SparkIcon size={size === "lg" ? 16 : 13} />
-      <span>一键试穿</span>
+      <span>{tx("quick.button")}</span>
     </button>
   );
 }
@@ -179,11 +181,17 @@ function Panel({
   onClose: () => void;
 }) {
   const reduce = useReducedMotion() === true;
+  const tx = useT("tryon");
+  const tc = useT("common");
+  const stageText = useQuickStageText();
+  const consentLabel = useConsentLabel(ctx.providerName);
+  const bagErrors = useBagErrors();
   const panelRef = useRef<HTMLDivElement | null>(null);
   const elapsed = useTicker(q.running);
   const accessory = isAccessory({ category: item.category, displayCategory: item.displayCategory ?? null });
   const stages = accessory ? NANO_STAGES : QUICK_STAGES;
-  const verb = accessory ? "穿戴" : "穿上";
+  // 文案里的动词：鞋包配饰“穿戴”，衣服“穿上”（字典里用 select 区分）。
+  const kind = accessory ? "accessory" : "garment";
   const name = cleanName(item.name);
   const result = q.view?.wornItemId === item.id ? q.view.resultUrl : null;
   const baseUrl = ctx.frontPhotoUrl;
@@ -208,12 +216,15 @@ function Panel({
   async function save() {
     setSaved("busy");
     setSaveError(null);
-    const r = await addToFittingRoom({
-      kind: "single",
-      outfitName: source.outfitName ?? null,
-      sourceOutfitId: source.outfitId ?? null,
-      items: [{ id: item.id, name: item.name }],
-    });
+    const r = await addToFittingRoom(
+      {
+        kind: "single",
+        outfitName: source.outfitName ?? null,
+        sourceOutfitId: source.outfitId ?? null,
+        items: [{ id: item.id, name: item.name }],
+      },
+      bagErrors,
+    );
     if (r.ok) setSaved("done");
     else {
       setSaved("idle");
@@ -245,11 +256,11 @@ function Panel({
   const saveRow = (
     <div className={s.saveRow}>
       <button type="button" className="link-btn" disabled={saved !== "idle"} onClick={() => void save()}>
-        {saved === "done" ? "已加入试衣间" : "先把这件加入试衣间"}
+        {saved === "done" ? tx("quick.saved") : tx("quick.saveFirst")}
       </button>
       {saved === "done" ? (
         <Link href="/fitting-room" className="link-btn fade-in">
-          去试衣间
+          {tx("quick.goToFittingRoom")}
         </Link>
       ) : null}
     </div>
@@ -258,74 +269,74 @@ function Panel({
   let title: string;
   let body: ReactNode;
   if (!hasBase) {
-    title = "先建立你的形象";
+    title = tx("avatar.createFirst");
     body = (
       <>
         <p className="serif-note" style={{ margin: 0 }}>
-          先建立你的形象，之后每件都能一键试穿。
+          {tx("quick.noAvatarLead")}
         </p>
         <p className="sc-meta" style={{ margin: 0 }}>
-          上传 3–5 张照片，生成你的数字分身。
+          {tx("quick.noAvatarHint")}
         </p>
         <Link href="/profile/avatar" className={`sc-cta ${s.main}`}>
-          建立我的数字分身
+          {tx("quick.createTwin")}
         </Link>
         {saveRow}
       </>
     );
   } else if (q.running) {
-    title = `正在为你${verb}这件`;
+    title = tx("quick.running", { kind });
     body = (
       <>
         <p className={`serif-note wait-step ${s.step}`} key={stageAt(elapsed, stages)} role="status" aria-live="polite">
-          {stages[stageAt(elapsed, stages)].text}…
+          {stageText(stages[stageAt(elapsed, stages)])}…
         </p>
         <p className="sc-meta" style={{ margin: 0 }}>
-          把「{name}」{verb}到你身上 · {elapsed} 秒
+          {tx("quick.runningMeta", { kind, name, sec: elapsed })}
         </p>
       </>
     );
   } else if (result) {
-    title = "穿在你身上";
+    title = tx("quick.resultTitle");
     body = (
       <>
         <p className="sc-meta" style={{ margin: 0 }} role={q.refining ? "status" : undefined}>
-          {q.refining ? "正在细化：衣长、领型和细节会更贴近商品图，好了自动替换" : `这是你${verb}「${name}」的样子`}
+          {q.refining ? tx("quick.refiningNote") : tx("quick.resultNote", { kind, name })}
         </p>
         <div className={s.actions}>
           <button type="button" className={`sc-cta ${s.main}`} disabled={saved !== "idle"} onClick={() => void save()}>
-            {saved === "done" ? "已加入试衣间" : "加入试衣间"}
+            {saved === "done" ? tx("quick.saved") : tx("quick.save")}
           </button>
           <Link href={`/item/${item.id}`} className={`sc-cta sc-cta--ghost ${s.main}`}>
-            看完整详情
+            {tx("actions.viewDetails")}
           </Link>
         </div>
         {saved === "done" ? (
           <Link href="/fitting-room" className="link-btn fade-in" style={{ justifySelf: "start" }}>
-            去试衣间
+            {tx("quick.goToFittingRoom")}
           </Link>
         ) : null}
       </>
     );
   } else {
-    title = "一键试穿";
+    title = tx("quick.title");
     body = (
       <>
         <p className="sc-meta" style={{ margin: 0 }}>
-          {ctx.baseSource === "twin" ? "用你的数字分身" : "用你的正面全身照"}，{accessory ? "约 45 秒" : "约 20 秒"}看「{name}」{accessory ? "穿戴" : "穿"}在你身上
+          {tx("quick.intro", { base: ctx.baseSource === "twin" ? "twin" : "photo", kind, name })}
         </p>
         {!consented ? (
           <label className={s.consent}>
             <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
-            <span>同意把我的形象照片发送给 {ctx.providerName}生成试穿图</span>
+            <span>{consentLabel}</span>
           </label>
         ) : null}
         <div className={s.actions}>
           <button type="button" className={`sc-cta ${s.main}`} disabled={!(consented || agree)} onClick={onStart}>
-            {q.error ? "再试一次" : "开始试穿"}
+            {q.error ? tx("actions.tryAgain") : tx("actions.start")}
           </button>
           <Link href={`/item/${item.id}`} className={`sc-cta sc-cta--ghost ${s.main}`}>
-            看完整详情
+            {tx("actions.viewDetails")}
           </Link>
         </div>
         {saveRow}
@@ -360,7 +371,7 @@ function Panel({
               {title}
             </h2>
           </div>
-          <button type="button" className={s.close} onClick={onClose} aria-label="关闭">
+          <button type="button" className={s.close} onClick={onClose} aria-label={tc("close")}>
             <CloseIcon />
           </button>
         </div>
@@ -371,7 +382,7 @@ function Panel({
               <motion.img
                 key={shown}
                 src={shown}
-                alt={result ? `${verb}${name}的你` : ctx.baseSource === "twin" ? "你的数字分身" : "你的正面全身照"}
+                alt={result ? tx("quick.resultAlt", { kind, name }) : ctx.baseSource === "twin" ? tx("avatar.twinAlt") : tx("avatar.photoAlt")}
                 className={s.frame}
                 {...crossfade}
               />
@@ -389,7 +400,7 @@ function Panel({
               <img src={item.image} alt="" />
             </span>
           ) : null}
-          {result && !q.running ? <span className={s.label}>{q.refining ? "正在细化" : "On You"}</span> : null}
+          {result && !q.running ? <span className={s.label}>{q.refining ? tx("stage.refining") : "On You"}</span> : null}
         </div>
 
         <div className={s.text}>

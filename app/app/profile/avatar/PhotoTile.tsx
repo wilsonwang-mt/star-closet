@@ -2,9 +2,11 @@
 
 import { useRef, type ReactNode } from "react";
 import type { PhotoView } from "@/lib/avatar/service";
+import { useT } from "@/lib/i18n/client";
 import s from "./AvatarStudio.module.css";
 
-export type Requirement = "必填" | "二选一" | "可选" | "必传" | "选传";
+/** 照片格右侧的要求标注，对应字典 avatar.tile.req：必填 / 二选一 / 可选 / 必传 / 选传。 */
+export type Requirement = "required" | "either" | "optional" | "must" | "may";
 
 // 拍摄示意剪影：细线勾勒，颜色跟随 currentColor（香槟色）。
 export function FaceSilhouette() {
@@ -47,7 +49,7 @@ export default function PhotoTile({
   error,
   required,
   icon,
-  noun = "全身照",
+  noun = "fullBody",
   onPick,
   onDelete,
 }: {
@@ -61,11 +63,12 @@ export default function PhotoTile({
   required: Requirement;
   /** 空格子里的拍摄示意；不传时显示“+” */
   icon?: ReactNode;
-  /** 读屏用的名词：“上传正面全身照” */
-  noun?: string;
+  /** 读屏用的名词：fullBody →“上传正面全身照”，photo →“上传正脸照片” */
+  noun?: "fullBody" | "photo";
   onPick?: (f: File) => void;
   onDelete?: () => void;
 }) {
+  const t = useT("avatar");
   const input = useRef<HTMLInputElement>(null);
   return (
     <div className={s.tile}>
@@ -75,11 +78,11 @@ export default function PhotoTile({
         data-empty={photo ? undefined : true}
         disabled={disabled || busy || !onPick}
         onClick={() => input.current?.click()}
-        aria-label={photo ? `替换${label}照片` : `上传${label}${noun}`}
+        aria-label={photo ? t("tile.replace", { label }) : t(noun === "photo" ? "tile.uploadPhoto" : "tile.uploadFullBody", { label })}
       >
         {photo ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img key={photo.id} src={photo.url} alt={`${label}照片`} />
+          <img key={photo.id} src={photo.url} alt={t("tile.alt", { label })} />
         ) : icon ? (
           <span className={s.plus}>
             {icon}
@@ -93,7 +96,7 @@ export default function PhotoTile({
         )}
         {busy ? (
           <span className={s.busy} aria-hidden="true">
-            处理中…
+            {t("tile.processing")}
           </span>
         ) : null}
       </button>
@@ -112,11 +115,11 @@ export default function PhotoTile({
       ) : null}
       <div className={s.caption}>
         <span>
-          {label} <span className={s.req}>{required}</span>
+          {label} <span className={s.req}>{t(`tile.req.${required}`)}</span>
         </span>
         {photo && onDelete ? (
-          <button type="button" className={s.small} onClick={onDelete} disabled={busy} aria-label={`删除${label}照片`}>
-            删除
+          <button type="button" className={s.small} onClick={onDelete} disabled={busy} aria-label={t("tile.remove", { label })}>
+            {t("tile.delete")}
           </button>
         ) : null}
       </div>
@@ -129,7 +132,7 @@ export default function PhotoTile({
       )}
       {photo?.hints.map((h) => (
         <span key={h} className={`${s.hint} ${s.warn}`}>
-          提示：{h}
+          {t("tile.tip", { hint: h })}
         </span>
       ))}
       {error ? (

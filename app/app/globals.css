@@ -528,3 +528,14 @@ html[data-vt]::view-transition-new(root) { animation: vt-fade-in .42s ease-out .
   html[data-vt]::view-transition-old(root) { animation: vt-fade-out .2s ease-out both; }
   html[data-vt]::view-transition-new(root) { animation: vt-fade-in .2s ease-out both; }
 }
+
+/* 英文（D70）：标题与说明的衬线字体换成 Bodoni Moda（思源宋体的西文字形偏窄，中文排版的宽字距用在英文上会散），
+ * 字距收窄。中文页面不受影响；各组件里为中文设的宽字距，在组件 module.css 用 :global(html[lang="en"]) 单独收。 */
+html[lang="en"] { --sc-font-serif: "Bodoni Moda", "Noto Serif SC", "Songti SC", serif; }
+html[lang="en"] .sc-display { letter-spacing: .01em; }
+html[lang="en"] .site-menu__label { letter-spacing: .03em; }
+html[lang="en"] .sc-meta, html[lang="en"] .sc-badge { letter-spacing: .04em; }
+html[lang="en"] .sc-cta { letter-spacing: .08em; }
+html[lang="en"] .sc-cta.compact, html[lang="en"] .site-menu__signout, html[lang="en"] .back-link { letter-spacing: .06em; }
+html[lang="en"] .section-title { letter-spacing: .01em; }
+html[lang="en"] .link-btn { letter-spacing: .03em; }

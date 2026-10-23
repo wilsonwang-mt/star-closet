@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { localizeServer } from "@/lib/i18n/server";
 import { QuotaError } from "@/lib/usage";
 import { MetapersonError } from "./metaperson";
 import { AvatarError } from "./service";
@@ -10,16 +11,21 @@ export function json(data: unknown, status = 200) {
   return NextResponse.json(data, { status, headers: NO_STORE });
 }
 
-// 统一：未登录 401；业务错误按 AvatarError.status；其他错误 500，不回显内部信息。
+/** 错误响应：中文提示按当前请求语言翻译（lib/i18n/phrases），同样不缓存。 */
+export async function jsonError(message: string, status: number) {
+  return json({ error: await localizeServer(message) }, status);
+}
+
+// 统一：未登录 401；业务错误按 AvatarError.status；其他错误 500，不回显内部信息。错误提示都在这里按请求语言翻译。
 export async function withUser(fn: (userId: string) => Promise<Response>): Promise<Response> {
   const user = await getCurrentUser();
-  if (!user) return json({ error: "请先登录" }, 401);
+  if (!user) return jsonError("请先登录", 401);
   try {
     return await fn(user.id);
   } catch (e) {
-    if (e instanceof AvatarError || e instanceof MetapersonError || e instanceof QuotaError) return json({ error: e.message }, e.status);
+    if (e instanceof AvatarError || e instanceof MetapersonError || e instanceof QuotaError) return jsonError(e.message, e.status);
     console.error("[avatar]", e instanceof Error ? e.message : "unknown error");
-    return json({ error: "服务暂时不可用，请稍后再试" }, 500);
+    return jsonError("服务暂时不可用，请稍后再试", 500);
   }
 }
 

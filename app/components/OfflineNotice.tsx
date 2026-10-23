@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useT } from "@/lib/i18n/client";
 import { reducedFade, springs } from "@/lib/motion";
 import s from "./OfflineNotice.module.css";
 
@@ -30,6 +31,7 @@ function internalHref(e: MouseEvent): string | null {
 
 export default function OfflineNotice() {
   const router = useRouter();
+  const t = useT("nav");
   const reduced = useReducedMotion() === true;
   const [mounted, setMounted] = useState(false);
   const [phase, setPhase] = useState<Phase>("online");
@@ -103,7 +105,7 @@ export default function OfflineNotice() {
               animate={{ y: 0 }}
               transition={springs.press}
             >
-              {phase === "back" ? "已恢复连接" : "网络已断开，恢复后自动继续"}
+              {phase === "back" ? t("offline.back") : t("offline.lost")}
             </motion.span>
           </motion.div>
         ) : null}

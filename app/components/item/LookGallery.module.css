@@ -191,3 +191,9 @@
   max-height: 100%;
   border-radius: 16px;
 }
+
+/* 英文（D70）：衬线标题为中文设的宽字距用在英文上会散，收窄 */
+:global(html[lang="en"]) .title,
+:global(html[lang="en"]) .quickTitle {
+  letter-spacing: 0.02em;
+}

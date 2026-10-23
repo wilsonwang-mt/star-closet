@@ -214,3 +214,11 @@
   .look:hover, .lookLink:active, .pieceOn .pieceThumb { transform: none; }
   .pieceThumb, .lookLink { transition: none; }
 }
+
+/* ---------- 英文（D70）：为中文设的宽字距用在英文上会散，“查看与改编”等不换行的链接也会变宽；英文时收窄 ---------- */
+:global(html[lang="en"]) .back,
+:global(html[lang="en"]) .cue { letter-spacing: .06em; }
+:global(html[lang="en"]) .tagline { letter-spacing: .01em; }
+:global(html[lang="en"]) .tag,
+:global(html[lang="en"]) .palette,
+:global(html[lang="en"]) .go { letter-spacing: .04em; }

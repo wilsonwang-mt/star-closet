@@ -331,3 +331,130 @@ test("callClaude：请求形状（模型、结构化输出、图片块）与解�
     globalThis.fetch = prev;
   }
 });
+
+// ---------- 多语言（D70）：英文界面的概括 ----------
+
+const MODEL_OUT_EN = { ...MODEL_OUT, summary: "Narrow shoulders, a high waist and long legs." };
+const CJK = /[㐀-鿿]/;
+
+test("英文概括：cleanSummary 保留词间空格，过长时在逗号处截断，夸大说法或夹带中文时整句丢弃", () => {
+  const { cleanSummary } = m.body;
+  assert.equal(cleanSummary("  Narrow shoulders,  a high waist. ", "en"), "Narrow shoulders, a high waist");
+  const long = "Narrow shoulders, a high waist, long legs, a straight upper body, slightly wider hips and balanced overall proportions";
+  const out = cleanSummary(long, "en")!;
+  assert.ok(out.length <= 90 && !out.endsWith(","), out);
+  assert.ok(long.startsWith(out));
+  assert.equal(cleanSummary("A precise replica of your figure", "en"), null);
+  assert.equal(cleanSummary("Your proportions, 1:1", "en"), null);
+  assert.equal(cleanSummary("肩线偏窄、腰线较高", "en"), null, "英文界面不显示中文概括");
+  assert.equal(cleanSummary("肩线偏窄、腰线较高。"), "肩线偏窄、腰线较高", "中文默认不变");
+});
+
+test("英文界面：系统提示要求英文概括，其余规则不变；中文提示词不变", () => {
+  const zh = m.body.bodySystemPrompt();
+  const en = m.body.bodySystemPrompt("en");
+  assert.match(zh, /summary 用中文写一句不超过 30 字/);
+  assert.doesNotMatch(en, /summary 用中文写/);
+  assert.match(en, /summary 用英文（English）写/);
+  assert.equal(en.split("\n").length, zh.split("\n").length);
+  assert.match(en, /4\. 不识别、不描述人物身份/);
+});
+
+test("runBodyAnalysis 英文：概括用英文、记下语言；换回中文时重新分析一次；接口边界只显示与界面同语言的概括", async () => {
+  const { db, schema } = m.db;
+  const { localizeAvatarState, localizeBodyAnalysis } = await import("./l10n");
+  await db.insert(schema.user).values({ id: "b5", name: "测试", email: "b5@example.test" });
+  await db.insert(schema.profile).values({ userId: "b5", heightCm: 170, weightKg: 60 });
+  await consent("b5", true);
+  await m.service.addPhoto("b5", "face", png(600, 600));
+  await m.service.addPhoto("b5", "front", png());
+
+  const en = fakeModel(MODEL_OUT_EN);
+  const r = await m.body.runBodyAnalysis("b5", { consented: true, locale: "en" }, en.fn);
+  assert.equal(en.calls.length, 1);
+  assert.equal(en.calls[0].locale, "en");
+  assert.equal(r.summary, "Narrow shoulders, a high waist and long legs");
+  assert.equal(r.lang, "en");
+  await m.body.runBodyAnalysis("b5", { consented: true, locale: "en" }, en.fn);
+  assert.equal(en.calls.length, 1, "同一组照片、同一语言直接返回已存结果");
+
+  let st = await m.service.getAvatarState("b5");
+  assert.equal(st.bodyAnalysis?.lang, "en");
+  assert.equal(localizeAvatarState(st, "en").bodyAnalysis?.summary, "Narrow shoulders, a high waist and long legs");
+  assert.equal(localizeAvatarState(st, "zh").bodyAnalysis?.summary, null, "中文界面不显示英文概括");
+  assert.deepEqual(localizeAvatarState(st, "zh").bodyAnalysis?.blends, st.bodyAnalysis?.blends);
+
+  // 英文界面的其他文字：处理方、体型分析名称、照片质量提示都是英文
+  const view = localizeAvatarState(st, "en");
+  assert.equal(view.offer.bodyAnalysis?.name, "Anthropic (Claude)");
+  for (const p of [view.provider, view.offer.thirdParty!]) {
+    assert.ok(!CJK.test(p.name) && !CJK.test(p.processor), `${p.name}: ${p.processor}`);
+  }
+  for (const h of view.photos.flatMap((p) => p.hints)) assert.ok(!CJK.test(h), h);
+  // lib 里的视图仍是中文原文
+  assert.equal(st.offer.bodyAnalysis?.name, "Anthropic（Claude）");
+
+  // 换回中文：重新分析一次并覆盖
+  const zh = fakeModel(MODEL_OUT);
+  const z = await m.body.runBodyAnalysis("b5", { consented: true }, zh.fn);
+  assert.equal(zh.calls.length, 1);
+  assert.equal(z.lang, "zh");
+  assert.equal(z.summary, "肩线偏窄、腰线较高、腿部比例修长");
+  st = await m.service.getAvatarState("b5");
+  assert.equal(localizeBodyAnalysis(st.bodyAnalysis!, "en").summary, null);
+  assert.equal(localizeBodyAnalysis(st.bodyAnalysis!, "zh").summary, "肩线偏窄、腰线较高、腿部比例修长");
+  assert.equal(fetchCalls, 0);
+});
+
+test("callClaude 英文：系统提示与结构化输出的说明都要求英文概括（fetch 换成本地假响应）", async () => {
+  let captured: Record<string, unknown> | null = null;
+  const prev = globalThis.fetch;
+  globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+    captured = JSON.parse(String(init?.body));
+    const message = {
+      id: "msg_test",
+      type: "message",
+      role: "assistant",
+      model: "claude-opus-5-5",
+      content: [{ type: "text", text: JSON.stringify(MODEL_OUT_EN) }],
+      stop_reason: "end_turn",
+      stop_sequence: null,
+      usage: { input_tokens: 1, output_tokens: 1 },
+    };
+    return new Response(JSON.stringify(message), { status: 200, headers: { "content-type": "application/json" } });
+  }) as typeof fetch;
+  try {
+    const out = await m.body.callClaude({ images: [{ slot: "front", mime: "image/png", base64: "QUJD" }], heightCm: 170, weightKg: null, locale: "en" });
+    assert.deepEqual(out, MODEL_OUT_EN);
+    const body = captured as unknown as { system: string; output_config: { format: unknown } };
+    assert.match(body.system, /summary 用英文（English）写/);
+    assert.match(JSON.stringify(body.output_config.format), /in English/);
+  } finally {
+    globalThis.fetch = prev;
+  }
+});
+
+test("作业视图英文：失败说明、说明文字与徽标按界面语言；中文原样", async () => {
+  const { localizeJobView } = await import("./l10n");
+  const job = {
+    id: "j1",
+    status: "failed" as const,
+    provider: "mock",
+    isMock: true,
+    glbUrl: null,
+    resultDeleted: false,
+    fidelityNote: "示意模型，非本人：未使用照片生成，仅为通用人台。合身未验证。",
+    badges: m.service.badgesFor(true),
+    error: { code: "PROVIDER_FAILED", message: "生成服务暂时不可用（503）" },
+    remotePurge: null,
+    elapsedSeconds: 3,
+    createdAt: "",
+    updatedAt: "",
+  };
+  const en = localizeJobView(job, "en");
+  assert.equal(en.error?.message, "The generation service is temporarily unavailable (503).");
+  assert.equal(en.error?.code, "PROVIDER_FAILED");
+  assert.deepEqual(en.badges, ["Demo model"]);
+  assert.ok(en.fidelityNote && !CJK.test(en.fidelityNote));
+  assert.deepEqual(localizeJobView(job, "zh"), job);
+});
