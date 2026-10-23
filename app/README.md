@@ -32,6 +32,28 @@
 
 尚未接入：单品可旋转 GLB、打赏、站内支付。场景视频（`public/scenes/*-web.mp4`）只加载并播放当前显示的那一段，减弱动态时只显示首帧。试衣间里的咖啡馆生活场景只是标注了“AI 生成场景示意 · 合身未验证”的示意图。
 
+## 多语言（D70）
+
+现有中文与英文。顶部导航主题切换左边是语言按钮（显示当前语言简写「中」或「EN」），点开是一张玻璃小卡片列出全部语言。
+
+- **语言来源**：cookie `sc-locale`（手动选择，存一年）→ 浏览器 `Accept-Language` 里第一个本站支持的语言 → 中文。不加 URL 语言前缀；根布局本来就读主题 cookie，所有页面都是动态渲染。切换时写 cookie 再 `router.refresh()`。
+- **框架**（`lib/i18n/`）：
+  - `config.ts`：语言清单、默认语言、浏览器语言协商。
+  - `messages/zh/*.ts` 是唯一的源，按命名空间分文件（common、meta、nav、home、closet、outfit、item、system、fittingRoom、tryon、bag、auth、profile、avatar、chat）；`messages/en/*.ts` 用 `Shape<>` 约束成同样的键，少键或多键 typecheck 报错。
+  - 消息格式是 ICU 子集：`{name}` 插值、`{n, plural, one {# piece} other {# pieces}}`、`{x, select, …}`（`format.ts`）。
+  - 服务端组件与 Route Handler：`const t = await getT("closet")`、`getLocale()`；客户端组件：`const t = useT("tryon")`、`useLocale()`、`useTerm()`。根布局只把当前语言的字典传给客户端。
+  - lib 函数需要语言时作为参数传入，默认 `"zh"`，所以在请求之外（单元测试、脚本）输出不变。
+- **目录内容**：数据库与 `data/catalog.json` 永远是中文，筛选、试穿品类判断、改编规则都按中文工作。只在显示边界翻译：
+  - 固定词（品类、颜色、材质、季节、版型、风格与场合标签、性别、衣橱类型、预算档、均码…）查 `data/catalog.en.json` 的 `terms`，客户端用 `useTerm()`，服务端用 `getCatalogL10n().term()`。
+  - 自由文本（衣橱名、简介、搭配名与说明、单品名与备注）按编号查同一文件，页面与接口在交给界面前用 `getCatalogL10n()` 的 `curator / outfit / item`。
+  - 目录改了以后重跑 `npx tsx --env-file=.env.local scripts/translate-catalog.ts --budget 2`（调用 `claude-opus-5-5`，付费、逐笔记账、可续跑，已有译文跳过）。
+- **服务端提示**：lib 里仍写中文；接口在返回前按请求语言翻译（`lib/i18n/phrases/en.ts`，以中文原文为键，带变量的用正则）。Route Handler 用 `jsonError()`（`lib/i18n/api.ts`）或各模块的 `localize*View()`。
+- **AI 文字**：悬浮对话、一句话改编、体型分析、数字分身概括按请求语言写；对话的目录快照与提示缓存按语言分开。图像生成提示词不随语言变。
+- **英文排版**：英文页面标题衬线改用 Bodoni Moda，为中文设计的宽字距在 `globals.css` 末尾与各组件 module.css 里用 `html[lang="en"]` 收窄。
+- **新增一种语言**：在 `config.ts` 的 `LOCALES` 与 `LOCALE_META` 登记；复制 `messages/en/` 为新语言并翻译；补 `phrases/<语言>.ts`；用脚本生成 `data/catalog.<语言>.json` 并在 `lib/i18n/catalog.ts` 登记。语言按钮的清单自动更新。
+- **测试**：`lib/i18n/i18n.test.ts`（语言协商、消息格式、各语言字典键与占位符一致、英文字典无中文、目录与服务端提示的英文覆盖），以及对话、改编、试穿、体型分析、数字分身各自的英文路径测试。
+- **已知限制**：试衣间里保存的搭配标题、理由按保存时的界面语言存库；数字分身的概括与标签只按生成时的语言写，切换语言后不显示，重新生成才有新语言版本；体型分析换语言会重新分析一次（多一次 Claude 调用）。
+
 ## 悬浮对话（D66，D68 动态化）
 
 全站右下角的圆形入口（首页标题旁还有一枚「说场合和预算」引导胶囊），说出场合、风格、预算、性别或想像谁，对话里直接出卡片：衣橱卡 → `/closet/[id]`，搭配卡 → `/outfit/[id]`，功能卡 → 试衣间、3D 形象、2D 试穿（有 `FAL_KEY` 才出现）、档案、登录。手机是底部抽屉，桌面是右下角浮窗；对话存在 sessionStorage，路由切换与刷新都不丢；遇到吸底操作条（`.cta-bar`）时，手机上入口停靠进操作条右侧、成为主按钮旁的圆形次按钮（操作条加 `data-dock-reserve` 留位），其他会挡住入口的元素（`[data-dock-avoid]`）则把入口抬到它上方。
