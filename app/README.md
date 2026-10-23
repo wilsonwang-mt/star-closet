@@ -53,13 +53,15 @@
 - 启用：`FAL_KEY` 存在，且 `AVATAR3D_PROVIDER` 未设或为 `twin`（`lib/avatar/providers.ts` 的 `twinEnabled()`）。此模式不加载 MetaPerson 创建器。配置 `ANTHROPIC_API_KEY` 时同意卡多一项照片分析。
 - 同意卡（D47，三项各自勾选）：保存我的照片与形象，仅自己可见（必选）；由 fal.ai 上的 AI 图像模型根据我的照片生成我的形象（必选才能上传）；由 Anthropic（Claude）分析我的照片（可选）。`consent_version = avatar-consent-v2:store+twin` 或 `…:store+twin+anthropic`。
 - 上传卡：正脸（`face`，必传）、全身正面（`front`，必传，同时是试穿底图）、侧脸（`extra`）、全身侧面（`side`）、半身或其他（`back`），每格一张，至少 2 张、最多 5 张；浏览器压缩为 JPEG，服务端再剥元数据，存私有存储，照片自上传起 30 天到期。形象性别在上传区自选。
-- 生成 `POST /api/avatar/twin { gender }`（`lib/avatar/twin.ts` 的 `generateTwin`，同步，`maxDuration = 120`）：需登录与同意；先（同意且有 key 时）用 `claude-opus-5-5` 分析全部照片，得到一句不超过 30 字的概括、特征（发型、发色、脸型、肤色、身材、肩/腰/臀/腿、眼镜）和一段英文外观描述，30 秒超时则跳过；再以全部照片为 `image_urls`（顺序：正脸、侧脸、全身正面、全身侧面、半身或其他；每张压到长边 1536、JPEG q90 的 data URI）用指挥台实测达标的提示词模板（同一人、不美化不修身、素色基础款、暖米色影棚、85mm 质感；Claude 描述只作补充短句）并行调用 `fal-ai/nano-banana-pro/edit` 三次（`aspect_ratio 3:4`、`resolution 2K`、`X-Fal-Store-IO: 0`），每张失败且剩余时间足够时重试一次；正面必须成功，侧面/背面失败则为空。结果存 `<userId>/avatars/twin-<jobId>-<front|side|back>.<ext>`，写 `avatar_job`（`provider = twin`，`result_images = { front, side, back, summary, traits, gender, descriptor }`）。新分身成功后才删除旧分身文件；同一用户同时只允许一个生成。
-- 展示：“你的形象”卡——画廊可拖动、方向键、圆点切换，交叉淡入 + 轻微视差（只动 transform / opacity，减弱动态只淡入淡出），下方一句概括与特征标签，按钮「去试穿」（`/fitting-room`）「重新生成」「删除这个形象」。生成中显示等待态：本人全身照压暗 + 香槟扫光，阶段文案按真实秒数切换（正在读取你的照片 → 正在理解你的身材与发型 → 正在为你拍摄标准照），显示已用秒数，不显示百分比。
+- 生成 `POST /api/avatar/twin { gender }`（`lib/avatar/twin.ts` 的 `generateTwin`）：需登录与同意；校验通过、作业写入后立即返回，生成在响应之后用 `after()` 继续（总预算 240 秒，路由 `maxDuration = 300`），页面每 3 秒查询作业状态；先（同意且有 key 时）用 `claude-opus-5-5` 分析全部照片，得到一句不超过 30 字的概括、特征（发型、发色、脸型、肤色、身材、肩/腰/臀/腿、眼镜）和一段英文外观描述，30 秒超时则跳过；再以全部照片为 `image_urls`（顺序：正脸、侧脸、全身正面、全身侧面、半身或其他；每张压到长边 1536、JPEG q90 的 data URI）用指挥台实测达标的提示词模板（同一人、不美化不修身、素色基础款、暖米色影棚、85mm 质感；Claude 描述只作补充短句）并行调用 `fal-ai/nano-banana-pro/edit` 三次（`aspect_ratio 3:4`、`resolution 2K`、走队列接口、`X-Fal-Store-IO: 0`），每张失败且剩余时间足够时重试一次；正面必须成功，侧面/背面失败则为空。提示词与 fal 调用在 `lib/avatar/twin-gen.ts`（评估脚本共用）。结果存 `<userId>/avatars/twin-<jobId>-<front|side|back>.<ext>`，写 `avatar_job`（`provider = twin`，`result_images = { front, side, back, summary, traits, gender, descriptor }`）。新分身成功后才删除旧分身文件；同一用户同时只允许一个生成。
+- 正面脸部精修（D69，`lib/avatar/twin-face.ts`）：2K 全身图里脸只有约 250px，模型容易把五官画成“通用脸”。正面出图后立即按影棚背景定位头部，把头部方块（约两个头高）放大到 1536 交给 `nano-banana-pro/edit`（`1:1`、`2K`，参考为正脸与侧脸），只重画五官；结果在缩放 × 平移上与原图对齐，去掉明暗差后的平均差超过 6 视为构图被改动、放弃这次精修（剩余时间够时重试一次）；对齐后做低频色调迁移，只把脸部椭圆羽化贴回，发型外轮廓与背景保留原图。找不到头部、失败或时间不足时保留未精修的正面，不影响分身生成。侧面、背面不做。`TWIN_FACE_DETAIL=0` 关闭。
+- 展示：“你的形象”卡——画廊可拖动、方向键、圆点切换，交叉淡入 + 轻微视差（只动 transform / opacity，减弱动态只淡入淡出），下方一句概括与特征标签，按钮「去试穿」（`/fitting-room`）「重新生成」「删除这个形象」。生成中显示等待态：本人全身照压暗 + 香槟扫光，阶段文案按真实秒数切换（正在读取你的照片 → 正在理解你的身材与发型 → 正在为你拍摄标准照 → 40 秒后正在细化脸部细节），显示已用秒数，不显示百分比。
 - 删除：「删除这个形象」删形象照、保留照片（`DELETE /api/avatar/jobs/<id>/result`）；「一键删除」清掉全部照片、形象照与记录。
 - 给试穿的接口（`lib/avatar/twin.ts`）：`getTwin(userId)`、`readTwinImageDataUri(key)`、`getIdentityRefs(userId)`（分身正面 + 正脸 + 侧脸，最多 4 张 data URI）。
 - 数据库：迁移 `drizzle/0005_twin_result_images.sql` 给 `avatar_job` 加 `result_images jsonb`，需要在 Supabase 执行（`npm run db:setup`）；未执行时形象页会因缺列报错。
-- 测试：`lib/avatar/twin.test.ts`（全部 mock fal 与分析，合成纯色图片）。
-- 成本：建一次分身约 0.45–0.6 美元。
+- 测试：`lib/avatar/twin.test.ts`、`lib/avatar/twin-face.test.ts`（全部 mock fal 与分析，合成纯色图片与几何示意图）。
+- 脸部相似度评估（D69）：`scripts/twin-eval-gen.ts` 用线上同一套提示词为测试人物生成（付费，逐笔记账，`--budget` 封顶），`scripts/face-eval.py` 用 OpenCV 的 YuNet + SFace（可选 FaceNet）算与参考正脸的余弦相似度、rank-1 与 margin。需要 `opencv-python` ≥ 4.5.4，模型按 sha256 自动下载到 `~/.cache/star-closet/face-eval`。只能用 AI 生成的虚构人物照片，照片与结果放在仓库外。用法见两个脚本的文件头注释。
+- 成本：建一次分身约 0.6 美元（三张 2K + 一次脸部精修，各 0.15 美元；精修构图被改动时重试再加 0.15）；耗时比不精修多约 25 秒（本机实测 66 秒，n=1）。
 
 ### MetaPerson 模式（已停用，D63；代码保留）
 
@@ -234,7 +236,7 @@ npm run dev                  # http://localhost:3000
 按需：
 
 - `ANTHROPIC_API_KEY`（改编、体型分析；建议设花费上限的正式 key）
-- `FAL_KEY`、`TRYON_PROVIDER`、`AVATAR3D_PROVIDER`、`AVATAR3D_MAX_POLL_SECONDS`、`TWIN_QUEUE_POLL_MS`
+- `FAL_KEY`、`TRYON_PROVIDER`、`AVATAR3D_PROVIDER`、`AVATAR3D_MAX_POLL_SECONDS`、`TWIN_QUEUE_POLL_MS`、`TWIN_FACE_DETAIL`
 - `AVATARSDK_CLIENT_ID`、`AVATARSDK_CLIENT_SECRET`、`AVATARSDK_EXPORT_HOSTS`（MetaPerson，已停用）
 - 每日上限覆盖（正整数，不填用默认）：`QUOTA_ADAPT`（100）、`QUOTA_TRYON`（60，试衣间与一键试穿共用）、`QUOTA_SCENE`（30）、`QUOTA_TWIN`（10）、`QUOTA_BODY_ANALYSIS`（20）
 
