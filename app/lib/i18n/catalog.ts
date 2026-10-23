@@ -34,6 +34,9 @@ export function terms(locale: Locale, list: readonly string[] | null | undefined
   return (list ?? []).map((t) => term(locale, t));
 }
 
+/** 原字段有内容才替换：原本为空（null / ""）的保持为空。 */
+const has = (v: unknown) => typeof v === "string" && v.length > 0;
+
 function pick<T extends object>(src: T | undefined, key: keyof T): string | undefined {
   const v = src?.[key];
   return typeof v === "string" && v ? v : undefined;
@@ -68,10 +71,10 @@ export function localizeCurator<T extends CuratorLike>(c: T, locale: Locale): T 
   if (!o) return c;
   return {
     ...c,
-    ...(c.closetName !== undefined && pick(o, "closetName") ? { closetName: pick(o, "closetName") } : {}),
-    ...(c.tagline !== undefined && pick(o, "tagline") ? { tagline: pick(o, "tagline") } : {}),
-    ...(c.intro !== undefined && pick(o, "intro") ? { intro: pick(o, "intro") } : {}),
-    ...(c.personaNote !== undefined && pick(o, "personaNote") ? { personaNote: pick(o, "personaNote") } : {}),
+    ...(has(c.closetName) && pick(o, "closetName") ? { closetName: pick(o, "closetName") } : {}),
+    ...(has(c.tagline) && pick(o, "tagline") ? { tagline: pick(o, "tagline") } : {}),
+    ...(has(c.intro) && pick(o, "intro") ? { intro: pick(o, "intro") } : {}),
+    ...(has(c.personaNote) && pick(o, "personaNote") ? { personaNote: pick(o, "personaNote") } : {}),
   } as T;
 }
 
@@ -80,11 +83,11 @@ export function localizeItem<T extends ItemLike>(item: T, locale: Locale): T {
   if (!o) return item;
   return {
     ...item,
-    ...(item.name !== undefined && pick(o, "name") ? { name: pick(o, "name") } : {}),
-    ...(item.priceNote !== undefined && pick(o, "priceNote") ? { priceNote: pick(o, "priceNote") } : {}),
-    ...(item.sizeNote !== undefined && pick(o, "sizeNote") ? { sizeNote: pick(o, "sizeNote") } : {}),
-    ...(item.imageRightsNote !== undefined && pick(o, "imageRightsNote") ? { imageRightsNote: pick(o, "imageRightsNote") } : {}),
-    ...(item.buyLabel !== undefined && pick(o, "buyLabel") ? { buyLabel: pick(o, "buyLabel") } : {}),
+    ...(has(item.name) && pick(o, "name") ? { name: pick(o, "name") } : {}),
+    ...(has(item.priceNote) && pick(o, "priceNote") ? { priceNote: pick(o, "priceNote") } : {}),
+    ...(has(item.sizeNote) && pick(o, "sizeNote") ? { sizeNote: pick(o, "sizeNote") } : {}),
+    ...(has(item.imageRightsNote) && pick(o, "imageRightsNote") ? { imageRightsNote: pick(o, "imageRightsNote") } : {}),
+    ...(has(item.buyLabel) && pick(o, "buyLabel") ? { buyLabel: pick(o, "buyLabel") } : {}),
   } as T;
 }
 
@@ -95,9 +98,9 @@ export function localizeOutfit<T extends OutfitLike>(outfit: T, locale: Locale):
   if (!o && !items) return outfit;
   return {
     ...outfit,
-    ...(outfit.name !== undefined && pick(o, "name") ? { name: pick(o, "name") } : {}),
-    ...(outfit.styleNote !== undefined && pick(o, "styleNote") ? { styleNote: pick(o, "styleNote") } : {}),
-    ...(outfit.coverNote !== undefined && pick(o, "coverNote") ? { coverNote: pick(o, "coverNote") } : {}),
+    ...(has(outfit.name) && pick(o, "name") ? { name: pick(o, "name") } : {}),
+    ...(has(outfit.styleNote) && pick(o, "styleNote") ? { styleNote: pick(o, "styleNote") } : {}),
+    ...(has(outfit.coverNote) && pick(o, "coverNote") ? { coverNote: pick(o, "coverNote") } : {}),
     ...(items ? { items } : {}),
   } as T;
 }

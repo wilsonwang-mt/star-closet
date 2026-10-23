@@ -1,8 +1,2134 @@
 {
   "version": 1,
   "source_catalog_version": "0.2",
-  "terms": {},
-  "curators": {},
-  "outfits": {},
-  "items": {}
+  "terms": {
+    "90%白鸭绒": "90% white duck down",
+    "925银": "Sterling silver",
+    "AI 生成": "AI-generated",
+    "Amekaji": "Amekaji",
+    "A字": "A-line",
+    "City Boy": "City boy",
+    "Gorpcore": "Gorpcore",
+    "PU": "PU",
+    "Polo衫": "Polo shirt",
+    "Smart Casual": "Smart casual",
+    "TR90": "TR90",
+    "T恤": "T-shirt",
+    "三层防水面料": "Three-layer waterproof fabric",
+    "上装": "Tops",
+    "下午茶": "Afternoon tea",
+    "下装": "Bottoms",
+    "不锈钢": "Stainless steel",
+    "东方": "Eastern",
+    "丝巾": "Silk scarf",
+    "丝绒": "Velvet",
+    "个人主理人": "Independent curator",
+    "中式外套": "Chinese-style jacket",
+    "中性": "Unisex",
+    "中筒靴": "Mid-calf boots",
+    "中跟": "Mid heel",
+    "中跟鞋": "Mid-heel shoes",
+    "乐福鞋": "Loafers",
+    "亚麻": "Linen",
+    "亮橙": "Bright orange",
+    "人造毛": "Faux fur",
+    "仿珍珠": "Faux pearl",
+    "仿羊羔毛": "Faux shearling",
+    "休闲": "Casual",
+    "休闲裤": "Casual trousers",
+    "优雅": "Elegant",
+    "低跟": "Low heel",
+    "修身": "Slim fit",
+    "公文包": "Briefcase",
+    "军绿": "Army green",
+    "冲锋衣": "Shell jacket",
+    "凉鞋": "Sandals",
+    "出差": "Business travel",
+    "出街": "Out and about",
+    "勃肯鞋": "Footbed sandals",
+    "包": "Bags",
+    "半身裙": "Skirts",
+    "卡其": "Khaki",
+    "卫衣": "Sweatshirt",
+    "印花": "Print",
+    "厚底": "Platform",
+    "原木色": "Natural wood",
+    "原色": "Natural",
+    "原色牛仔": "Raw denim",
+    "双肩包": "Backpack",
+    "双面羊毛": "Double-faced wool",
+    "发饰": "Hair accessories",
+    "周末": "Weekend",
+    "品牌主题": "Brand edit",
+    "四季": "All-season",
+    "围巾": "Scarf",
+    "图案": "Pattern",
+    "墨镜": "Sunglasses",
+    "墨黑": "Ink black",
+    "复古": "Vintage",
+    "外套": "Outerwear",
+    "大地色": "Earth tones",
+    "大衣": "Coat",
+    "夹克": "Jacket",
+    "女装": "Womenswear",
+    "奶咖": "Latte",
+    "奶油黄": "Butter yellow",
+    "奶白": "Cream",
+    "婚礼宾客": "Wedding guest",
+    "学院": "Preppy",
+    "宽松": "Relaxed fit",
+    "宾客": "Guest",
+    "尼龙": "Nylon",
+    "山系": "Mountain style",
+    "工程师靴": "Engineer boots",
+    "工装": "Workwear",
+    "工装夹克": "Work jacket",
+    "工装裤": "Cargo trousers",
+    "工装靴": "Work boots",
+    "巧克力": "Chocolate",
+    "布鞋": "Cloth shoes",
+    "帆布": "Canvas",
+    "帆布包": "Canvas bag",
+    "帆布鞋": "Canvas sneakers",
+    "常规": "Regular fit",
+    "帽子": "Hats",
+    "平价": "Affordable",
+    "平底": "Flat",
+    "平底单鞋": "Flats",
+    "年会": "Year-end party",
+    "廓形": "Structured silhouette",
+    "开衫": "Cardigan",
+    "彩色": "Multicolour",
+    "徒步鞋": "Hiking shoes",
+    "德比鞋": "Derby shoes",
+    "慵懒": "Laid-back",
+    "户外": "Outdoor",
+    "户外婚礼": "Outdoor wedding",
+    "手拿包": "Clutch",
+    "手持物": "Handheld items",
+    "手提包": "Handbag",
+    "手链": "Bracelet",
+    "托特包": "Tote bag",
+    "抓绒": "Fleece",
+    "抓绒外套": "Fleece jacket",
+    "披肩": "Shawl",
+    "拍照": "Photo-ready",
+    "提花面料": "Jacquard",
+    "摩卡": "Mocha",
+    "收腰": "Cinched waist",
+    "斜挎包": "Crossbody bag",
+    "新中式": "New Chinese style",
+    "方巾": "Square scarf",
+    "旅行": "Travel",
+    "日系": "Japanese style",
+    "春夏": "Spring/summer",
+    "春秋": "Spring/fall",
+    "晚宴": "Evening dinner",
+    "月白": "Moon white",
+    "木质": "Wood",
+    "机能": "Techwear",
+    "束脚": "Cuffed hem",
+    "板材": "Acetate",
+    "板鞋": "Skate shoes",
+    "极简": "Minimalist",
+    "栗棕": "Chestnut",
+    "格纹": "Check",
+    "棉": "Cotton",
+    "棉麻": "Cotton-linen",
+    "棒球服": "Varsity jacket",
+    "棕格纹": "Brown check",
+    "森林绿": "Forest green",
+    "樱粉": "Cherry blossom pink",
+    "橄榄绿": "Olive green",
+    "檀木": "Sandalwood",
+    "檀木色": "Sandalwood brown",
+    "正式": "Formal",
+    "毛绒包": "Fluffy bag",
+    "毛衣": "Sweater",
+    "水墨": "Ink wash",
+    "法式": "French style",
+    "派对": "Party",
+    "浅灰": "Light grey",
+    "浅蓝": "Light blue",
+    "淡水珍珠": "Freshwater pearl",
+    "深棕": "Dark brown",
+    "深灰": "Dark grey",
+    "深蓝": "Dark blue",
+    "演唱会": "Concert",
+    "灯芯绒": "Corduroy",
+    "灰格纹": "Grey check",
+    "灰橙": "Grey and orange",
+    "灰色": "Grey",
+    "灰色系": "Greys",
+    "炭灰": "Charcoal",
+    "焦糖": "Caramel",
+    "燕麦": "Oatmeal",
+    "牛仔": "Denim",
+    "牛仔夹克": "Denim jacket",
+    "牛仔蓝": "Denim blue",
+    "牛仔裤": "Jeans",
+    "牛皮": "Cowhide leather",
+    "玉髓": "Chalcedony",
+    "玛丽珍鞋": "Mary Janes",
+    "玳瑁": "Tortoiseshell",
+    "珍珠白": "Pearl white",
+    "甜酷": "Sweet-cool",
+    "男装": "Menswear",
+    "白灰": "White and grey",
+    "白粉": "White and pink",
+    "白色": "White",
+    "白色系": "Whites",
+    "白鸭绒": "White duck down",
+    "百褶": "Pleated",
+    "皮衣": "Leather jacket",
+    "直筒": "Straight leg",
+    "看展": "Gallery visit",
+    "真丝": "Silk",
+    "眼镜": "Eyewear",
+    "短款": "Cropped",
+    "短靴": "Ankle boots",
+    "碎花": "Floral print",
+    "秋冬": "Fall/winter",
+    "穆勒鞋": "Mules",
+    "穿搭博主": "Style creator",
+    "竹青": "Bamboo green",
+    "米白": "Off-white",
+    "米色": "Beige",
+    "粗花呢": "Tweed",
+    "粗花呢外套": "Tweed jacket",
+    "粘胶": "Viscose",
+    "糖果色": "Candy colours",
+    "紫色系": "Purples",
+    "红棕": "Reddish brown",
+    "红粉系": "Reds and pinks",
+    "约会": "Date night",
+    "织金面料": "Gold brocade",
+    "绿色系": "Greens",
+    "缎面": "Satin",
+    "编织包": "Woven bag",
+    "网面": "Mesh",
+    "羊毛": "Wool",
+    "羊毛混纺": "Wool blend",
+    "羊皮": "Lambskin",
+    "羊羔毛外套": "Shearling jacket",
+    "美利奴羊毛": "Merino wool",
+    "美式复古": "Americana vintage",
+    "美拉德": "Maillard palette",
+    "羽绒服": "Down jacket",
+    "翠绿": "Emerald",
+    "老爹鞋": "Chunky sneakers",
+    "耳饰": "Earrings",
+    "聚会": "Party",
+    "聚酯纤维": "Polyester",
+    "胭脂": "Rouge",
+    "胭脂红": "Rouge red",
+    "胸包": "Chest bag",
+    "腈纶": "Acrylic",
+    "腈纶混纺": "Acrylic blend",
+    "腋下包": "Shoulder bag",
+    "腕表": "Watch",
+    "腰带": "Belt",
+    "节日": "Holiday",
+    "茶会": "Tea party",
+    "蓝色系": "Blues",
+    "薄荷绿": "Mint green",
+    "藏青": "Navy",
+    "藏青白条纹": "Navy and white stripe",
+    "藤编": "Rattan",
+    "衬衫": "Shirt",
+    "袜子": "Socks",
+    "裸杏": "Nude apricot",
+    "裸色": "Nude",
+    "西装外套": "Blazer",
+    "西装裤": "Tailored trousers",
+    "豹纹": "Leopard print",
+    "越野跑鞋": "Trail running shoes",
+    "运动": "Sport",
+    "运动裤": "Track pants",
+    "运动鞋": "Sneakers",
+    "进阶": "Investment",
+    "连衣裙": "Dresses",
+    "适中": "Mid-range",
+    "通勤": "Commute",
+    "速干面料": "Quick-dry fabric",
+    "邮差包": "Messenger bag",
+    "配饰": "Accessories",
+    "酒红": "Burgundy",
+    "醋酸": "Acetate",
+    "醋酸混纺": "Acetate blend",
+    "醋酸缎面": "Acetate satin",
+    "金属PU": "Metallic PU",
+    "金属色": "Metallic",
+    "金色": "Gold",
+    "针织衫": "Knitwear",
+    "针织马甲": "Knit vest",
+    "钱包链": "Wallet chain",
+    "铜镀金": "Gold-plated brass",
+    "银色": "Silver",
+    "锦纶氨纶": "Nylon-elastane",
+    "长靴": "Knee-high boots",
+    "阔腿": "Wide leg",
+    "阔腿裤": "Wide-leg trousers",
+    "防水面料": "Waterproof fabric",
+    "雅致": "Refined",
+    "雪纺": "Chiffon",
+    "雾灰": "Mist grey",
+    "雾粉": "Dusty pink",
+    "雾霾蓝": "Haze blue",
+    "露营": "Camping",
+    "静奢": "Quiet luxury",
+    "靛蓝": "Indigo",
+    "面试": "Interview",
+    "鞋": "Shoes",
+    "韩系": "Korean style",
+    "项链": "Necklace",
+    "风格主题": "Style closet",
+    "风衣": "Trench coat",
+    "香槟": "Champagne",
+    "香芋紫": "Taro purple",
+    "马丁靴": "Combat boots",
+    "马海毛混纺": "Mohair blend",
+    "马甲": "Vest",
+    "马面裙": "Mamianqun skirt",
+    "驼色": "Camel",
+    "高跟": "High heel",
+    "高跟鞋": "Heels",
+    "鸭绒": "Duck down",
+    "麂皮": "Suede",
+    "黄橙系": "Yellows and oranges",
+    "黑白": "Black and white",
+    "黑色": "Black",
+    "黑色系": "Blacks",
+    "黛蓝": "Ink blue",
+    "鼠尾草绿": "Sage green"
+  },
+  "curators": {
+    "C01": {
+      "closetName": "Quiet Luxury Commute",
+      "tagline": "Understated polish, Monday through Friday",
+      "intro": "After eight years as a brand buyer, I only choose essentials with good fabric, clean tailoring and years of wear in them. One coat and three pairs of trousers make a week of commuting.",
+      "personaNote": "Fictional sample curator; portrait and closet scenes are AI-generated"
+    },
+    "C02": {
+      "closetName": "Laid-Back French Style",
+      "tagline": "Stripes, a trench coat and a touch of effortlessness",
+      "intro": "A style creator who lived in Paris for two years. I believe style comes from ease: a striped top, a good pair of jeans and shoes you can actually walk in.",
+      "personaNote": "Fictional sample curator; portrait and closet scenes are AI-generated"
+    },
+    "C03": {
+      "closetName": "Urban Outdoor",
+      "tagline": "Commute on Monday, hit the trail on the weekend, no change needed",
+      "intro": "An outdoor creator with ten years of hiking behind me. I bring shell jackets, fleece and trail running shoes into the city: they should look good, block wind and rain, and be made for walking.",
+      "personaNote": "Fictional sample curator; portrait and closet scenes are AI-generated"
+    },
+    "C04": {
+      "closetName": "New Chinese Style",
+      "tagline": "Frog buttons, mamianqun skirts and an Eastern feel for every day",
+      "intro": "I trained in fashion design and have worked in New Chinese style for three years. No costumes, just an Eastern wardrobe you can wear to work, to tea or home for the New Year.",
+      "personaNote": "Fictional sample curator; portrait and closet scenes are AI-generated"
+    },
+    "C05": {
+      "closetName": "Korean Sweet-Cool",
+      "tagline": "A little sweet, a little cool, ready for date night and concerts",
+      "intro": "A 24-year-old Korean style creator on a limited budget with plenty of ideas. Even ¥300 can put together a photo-ready date night look.",
+      "personaNote": "Fictional sample curator; portrait and closet scenes are AI-generated"
+    },
+    "C06": {
+      "closetName": "Wedding Guest and Party",
+      "tagline": "Ten weddings a year, never the same outfit twice",
+      "intro": "A wedding planner who works dozens of weddings a year. I only recommend guest and party looks that never upstage the bride, photograph beautifully and can be worn again.",
+      "personaNote": "Fictional sample curator; portrait and closet scenes are AI-generated"
+    },
+    "C07": {
+      "closetName": "Maillard Fall/Winter",
+      "tagline": "Caramel, mocha and the warmth of a whole autumn",
+      "intro": "An earth-tones creator for fall/winter only. From suede and corduroy to leopard print, I show you how to wear caramel and mocha so they look refined, never heavy.",
+      "personaNote": "Fictional sample curator; portrait and closet scenes are AI-generated"
+    },
+    "C08": {
+      "closetName": "Men's City Commute",
+      "tagline": "One good shirt for effortless polish",
+      "intro": "A product manager at a tech company and a menswear style creator after hours. I only recommend foolproof, easy-care essentials that work from the meeting room to date night.",
+      "personaNote": "Fictional sample curator; portrait and closet scenes are AI-generated"
+    },
+    "C09": {
+      "closetName": "Japanese Mountain City Boy",
+      "tagline": "Relaxed, comfortable and ready to go",
+      "intro": "A photographer and menswear creator. I love vintage shops and hiking, and mix workwear, outdoor gear and relaxed Japanese cuts.",
+      "personaNote": "Fictional sample curator; portrait and closet scenes are AI-generated"
+    },
+    "C10": {
+      "closetName": "Americana Vintage Workwear",
+      "tagline": "Raw denim and canvas that become more your own with every wear",
+      "intro": "A fictional sample brand, used to demonstrate a brand edit closet. Unisex Americana vintage workwear, with denim, canvas and leather all chosen for durability.",
+      "personaNote": "Fictional sample curator; portrait and closet scenes are AI-generated"
+    }
+  },
+  "outfits": {
+    "O01": {
+      "name": "Monday Morning Meeting",
+      "styleNote": "A cream shirt with charcoal straight-leg trousers under a camel double-faced coat. No more than three colours and clean lines read assured in a meeting without feeling stiff. Loafers stay comfortable all day.",
+      "coverNote": "AI-generated illustrative scene · Fit not verified"
+    },
+    "O02": {
+      "name": "Interview First Impressions",
+      "styleNote": "An oatmeal blazer over a fine-knit turtleneck, with camel wide-leg trousers to lengthen the proportions. Layering light and dark shades of one colour family looks professional and softer than head-to-toe black.",
+      "coverNote": "AI-generated illustrative scene · Fit not verified"
+    },
+    "O03": {
+      "name": "After-Work Drinks",
+      "styleNote": "A charcoal knit vest over a shirt, with a black satin skirt and slim-heeled ankle boots. Meetings by day, straight to the bar by night; just swap your bag for a shoulder bag.",
+      "coverNote": "AI-generated illustrative scene · Fit not verified"
+    },
+    "O04": {
+      "name": "Casual Friday",
+      "styleNote": "A white T-shirt and dark blue straight-leg jeans, brought back to office-ready with a khaki trench coat. A small square bag fits your phone and work pass perfectly.",
+      "coverNote": "AI-generated illustrative scene · Fit not verified"
+    },
+    "O05": {
+      "name": "Three-Day Business Trip",
+      "styleNote": "A turtleneck, wide-leg trousers and a coat that all work with one another, plus ballet flats that pack flat. One tote bag holds a laptop and a full day's agenda.",
+      "coverNote": "AI-generated illustrative scene · Fit not verified"
+    },
+    "O06": {
+      "name": "Business Dinner",
+      "styleNote": "A satin skirt with a fluid shirt and an oatmeal blazer, catching the evening light with a quiet sheen. Kitten heels are easier than stilettos for standing all night.",
+      "coverNote": "AI-generated illustrative scene · Fit not verified"
+    },
+    "O07": {
+      "name": "Weekend Café",
+      "styleNote": "A striped top, light blue jeans and a short trench coat: the French wardrobe trio. A rattan bag and cat-eye sunglasses turn it from commute to holiday.",
+      "coverNote": "AI-generated illustrative scene · Fit not verified"
+    },
+    "O08": {
+      "name": "Gallery Day",
+      "styleNote": "A mohair cardigan with a camel pleated skirt, pairing fluffy texture with fluid drape, soft against structured. Burgundy Mary Janes and a beret add a vintage note to the understated palette.",
+      "coverNote": "AI-generated illustrative scene · Fit not verified"
+    },
+    "O09": {
+      "name": "Early Autumn Date",
+      "styleNote": "A black satin slip dress under a cream mohair cardigan, cool inside and warm outside. Mid-calf boots carry the dress into autumn.",
+      "coverNote": "AI-generated illustrative scene · Fit not verified"
+    },
+    "O10": {
+      "name": "Rainy-Day Commute",
+      "styleNote": "A burgundy sweater with off-white straight-leg trousers; the trench coat keeps off the rain and German army trainers handle puddles. A canvas bag fits an umbrella and a laptop.",
+      "coverNote": "AI-generated illustrative scene · Fit not verified"
+    },
+    "O11": {
+      "name": "Weekend Afternoon Tea",
+      "styleNote": "A cropped tweed jacket over a floral print shirt with ankle-length jeans, exactly half polished, half relaxed.",
+      "coverNote": "AI-generated illustrative scene · Fit not verified"
+    },
+    "O12": {
+      "name": "Winter Stroll",
+      "styleNote": "An oatmeal knit dress under a black leather jacket, soft against hard. A beret and mid-calf boots are enough for early winter winds.",
+      "coverNote": "AI-generated illustrative scene · Fit not verified"
+    },
+    "O13": {
+      "name": "Urban Hike",
+      "styleNote": "A half-zip fleece with quick-dry hiking trousers, and a shell jacket tucked into a chest bag, ready when needed. Trail running shoes go from pavement to mountain path without a change.",
+      "coverNote": "AI-generated illustrative scene · Fit not verified"
+    },
+    "O14": {
+      "name": "Weekend Camping",
+      "styleNote": "A cable-knit sweater layered under a fleece jacket stays warm when the campsite cools at night. Cargo trousers offer plenty of pockets, and hiking shoes can take the mud.",
+      "coverNote": "AI-generated illustrative scene · Fit not verified"
+    },
+    "O15": {
+      "name": "Snowy Mountain Escape",
+      "styleNote": "A cropped down jacket over a sweatshirt, with an orange beanie that photographs best against the snow. Hiking shoes grip well, and a backpack carries a day's supplies.",
+      "coverNote": "AI-generated illustrative scene · Fit not verified"
+    },
+    "O16": {
+      "name": "Coffee and the Park",
+      "styleNote": "A quick-dry long-sleeve top with a utility skirt and a down vest, bringing an outdoor feel into everyday city life. Cork footbed sandals slip on and off easily.",
+      "coverNote": "AI-generated illustrative scene · Fit not verified"
+    },
+    "O17": {
+      "name": "Cycling Commute",
+      "styleNote": "A sweatshirt and cargo trousers, with a shell jacket against wind and rain. Chunky sneakers and a backpack mean you go straight from bike to office.",
+      "coverNote": "AI-generated illustrative scene · Fit not verified"
+    },
+    "O18": {
+      "name": "Flying to Dali",
+      "styleNote": "A fleece jacket over a quick-dry long-sleeve top, with yoga pants comfortable enough for a long flight. Sunglasses and a chest bag, and you're out the door on landing.",
+      "coverNote": "AI-generated illustrative scene · Fit not verified"
+    },
+    "O19": {
+      "name": "Weekend Tea Gathering",
+      "styleNote": "A moon white frog-button shirt with ink blue linen wide-leg trousers and a frog-button knit cardigan. Eastern details stay at the buttons and collar, so it never feels overdone for everyday wear.",
+      "coverNote": "AI-generated illustrative scene · Fit not verified"
+    },
+    "O20": {
+      "name": "Home for New Year",
+      "styleNote": "A rouge red Mamianqun skirt with an ink blue jacquard jacket; the red and blue contrast is festive without being garish. Block-heel ankle boots stay comfortable through a full day of family visits.",
+      "coverNote": "AI-generated illustrative scene · Fit not verified"
+    },
+    "O21": {
+      "name": "Best Friend's Wedding Guest",
+      "styleNote": "A bamboo green modern qipao with a dusty pink shawl: soft colours that never upstage the bride. Mid-heel mules and an embroidered clutch keep you poised through toasts and photos.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O22": {
+      "name": "A Day at the Museum",
+      "styleNote": "A moon white shirt with an ink black gold brocade mamianqun skirt; the plain top leaves the spotlight to the skirt. Carry a round fan and every photo tells a story.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O23": {
+      "name": "New Chinese Commute",
+      "styleNote": "A knot-button knit cardigan with linen wide-leg trousers, under a stand-collar wool coat. A bead bracelet is the only ornament: quiet, yet memorable.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O24": {
+      "name": "Winter Fireside Tea",
+      "styleNote": "A cream stand-collar coat over an ink black mamianqun skirt, with a relaxed tie-dye top. Made for brewing tea by the stove with friends: warm and full of atmosphere.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O25": {
+      "name": "Movie Date",
+      "styleNote": "A cherry blossom pink cropped cardigan with a grey pleated mini skirt; slouch socks and platform Mary Janes are Korean-style sweet staples. A fluffy little bag adds a touch of winter charm.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O26": {
+      "name": "Concert Night",
+      "styleNote": "A black cropped T-shirt with white-trimmed track pants and a bomber jacket, easy to dance in all night. Running shoes and a baseball cap make the queue to get in painless.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O27": {
+      "name": "Weekend Shopping",
+      "styleNote": "A butter yellow sweatshirt with relaxed jeans, and a small backpack to hold every find. Bright colours that look filtered in every photo.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O28": {
+      "name": "Sweet-Cool Party",
+      "styleNote": "A black cropped T-shirt tucked into a leather mini skirt under a varsity jacket: half sweet, half cool. Combat boots and a crescent bag sharpen the whole look.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O29": {
+      "name": "Winter Date",
+      "styleNote": "A cherry blossom pink puffer with a matching cardigan, balanced by relaxed jeans. Combat boots grip on slippery ground, and a fluffy bag feels truly wintry.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O30": {
+      "name": "Graduation Photos",
+      "styleNote": "A striped shirt under a check pinafore dress brings instant preppy charm. Slouch socks and platform Mary Janes lengthen the legs in full-length shots.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O31": {
+      "name": "Garden Lawn Wedding",
+      "styleNote": "A sage green floral print tea dress photographs beautifully on the lawn without stealing the bride's thunder. A shawl for the evening chill, and flats that won't sink into the grass.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O32": {
+      "name": "Hotel Evening Wedding",
+      "styleNote": "A champagne satin bias-cut dress with a fluid sheen under banquet lighting. The palette stays to champagne and nude, with a gold clutch as the sole highlight.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O33": {
+      "name": "Bridesmaids in Harmony",
+      "styleNote": "A taro purple off-the-shoulder dress; bridesmaids in one colour family but different cuts make the best group photos. Gold sandals and a pearl bag tie the details together.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O34": {
+      "name": "Year-End Party",
+      "styleNote": "A black velvet little black dress with a burgundy belted coat, warm with real presence for a winter year-end party. A fine diamond collarbone necklace sits just at the neckline.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O35": {
+      "name": "Winter Indoor Wedding",
+      "styleNote": "A white bow-collar shirt with a burgundy velvet pleated skirt, a skirt that still feels warm in winter. Mid-heel mules and a small satin bag stay comfortable all day.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O36": {
+      "name": "Meeting the Parents",
+      "styleNote": "A haze blue chiffon maxi dress, gentle and appropriate, with a cream shawl for added warmth and approachability. Flats and a small satin bag: polite without trying too hard.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O37": {
+      "name": "Maillard Weekend",
+      "styleNote": "A mocha cable-knit cardigan with caramel corduroy wide-leg trousers; layering light and dark shades of one colour is key to the Maillard palette. Suede sneakers and a saddle bag bring the vintage feel back to everyday.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O38": {
+      "name": "Autumn Date",
+      "styleNote": "A chestnut turtleneck with a suede A-line skirt: one brown in three textures. Chocolate knee-high boots and a fringed bag add a little wildness to the softness.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O39": {
+      "name": "Early Morning Commute",
+      "styleNote": "A corduroy shirt with latte straight-leg tailored trousers, under a mocha coat. A brown belt keeps a waistline even in a relaxed fit.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O40": {
+      "name": "Urban Hunter",
+      "styleNote": "A leopard print satin skirt with a caramel suede jacket, this fall/winter's hottest wild pairing. A solid turtleneck on top tempers the print.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O41": {
+      "name": "Maillard in the Wild",
+      "styleNote": "A shearling-collared jacket over corduroy wide-leg trousers keeps you warm out in the countryside. The check scarf is the only pattern in the look.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O42": {
+      "name": "Christmas Party",
+      "styleNote": "Under the mocha coat, a cable-knit cardigan and leopard-print skirt hold their own once the coat comes off at the party. Gold hoops echo the holiday lights.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O43": {
+      "name": "Monday Meeting",
+      "styleNote": "A white Oxford shirt with charcoal tailored trousers and a navy casual blazer: formal enough without a tie. Derby shoes and a briefcase look dependable in meetings.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O44": {
+      "name": "Interview Day",
+      "styleNote": "A charcoal merino sweater layered over the shirt, with a hint of white at the collar, feels composed without being stiff. Loafers look younger than dress shoes.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O45": {
+      "name": "Casual Friday",
+      "styleNote": "A white T-shirt, raw denim jeans and a Harrington jacket go straight from Friday at the office to dinner. White sneakers and a nylon tote keep it relaxed, never sloppy.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O46": {
+      "name": "First Date",
+      "styleNote": "A charcoal sweater with khaki casual trousers under a camel coat. The palette is soft, and glasses lend a more refined air.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O47": {
+      "name": "Two-Day Business Trip",
+      "styleNote": "A knit polo shirt with khaki trousers, plus a blazer ready to throw on for client meetings. White sneakers stay comfortable through the airport.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O48": {
+      "name": "Winter Commute",
+      "styleNote": "A sweater with tailored trousers, finished with a camel coat and a charcoal scarf. Clean and sharp, even in winter.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O49": {
+      "name": "Weekend Stroll",
+      "styleNote": "An oatmeal sweatshirt with relaxed cargo trousers: the classic city boy silhouette. Canvas sneakers, a small crossbody bag and a corduroy cap add easy detail.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O50": {
+      "name": "Weekend Camping",
+      "styleNote": "A flannel check shirt with army trousers under a fleece jacket. When the campsite cools down at night, add a knit beanie.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O51": {
+      "name": "Mountain-Style Hike",
+      "styleNote": "A long-sleeve T-shirt with relaxed cargo trousers, and a shell jacket against the wind. Hiking shoes grip well, and the backpack holds a full day's supplies.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O52": {
+      "name": "Gallery Day",
+      "styleNote": "A fisherman sweater with light blue jeans and a canvas work jacket. Just blue and white, clean and easy on the eye.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O53": {
+      "name": "Fall Getaway",
+      "styleNote": "A check shirt worn as a jacket over a long-sleeve T-shirt, topped with a work vest whose many pockets make travel easy.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O54": {
+      "name": "Rainy Day Out",
+      "styleNote": "A sweatshirt, army trousers and a shell jacket keep you composed in the rain. A knit beanie and hiking shoes suit grey, drizzly days in the city.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O55": {
+      "name": "Classic Denim",
+      "styleNote": "A black pocket T-shirt with raw selvedge jeans and a matching denim jacket: layered indigo is where Americana vintage begins.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O56": {
+      "name": "Weekend Workwear",
+      "styleNote": "A waffle-knit henley with double-knee cargo trousers under a canvas work jacket, growing softer and better with every wear.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O57": {
+      "name": "Night Ride",
+      "styleNote": "A leather flight jacket with raw denim, engineer boots and a wallet chain, for riding out to a drink after dark.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O58": {
+      "name": "Studio Days",
+      "styleNote": "A grey sweatshirt with off-white painter trousers, high-top canvas sneakers and a tool tote, wearable for men and women alike.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O59": {
+      "name": "Fall Camping",
+      "styleNote": "A denim work shirt with double-knee cargo trousers and a hard-wearing canvas jacket, made for pitching tents and building fires.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    },
+    "O60": {
+      "name": "City Roaming",
+      "styleNote": "A henley, painter trousers and a denim jacket in off-white and indigo. The messenger bag fits a camera and a book.",
+      "coverNote": "AI-generated scene for illustration · Fit not verified"
+    }
+  },
+  "items": {
+    "I001": {
+      "name": "Cream Fluid Acetate Shirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I002": {
+      "name": "Oatmeal Fine-Knit Wool Turtleneck",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Slim fit; if between sizes, size up",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I003": {
+      "name": "Charcoal V-Neck Knit Vest",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I004": {
+      "name": "White Heavyweight Crew-Neck T-Shirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I005": {
+      "name": "Charcoal Straight-Leg Wool Tailored Trousers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I006": {
+      "name": "Camel High-Waisted Pleated Wide-Leg Trousers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I007": {
+      "name": "Black Satin A-Line Midi Skirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I008": {
+      "name": "Dark Blue High-Rise Straight-Leg Jeans",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I009": {
+      "name": "Camel Double-Faced Wool Long Coat",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Structured silhouette with room for a thick sweater underneath",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I010": {
+      "name": "Oatmeal Single-Breasted Blazer",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I011": {
+      "name": "Khaki Classic Double-Breasted Trench Coat",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I012": {
+      "name": "Black Square-Toe Leather Loafers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I013": {
+      "name": "Nude Apricot Pointed-Toe Kitten Heels",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I014": {
+      "name": "Black Stiletto Ankle Boots",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I015": {
+      "name": "Cream Lambskin Ballet Flats",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I016": {
+      "name": "Black Leather Commuter Tote Bag",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I017": {
+      "name": "Caramel Leather Shoulder Bag",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I018": {
+      "name": "Charcoal Mini Square Crossbody Bag",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I019": {
+      "name": "Gold Fine Chain Threader Earrings",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I020": {
+      "name": "Oatmeal Wool Scarf",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I021": {
+      "name": "Black Slim Leather Belt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I022": {
+      "name": "Gold Slim-Strap Watch",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I023": {
+      "name": "Navy and White Stripe Long-Sleeve T-Shirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I024": {
+      "name": "Cream Mohair Cardigan",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I025": {
+      "name": "Cream and Red Floral Puff-Sleeve Shirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I026": {
+      "name": "Burgundy Crew-Neck Wool Sweater",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I027": {
+      "name": "Black Bias-Cut Satin Slip Dress",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Slim fit; if between sizes, size up",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I028": {
+      "name": "Oatmeal Ribbed Knit Dress",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Slim fit; if between sizes, size up",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I029": {
+      "name": "Light Blue Straight-Leg Cropped Jeans",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I030": {
+      "name": "Camel Pleated Midi Skirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I031": {
+      "name": "Cream Straight-Leg Casual Trousers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I032": {
+      "name": "Beige Cropped Trench Coat",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Cropped, hits at the waist",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I033": {
+      "name": "Black and White Cropped Tweed Jacket",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Cropped, hits at the waist",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I034": {
+      "name": "Black Cropped Leather Jacket",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Cropped, hits at the waist",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I035": {
+      "name": "Burgundy Patent Leather Mary Janes",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I036": {
+      "name": "Black Lambskin Ballet Flats",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I037": {
+      "name": "Dark Brown Low Block-Heel Mid-Calf Boots",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I038": {
+      "name": "White Retro German Army Trainers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I039": {
+      "name": "Rattan Market Basket Bag",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I040": {
+      "name": "Dark Brown Suede Baguette Bag",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I041": {
+      "name": "Cream Canvas Tote Bag",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I042": {
+      "name": "Red and Navy Print Silk Square Scarf",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I043": {
+      "name": "Black Wool Beret",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I044": {
+      "name": "Freshwater Pearl Stud Earrings",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I045": {
+      "name": "Tortoiseshell Cat-Eye Sunglasses",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I046": {
+      "name": "Oatmeal Fleece Jacket",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I047": {
+      "name": "Olive Green Waterproof Shell Jacket",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I048": {
+      "name": "Black Cropped Down Jacket",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Cropped, hits at the waist",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I049": {
+      "name": "Khaki Quilted Down Vest",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I050": {
+      "name": "Mist Grey Quick-Dry Long-Sleeve T-Shirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I051": {
+      "name": "Mist Grey Heavyweight Hooded Sweatshirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I052": {
+      "name": "Forest Green Half-Zip Fleece",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I053": {
+      "name": "Cream Chunky Cable-Knit Sweater",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I054": {
+      "name": "Khaki Cuffed Cargo Trousers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I055": {
+      "name": "Black Quick-Dry Hiking Trousers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I056": {
+      "name": "Olive Green Utility Midi Skirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I057": {
+      "name": "Charcoal High-Waisted Yoga Leggings",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Slim fit; if between sizes, size up",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I058": {
+      "name": "Grey and Orange Trail Running Shoes",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I059": {
+      "name": "Dark Brown Mid-Top Hiking Shoes",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I060": {
+      "name": "Oatmeal Suede Cork Footbed Clogs",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I061": {
+      "name": "White and Grey Retro Chunky Sneakers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I062": {
+      "name": "Black Minimalist Nylon Backpack",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I063": {
+      "name": "Olive Green Nylon Chest Bag",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I064": {
+      "name": "Light Grey Nylon Tote Bag",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I065": {
+      "name": "Khaki Washed Baseball Cap",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I066": {
+      "name": "Bright Orange Ribbed Knit Beanie",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I067": {
+      "name": "Colour-Block Wool Hiking Socks",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I068": {
+      "name": "Black Sport Sunglasses",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I069": {
+      "name": "Moon White Frog-Button Mandarin-Collar Shirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I070": {
+      "name": "Oatmeal Frog-Button Knit Cardigan",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I071": {
+      "name": "Bamboo Green Modern Qipao Dress",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Slim fit; if between sizes, size up",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I072": {
+      "name": "Ink Blue Tie-Dye Relaxed Top",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I073": {
+      "name": "Ink Black Gold Brocade Mamianqun Skirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I074": {
+      "name": "Rouge Red Gold Brocade Mamianqun Skirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I075": {
+      "name": "Ink Blue Linen Wide-Leg Trousers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I076": {
+      "name": "Ink Blue Frog-Button Jacquard Jacket",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I077": {
+      "name": "Cream Mandarin-Collar Frog-Button Wool Coat",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Structured silhouette with room for a thick sweater underneath",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I078": {
+      "name": "Dusty Pink Wool Shawl",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I079": {
+      "name": "Black Embroidered Velvet Flats",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I080": {
+      "name": "Moon White Mid-Heel Mules",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I081": {
+      "name": "Black Square Block-Heel Ankle Boots",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I082": {
+      "name": "Burgundy Leather Loafers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I083": {
+      "name": "Cream Bamboo-Handle Handbag",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I084": {
+      "name": "Ink Blue Embroidered Clutch",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I085": {
+      "name": "Ink Black Canvas Tote Bag",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I086": {
+      "name": "Wooden Pearl Hairpin",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I087": {
+      "name": "Emerald Gold-Trim Drop Earrings",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I088": {
+      "name": "Sandalwood Bead Bracelet",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I089": {
+      "name": "Ink Wash Silk Round Fan",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I090": {
+      "name": "Cherry Blossom Pink Cropped Knit Cardigan",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Cropped, hits at the waist",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I091": {
+      "name": "Black Cropped Slim-Fit T-Shirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Slim fit; if between sizes, size up",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I092": {
+      "name": "Butter Yellow Relaxed Hoodie",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I093": {
+      "name": "Mint Green Striped Relaxed Shirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I094": {
+      "name": "Grey Check Pinafore Dress",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I095": {
+      "name": "Grey Pleated Mini Skirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I096": {
+      "name": "Light Blue Washed Relaxed Wide-Leg Jeans",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I097": {
+      "name": "Black Faux Leather A-Line Mini Skirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I098": {
+      "name": "Black Side-Stripe Track Pants",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I099": {
+      "name": "Black Nylon Bomber Jacket",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Cropped, hits at the waist",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I100": {
+      "name": "Cream and Navy Varsity Jacket",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I101": {
+      "name": "Cherry Blossom Pink Cropped Puffer Jacket",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Cropped, hits at the waist",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I102": {
+      "name": "Black Platform Combat Boots",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I103": {
+      "name": "White and Pink Retro Running Sneakers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I104": {
+      "name": "Black Platform Mary Janes",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I105": {
+      "name": "Silver Crescent Bag",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I106": {
+      "name": "Cream Fluffy Mini Bag",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I107": {
+      "name": "Cherry Blossom Pink Small Nylon Backpack",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I108": {
+      "name": "Black Embroidered Baseball Cap",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I109": {
+      "name": "White Slouch Socks",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I110": {
+      "name": "Candy Colour Claw Clip Set",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I111": {
+      "name": "Silver Star Pendant Necklace",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I112": {
+      "name": "Sage Green Floral Tea Dress",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I113": {
+      "name": "Champagne Bias-Cut Satin Midi Dress",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Slim fit; if between sizes, size up",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I114": {
+      "name": "Taro Purple Off-the-Shoulder Ruched Dress",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I115": {
+      "name": "Black Long-Sleeve Velvet Little Black Dress",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Slim fit; if between sizes, size up",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I116": {
+      "name": "Haze Blue Ruched Chiffon Maxi Dress",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I117": {
+      "name": "White Tie-Neck Bow Shirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I118": {
+      "name": "Burgundy Pleated Velvet Midi Skirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I119": {
+      "name": "Black Satin Wide-Leg Trousers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I120": {
+      "name": "Black Sharp-Shoulder Blazer",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I121": {
+      "name": "Cream Knit Shawl",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I122": {
+      "name": "Burgundy Belted Wool Coat",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I123": {
+      "name": "Nude Pointed-Toe Stiletto Heels",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I124": {
+      "name": "Gold Strappy Block-Heel Sandals",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I125": {
+      "name": "Cream Pearl-Embellished Satin Flats",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I126": {
+      "name": "Black Suede Mid-Heel Mules",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I127": {
+      "name": "Gold Chain Clutch",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I128": {
+      "name": "Pearl Beaded Mini Top-Handle Bag",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I129": {
+      "name": "Black Satin Bow Mini Bag",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I130": {
+      "name": "Pearl Drop Earrings",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I131": {
+      "name": "Fine Crystal Collarbone Necklace",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I132": {
+      "name": "Burgundy Velvet Headband",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I133": {
+      "name": "Mocha Cable-Knit Cardigan",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I134": {
+      "name": "Chestnut Turtleneck Knit",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Slim fit; if between sizes, size up",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I135": {
+      "name": "Latte Corduroy Shirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I136": {
+      "name": "Caramel Corduroy Wide-Leg Trousers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I137": {
+      "name": "Chestnut Suede A-Line Skirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I138": {
+      "name": "Latte Straight-Leg Tailored Trousers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I139": {
+      "name": "Leopard Print Satin Midi Skirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I140": {
+      "name": "Caramel Suede Jacket",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I141": {
+      "name": "Latte Faux Shearling Lapel Jacket",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I142": {
+      "name": "Mocha Wool Coat",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Structured silhouette with room for a thick sweater underneath",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I143": {
+      "name": "Chocolate Low-Heel Knee-High Boots",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I144": {
+      "name": "Brown Horsebit Loafers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I145": {
+      "name": "Mocha Suede Retro Sneakers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I146": {
+      "name": "Caramel Cowhide Leather Tote Bag",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I147": {
+      "name": "Chestnut Fringed Suede Shoulder Bag",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I148": {
+      "name": "Chocolate Saddle Bag",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I149": {
+      "name": "Brown Check Scarf",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I150": {
+      "name": "Tortoiseshell Large Claw Clip",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I151": {
+      "name": "Gold Chunky Hoop Earrings",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I152": {
+      "name": "Chestnut Cowhide Leather Belt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I153": {
+      "name": "White Oxford Cotton Shirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I154": {
+      "name": "Navy Knit Polo Shirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I155": {
+      "name": "Charcoal Merino Crewneck Sweater",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I156": {
+      "name": "White Heavyweight Crewneck T-Shirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I157": {
+      "name": "Khaki Straight-Leg Casual Trousers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I158": {
+      "name": "Charcoal Wool Tailored Trousers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I159": {
+      "name": "Dark Blue Raw Denim Straight-Leg Jeans",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I160": {
+      "name": "Navy Unlined Blazer",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I161": {
+      "name": "Camel Wool Coat",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I162": {
+      "name": "Black Harrington Jacket",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I163": {
+      "name": "Dark Brown Cowhide Leather Derby Shoes",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I164": {
+      "name": "Black Penny Loafers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I165": {
+      "name": "White Leather Sneakers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I166": {
+      "name": "Black Cowhide Leather Briefcase",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I167": {
+      "name": "Dark Grey Nylon Commuter Tote",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I168": {
+      "name": "Silver Steel Bracelet Black Dial Watch",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I169": {
+      "name": "Dark Brown Cowhide Leather Belt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I170": {
+      "name": "Charcoal Wool Scarf",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I171": {
+      "name": "Tortoiseshell Round Frame Glasses",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I172": {
+      "name": "White Relaxed Long-Sleeve T-Shirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I173": {
+      "name": "Green and Navy Check Flannel Shirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I174": {
+      "name": "Oatmeal Relaxed Crewneck Sweatshirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I175": {
+      "name": "Navy Fisherman Cable-Knit Sweater",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I176": {
+      "name": "Khaki Multi-Pocket Utility Vest",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I177": {
+      "name": "Army Green Mountain Shell Jacket",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I178": {
+      "name": "Cream Fleece Jacket",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I179": {
+      "name": "Navy Canvas Work Jacket",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I180": {
+      "name": "Khaki Relaxed Cargo Trousers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I181": {
+      "name": "Light Blue Relaxed Jeans",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "Relaxed fit; we recommend your usual size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I182": {
+      "name": "Olive Green Military Trousers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I183": {
+      "name": "Brown Cowhide Leather Work Boots",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I184": {
+      "name": "Grey Mountain Hiking Shoes",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I185": {
+      "name": "Off-White Low-Top Canvas Sneakers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I186": {
+      "name": "Army Green Hiking Backpack",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I187": {
+      "name": "Black Nylon Mini Crossbody Bag",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I188": {
+      "name": "Brown Corduroy Baseball Cap",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I189": {
+      "name": "Navy Fisherman Beanie",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I190": {
+      "name": "Grey Wool Blend Socks",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I191": {
+      "name": "Raw Denim Jacket",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I192": {
+      "name": "Khaki Canvas Work Jacket",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I193": {
+      "name": "Brown Leather Flight Jacket",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I194": {
+      "name": "Light Blue Denim Work Shirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I195": {
+      "name": "Oatmeal Waffle-Knit Henley",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I196": {
+      "name": "Black Pocket T-Shirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I197": {
+      "name": "Grey Vintage Crewneck Sweatshirt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I198": {
+      "name": "Raw Selvedge Jeans",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I199": {
+      "name": "Off-White Painter Trousers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I200": {
+      "name": "Khaki Double-Knee Work Trousers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size; refer to the retailer's size chart",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I201": {
+      "name": "Reddish Brown Round-Toe Work Boots",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I202": {
+      "name": "Black High-Top Canvas Sneakers",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I203": {
+      "name": "Black Engineer Boots",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "True to size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I204": {
+      "name": "Natural Canvas Tool Tote",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I205": {
+      "name": "Khaki Canvas Messenger Bag",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I206": {
+      "name": "Indigo Paisley Bandana",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I207": {
+      "name": "Black Brass Buckle Leather Belt",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I208": {
+      "name": "Black Watch Cap Beanie",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    },
+    "I209": {
+      "name": "Silver Wallet Chain",
+      "priceNote": "Reference price: based on the typical price range of comparable affordable brands as of October 2026, not a live selling price",
+      "sizeNote": "One size",
+      "imageRightsNote": "AI-generated product illustration (Figma Weave · Nano Banana 2.1), not a real photo of an item on sale",
+      "buyLabel": "Find similar on Taobao"
+    }
+  }
 }
