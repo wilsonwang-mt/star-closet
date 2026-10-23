@@ -32,12 +32,13 @@
 
 尚未接入：单品可旋转 GLB、打赏、站内支付。场景视频（`public/scenes/*-web.mp4`）只加载并播放当前显示的那一段，减弱动态时只显示首帧。试衣间里的咖啡馆生活场景只是标注了“AI 生成场景示意 · 合身未验证”的示意图。
 
-## 悬浮对话（D66）
+## 悬浮对话（D66，D68 动态化）
 
 全站右下角的圆形入口（首页标题旁还有一枚「说场合和预算」引导胶囊），说出场合、风格、预算、性别或想像谁，对话里直接出卡片：衣橱卡 → `/closet/[id]`，搭配卡 → `/outfit/[id]`，功能卡 → 试衣间、3D 形象、2D 试穿（有 `FAL_KEY` 才出现）、档案、登录。手机是底部抽屉，桌面是右下角浮窗；对话存在 sessionStorage，路由切换与刷新都不丢；遇到吸底操作条（`.cta-bar`）时，手机上入口停靠进操作条右侧、成为主按钮旁的圆形次按钮（操作条加 `data-dock-reserve` 留位），其他会挡住入口的元素（`[data-dock-avoid]`）则把入口抬到它上方。
 
-- 接口：`POST /api/chat` 返回 NDJSON 流。第一行是规则层结果（`lib/locate/core.ts`：像谁 / 风格 / 场合 / 性别 / 预算 / 否定六个信号，复用 `parseConstraints`、`allowedGenders`；目录快照在服务端内存缓存 5 分钟，根布局会提前读一次），本机实测首字节约 10ms；随后是 Claude 的流式文字，最后是它用工具（`show_outfits` / `show_closets` / `open_page` / `suggest_replies`）选出的卡片。工具只返回 id，服务端按目录与性别校验后才转成卡片。
-- 模型：`claude-opus-5-5`，effort `low`，**fast mode**（`speed: "fast"`，beta `fast-mode-2026-02-01`，价格为标准 2 倍，Claude API 研究预览；2026-10-16 用户决定）；未开通或被限流且还没流出文字时自动用标准速度重试一次（标准速度下带服务端 `fallbacks: "default"`）。目录在系统提示里缓存。`CHAT_SPEED=standard` 关掉 fast，`CHAT_MODEL` 换模型。本机实测（2026-10-17，4 句样例）fast：4 句样例中 3 句首段文字 1.9–2.3 秒、整轮 2.6–3.2 秒（标准速度同 3 句 2.8–4.5 / 5.3–6.6 秒）；“暖一点的颜色”一句模型思考更久，fast 首字 9.5 秒、标准 10.7 秒。首字 15 秒、整轮 25 秒超时；没有 key、超时或出错时停在规则结果，不显示“规则模式”（D48）。
+- 接口：`POST /api/chat` 返回 NDJSON 流（D68 动态化）：先是 `understood`（理解行：这句话本身识别到的条件，由 `lib/locate/core.ts` 的规则层解析；目录快照在服务端内存缓存 5 分钟，根布局会提前读一次），随后是 Claude 的流式回复，每完成一次工具调用（`show_outfits` / `show_closets` / `open_page` / `suggest_replies`）推一次卡片或追问。回复形态按意图变（闲聊、建议、找搭配、问细节、指路、追问），卡片与追问都可选。工具只返回 id，服务端按目录与性别校验后才转成卡片；模型误把工具调用写进正文时由 `lib/chat/textTools.ts` 摘出转成卡片。规则层结果只在没有 key / AI 失败时作为兜底显示。
+- 上下文（D68）：系统提示含单品级目录；请求带当前页面路径，“这套”“这件”按页面理解；登录用户附档案偏好（风格、颜色、尺码、预算、城市）与数字分身 / 试衣间 / 购物袋状态（`lib/chat/user.ts`）。**身高、体重等身体数据不读、不发给 Claude。**
+- 模型：`claude-opus-5-5`，effort `low`，**fast mode**（`speed: "fast"`，beta `fast-mode-2026-02-01`，价格为标准 2 倍，Claude API 研究预览；2026-10-16 用户决定）；未开通或被限流且还没流出文字时自动用标准速度重试一次（标准速度下带服务端 `fallbacks: "default"`）。目录在系统提示里缓存。`CHAT_SPEED=standard` 关掉 fast，`CHAT_MODEL` 换模型。本机实测（2026-10-17，4 句样例）fast：4 句样例中 3 句首段文字 1.9–2.3 秒、整轮 2.6–3.2 秒（标准速度同 3 句 2.8–4.5 / 5.3–6.6 秒）；“暖一点的颜色”一句模型思考更久，fast 首字 9.5 秒、标准 10.7 秒。首字 15 秒、整轮 40 秒超时，`maxDuration = 60`；没有 key、超时或出错时发规则层兜底（追问类只说“没接上”），不显示“规则模式”（D48）。每轮一行日志：速度、首字 / 整轮耗时、卡片数、救回的工具调用、是否补句、页面类型，不记原话。
 - 用户的话不落库，服务端日志只记错误类型。
 - 测试：`lib/locate/locate.test.ts`（17 个样例，直接读 `data/catalog.json`）。
 
@@ -53,13 +54,13 @@
 - 同意卡（D47，三项各自勾选）：保存我的照片与形象，仅自己可见（必选）；由 fal.ai 上的 AI 图像模型根据我的照片生成我的形象（必选才能上传）；由 Anthropic（Claude）分析我的照片（可选）。`consent_version = avatar-consent-v2:store+twin` 或 `…:store+twin+anthropic`。
 - 上传卡：正脸（`face`，必传）、全身正面（`front`，必传，同时是试穿底图）、侧脸（`extra`）、全身侧面（`side`）、半身或其他（`back`），每格一张，至少 2 张、最多 5 张；浏览器压缩为 JPEG，服务端再剥元数据，存私有存储，照片自上传起 30 天到期。形象性别在上传区自选。
 - 生成 `POST /api/avatar/twin { gender }`（`lib/avatar/twin.ts` 的 `generateTwin`）：需登录与同意；校验通过、作业写入后立即返回，生成在响应之后用 `after()` 继续（总预算 240 秒，路由 `maxDuration = 300`），页面每 3 秒查询作业状态；先（同意且有 key 时）用 `claude-opus-5-5` 分析全部照片，得到一句不超过 30 字的概括、特征（发型、发色、脸型、肤色、身材、肩/腰/臀/腿、眼镜）和一段英文外观描述，30 秒超时则跳过；再以全部照片为 `image_urls`（顺序：正脸、侧脸、全身正面、全身侧面、半身或其他；每张压到长边 1536、JPEG q90 的 data URI）用指挥台实测达标的提示词模板（同一人、不美化不修身、素色基础款、暖米色影棚、85mm 质感；Claude 描述只作补充短句）并行调用 `fal-ai/nano-banana-pro/edit` 三次（`aspect_ratio 3:4`、`resolution 2K`、走队列接口、`X-Fal-Store-IO: 0`），每张失败且剩余时间足够时重试一次；正面必须成功，侧面/背面失败则为空。提示词与 fal 调用在 `lib/avatar/twin-gen.ts`（评估脚本共用）。结果存 `<userId>/avatars/twin-<jobId>-<front|side|back>.<ext>`，写 `avatar_job`（`provider = twin`，`result_images = { front, side, back, summary, traits, gender, descriptor }`）。新分身成功后才删除旧分身文件；同一用户同时只允许一个生成。
-- 正面脸部精修（D68，`lib/avatar/twin-face.ts`）：2K 全身图里脸只有约 250px，模型容易把五官画成“通用脸”。正面出图后立即按影棚背景定位头部，把头部方块（约两个头高）放大到 1536 交给 `nano-banana-pro/edit`（`1:1`、`2K`，参考为正脸与侧脸），只重画五官；结果在缩放 × 平移上与原图对齐，去掉明暗差后的平均差超过 6 视为构图被改动、放弃这次精修（剩余时间够时重试一次）；对齐后做低频色调迁移，只把脸部椭圆羽化贴回，发型外轮廓与背景保留原图。找不到头部、失败或时间不足时保留未精修的正面，不影响分身生成。侧面、背面不做。`TWIN_FACE_DETAIL=0` 关闭。
+- 正面脸部精修（D69，`lib/avatar/twin-face.ts`）：2K 全身图里脸只有约 250px，模型容易把五官画成“通用脸”。正面出图后立即按影棚背景定位头部，把头部方块（约两个头高）放大到 1536 交给 `nano-banana-pro/edit`（`1:1`、`2K`，参考为正脸与侧脸），只重画五官；结果在缩放 × 平移上与原图对齐，去掉明暗差后的平均差超过 6 视为构图被改动、放弃这次精修（剩余时间够时重试一次）；对齐后做低频色调迁移，只把脸部椭圆羽化贴回，发型外轮廓与背景保留原图。找不到头部、失败或时间不足时保留未精修的正面，不影响分身生成。侧面、背面不做。`TWIN_FACE_DETAIL=0` 关闭。
 - 展示：“你的形象”卡——画廊可拖动、方向键、圆点切换，交叉淡入 + 轻微视差（只动 transform / opacity，减弱动态只淡入淡出），下方一句概括与特征标签，按钮「去试穿」（`/fitting-room`）「重新生成」「删除这个形象」。生成中显示等待态：本人全身照压暗 + 香槟扫光，阶段文案按真实秒数切换（正在读取你的照片 → 正在理解你的身材与发型 → 正在为你拍摄标准照 → 40 秒后正在细化脸部细节），显示已用秒数，不显示百分比。
 - 删除：「删除这个形象」删形象照、保留照片（`DELETE /api/avatar/jobs/<id>/result`）；「一键删除」清掉全部照片、形象照与记录。
 - 给试穿的接口（`lib/avatar/twin.ts`）：`getTwin(userId)`、`readTwinImageDataUri(key)`、`getIdentityRefs(userId)`（分身正面 + 正脸 + 侧脸，最多 4 张 data URI）。
 - 数据库：迁移 `drizzle/0005_twin_result_images.sql` 给 `avatar_job` 加 `result_images jsonb`，需要在 Supabase 执行（`npm run db:setup`）；未执行时形象页会因缺列报错。
 - 测试：`lib/avatar/twin.test.ts`、`lib/avatar/twin-face.test.ts`（全部 mock fal 与分析，合成纯色图片与几何示意图）。
-- 脸部相似度评估（D68）：`scripts/twin-eval-gen.ts` 用线上同一套提示词为测试人物生成（付费，逐笔记账，`--budget` 封顶），`scripts/face-eval.py` 用 OpenCV 的 YuNet + SFace（可选 FaceNet）算与参考正脸的余弦相似度、rank-1 与 margin。需要 `opencv-python` ≥ 4.5.4，模型按 sha256 自动下载到 `~/.cache/star-closet/face-eval`。只能用 AI 生成的虚构人物照片，照片与结果放在仓库外。用法见两个脚本的文件头注释。
+- 脸部相似度评估（D69）：`scripts/twin-eval-gen.ts` 用线上同一套提示词为测试人物生成（付费，逐笔记账，`--budget` 封顶），`scripts/face-eval.py` 用 OpenCV 的 YuNet + SFace（可选 FaceNet）算与参考正脸的余弦相似度、rank-1 与 margin。需要 `opencv-python` ≥ 4.5.4，模型按 sha256 自动下载到 `~/.cache/star-closet/face-eval`。只能用 AI 生成的虚构人物照片，照片与结果放在仓库外。用法见两个脚本的文件头注释。
 - 成本：建一次分身约 0.6 美元（三张 2K + 一次脸部精修，各 0.15 美元；精修构图被改动时重试再加 0.15）；耗时比不精修多约 25 秒（本机实测 66 秒，n=1）。
 
 ### MetaPerson 模式（已停用，D63；代码保留）

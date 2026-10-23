@@ -37,7 +37,7 @@ function phaseText(sec: number, analysis: boolean) {
   if (sec < 4) return "正在读取你的照片";
   if (analysis && sec < 16) return "正在理解你的身材与发型";
   if (sec < 40) return "正在为你拍摄标准照";
-  return "正在细化脸部细节"; // 正面出图后做脸部精修（D68），约在 30–40 秒开始
+  return "正在细化脸部细节"; // 正面出图后做脸部精修（D69），约在 30–40 秒开始
 }
 
 export default function TwinStudio({

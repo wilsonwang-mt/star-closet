@@ -226,7 +226,7 @@ test("侧面两次都失败：仍成功，side 为空；正面失败则整次失
   assert.ok(existsSync(path.join(process.env.UPLOADS_DIR!, kept.images.front)));
 });
 
-test("正面做脸部精修（D68）：多一次调用，参考为正脸与侧脸；精修结果替换正面；TWIN_FACE_DETAIL=0 时不做", async () => {
+test("正面做脸部精修（D69）：多一次调用，参考为正脸与侧脸；精修结果替换正面；TWIN_FACE_DETAIL=0 时不做", async () => {
   frontImage = m.testing.figurePng();
   await m.twin.generateTwin("u1", { gender: "female" }, { analyze });
   const fal = calls.filter((c) => c.url === "https://queue.fal.run/fal-ai/nano-banana-pro/edit");

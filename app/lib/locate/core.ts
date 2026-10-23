@@ -40,7 +40,7 @@ export type LocateOutfit = {
 
 export type LocateCatalog = { closets: LocateCloset[]; outfits: LocateOutfit[] };
 
-export const PAGE_KEYS = ["closets", "fitting-room", "avatar", "tryon", "profile", "login"] as const;
+export const PAGE_KEYS = ["closets", "fitting-room", "avatar", "tryon", "bag", "profile", "login"] as const;
 export type PageKey = (typeof PAGE_KEYS)[number];
 
 export type QueryGender = "女装" | "男装" | "中性";
@@ -116,6 +116,7 @@ const PAGE_WORDS: [RegExp, PageKey][] = [
   [/试衣间|我保存的|我的搭配|收藏/, "fitting-room"],
   [/3d|三维|形象|数字人|数字分身|分身|建模|自拍/i, "avatar"],
   [/试穿|穿在我身上|上身效果|换装/, "tryon"],
+  [/购物袋|购物车|下单|结算/, "bag"],
   [/档案|个人资料|个人信息/, "profile"],
   [/登录|注册|账号/, "login"],
 ];

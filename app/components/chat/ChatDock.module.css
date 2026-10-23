@@ -83,6 +83,10 @@
   overflow-wrap: anywhere;
 }
 .bot { display: grid; gap: 10px; min-width: 0; }
+/* 理解行：发送后立刻出现的“听到的条件”，随输入变化；不是回复本身，所以做成很轻的一行 */
+.understood { margin: 0 0 -4px; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; letter-spacing: .08em; line-height: 1.5;
+  color: var(--sc-champ-text); }
+.understood svg { flex: none; opacity: .85; }
 .botText { margin: 0; font-family: var(--sc-font-serif); font-size: 14px; line-height: 1.85; letter-spacing: .02em; overflow-wrap: anywhere; }
 .streaming::after { content: ""; display: inline-block; width: 1px; height: 1em; margin-left: 2px; vertical-align: -2px; background: var(--sc-champ);
   animation: chat-pulse 1s steps(2, start) infinite; }
