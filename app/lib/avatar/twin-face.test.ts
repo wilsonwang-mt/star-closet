@@ -4,7 +4,7 @@ import sharp from "sharp";
 import { composeFaceDetail, ellipseMask, FACE_DETAIL_EDGE, FACE_ELLIPSE, faceDetailPrompt, locateHead, refineFace, transferTone } from "./twin-face";
 import { figurePng, pngWithMetadata } from "./testing";
 
-// 数字分身脸部精修（D68）：全部用合成的几何人形示意图与 mock fetch，不访问 fal，不含任何真人图像。
+// 数字分身脸部精修（D69）：全部用合成的几何人形示意图与 mock fetch，不访问 fal，不含任何真人图像。
 process.env.FAL_KEY = "test-fal-key";
 process.env.TWIN_QUEUE_POLL_MS = "1";
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""数字分身脸部相似度评估（D68）。
+"""数字分身脸部相似度评估（D69）。
 
 用公开、许可明确的人脸模型，在本机计算生成的形象照与用户参考正脸的相似度，代替“看着有七成像”的主观印象。
 - 检测：OpenCV Zoo 的 YuNet（face_detection_yunet_2023mar，MIT）

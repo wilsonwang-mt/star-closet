@@ -1,7 +1,7 @@
 import { sniffImage } from "./image";
 
 // 数字分身（D63）的纯生成部分：提示词、参考图处理与 fal 排队调用。不碰数据库与私有存储，
-// 供 twin.ts（线上生成）与 scripts/twin-eval-gen.ts（脸部相似度评估，D68）共用，保证评估测的就是线上的提示词与参数。
+// 供 twin.ts（线上生成）与 scripts/twin-eval-gen.ts（脸部相似度评估，D69）共用，保证评估测的就是线上的提示词与参数。
 
 export const IMAGE_MODEL = "fal-ai/nano-banana-pro/edit";
 

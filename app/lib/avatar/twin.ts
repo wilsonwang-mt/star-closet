@@ -39,7 +39,7 @@ export {
 // 3. fal.ai 上的 nano-banana-pro/edit 以该用户全部照片为参考图，并行生成正面、四分之三侧面、背面三张标准形象照
 //    （统一素色贴身基础服装、浅米色影棚背景、自然光）。参考图按 正脸、侧脸、全身正面、全身侧面、半身/其他 排序，
 //    压到长边 1536、JPEG q90 的 data URI。正面必须成功；侧面/背面失败允许为空。每张失败重试一次。
-//    正面生成后再做一次脸部精修（D68，twin-face.ts）：头部放大后按正脸与侧脸参考重画五官、贴回原图；
+//    正面生成后再做一次脸部精修（D69，twin-face.ts）：头部放大后按正脸与侧脸参考重画五官、贴回原图；
 //    精修失败或时间不够时保留未精修的正面，不影响分身生成。TWIN_FACE_DETAIL=0 可关闭。
 // 4. 结果存私有存储 `<userId>/avatars/twin-<jobId>-front.jpg` 等，写一条 avatar_job（provider = twin，result_images 存 key 与分析结果）。
 //    新分身成功后才删除旧分身；一键删除（deleteAll）随用户前缀清理全部文件并清空 result_images。
