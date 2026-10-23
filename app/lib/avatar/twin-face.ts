@@ -1,6 +1,6 @@
 import { generateOne, GenError, type TwinGender } from "./twin-gen";
 
-// 数字分身的脸部精修（D69）。
+// 数字分身的脸部精修（D69）。线上只精修正面；四分之三侧面评估过但没有启用（椭圆位置与提示词按角度区分，供评估脚本复现）。
 // 评估发现：全身标准形象照（2K，1792×2400）里脸只有约 250px 高，nano-banana-pro 在这个尺寸上会把五官画成“通用脸”；
 // 同样的参考图与提示词，脸占画面一半的特写身份保持度明显更高。所以在全身图生成后再做一步：
 //   1. 按影棚纯色背景找出人物头部（不依赖人脸模型）；
@@ -21,14 +21,21 @@ const CROP_HEADS = 2;
 const CROP_TOP_HEADS = 0.25;
 /** 低频色调迁移的模糊半径（占方块边长）：只对齐色调与明暗，不把原图的五官轮廓带回来。 */
 const TONE_SIGMA = 0.04;
+/** 做脸部精修的角度：正面与四分之三侧面（背面看不到脸，不精修）。 */
+export type FaceAngle = "front" | "side";
 /**
- * 贴回的脸部椭圆（占方块边长）。实测 30 张全身图，脸框中心约在 (0.50, 0.45)、宽 0.32、高 0.44。
- * 椭圆内 70% 全用精修结果，向外线性淡出到边缘；发型外轮廓与背景保留原图，避免发缘出现光晕。
+ * 贴回的脸部椭圆（中心与半轴，占方块边长）。椭圆内 70% 全用精修结果，向外线性淡出到边缘；
+ * 发型外轮廓与背景保留原图，避免发缘出现光晕。
+ * - 正面：实测 30 张全身图，脸框中心约在 (0.50, 0.45)、宽 0.32、高 0.44。
+ * - 侧面（四分之三侧）：实测 10 张，脸框大小与纵向位置同正面，横向中心 0.44–0.50（均值 0.47），脸朝画面左侧；
+ *   椭圆左移，让转头较大时的鼻尖与侧脸轮廓落在全用精修结果的区域里。半轴比正面大：侧面精修时模型常把远侧下颌画窄，
+ *   用正面的 0.23 / 0.29 时原图下颌落在淡出带里，与发梢之间留一条发白的光带；放大到 0.26 / 0.31 后消失，耳朵与发缘仍干净。
+ *   线上目前不对侧面精修（评估后没有可见改善，见 docs/交付记录.md），这组值供评估脚本复现。
  */
-const FACE_CX = 0.5;
-const FACE_CY = 0.45;
-const FACE_RX = 0.23;
-const FACE_RY = 0.29;
+export const FACE_ELLIPSE: Record<FaceAngle, { cx: number; cy: number; rx: number; ry: number }> = {
+  front: { cx: 0.5, cy: 0.45, rx: 0.23, ry: 0.29 },
+  side: { cx: 0.47, cy: 0.45, rx: 0.26, ry: 0.31 },
+};
 const FACE_SOLID = 0.7;
 /**
  * 精修结果与原裁切对齐后、去掉整体明暗差的平均灰度差（0–255）超过它，视为构图被改动，放弃精修。
@@ -127,16 +134,21 @@ export async function locateHead(bytes: Uint8Array): Promise<HeadBox | null> {
   return { left, top: topPx, size };
 }
 
-export function faceDetailPrompt(gender: TwinGender, hasProfile: boolean): string {
+export function faceDetailPrompt(gender: TwinGender, hasProfile: boolean, angle: FaceAngle = "front"): string {
   const noun = gender === "female" ? "woman" : "man";
   const pr = gender === "female" ? "her" : "his";
   const obj = gender === "female" ? "her" : "him";
+  const side = angle === "side";
   return [
-    `Image 1 is a close-up crop from a full-body studio photo of a ${noun}.`,
-    `Return image 1 with exactly the same framing, head size, head position and tilt, gaze direction, neutral expression, hairstyle and hair outline, neck, clothing, lighting, colors and background, all aligned with image 1.`,
+    `Image 1 is a close-up crop from a full-body studio photo of a ${noun}${side ? " in a three-quarter view" : ""}.`,
+    `Return image 1 with exactly the same framing, head size, head position${side ? ", head turn" : ""} and tilt, gaze direction, neutral expression, hairstyle and hair outline, neck, clothing, lighting, colors and background, all aligned with image 1.`,
+    // 侧面最常见的失败是把脸转正（参考 2 是正脸），对齐校验挡不住轻微转正，所以单独说明。
+    side ? "Keep exactly the same three-quarter head turn; do not rotate the face toward the camera." : "",
     `Only redraw the face in high detail so that it is unmistakably the same person as in reference 2 (${pr} frontal face close-up)${hasProfile ? ` and reference 3 (${pr} side profile)` : ""}: identical face shape and jawline, cheekbones, eyes, eyelids, eyebrows, nose and lips.`,
     `Keep the lighting, color grading, skin tone and skin smoothness of image 1. Do not beautify, slim, age or idealize ${obj}. Photorealistic, sharp focus.`,
-  ].join(" ");
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 /**
@@ -220,6 +232,7 @@ export async function requestFaceDetail(
   refs: { face: string; profile?: string | null },
   gender: TwinGender,
   signal: AbortSignal,
+  angle: FaceAngle = "front",
 ): Promise<Uint8Array> {
   const sharp = await loadSharp();
   const crop = await sharp(full)
@@ -228,11 +241,11 @@ export async function requestFaceDetail(
     .jpeg({ quality: 92 })
     .toBuffer();
   const images = [`data:image/jpeg;base64,${crop.toString("base64")}`, refs.face, ...(refs.profile ? [refs.profile] : [])];
-  return generateOne(faceDetailPrompt(gender, !!refs.profile), images, signal, { resolution: "2K", aspectRatio: "1:1" });
+  return generateOne(faceDetailPrompt(gender, !!refs.profile, angle), images, signal, { resolution: "2K", aspectRatio: "1:1" });
 }
 
-/** 本地合成：校验构图 → 缩放与平移对齐 → 低频色调迁移 → 脸部椭圆羽化贴回。构图被改动时返回原图。 */
-export async function composeFaceDetail(full: Uint8Array, box: HeadBox, out: Uint8Array): Promise<FaceDetailResult> {
+/** 本地合成：校验构图 → 缩放与平移对齐 → 低频色调迁移 → 脸部椭圆（按角度）羽化贴回。构图被改动时返回原图。 */
+export async function composeFaceDetail(full: Uint8Array, box: HeadBox, out: Uint8Array, angle: FaceAngle = "front"): Promise<FaceDetailResult> {
   const sharp = await loadSharp();
   const size = box.size;
   const meta = await sharp(full).metadata();
@@ -261,7 +274,8 @@ export async function composeFaceDetail(full: Uint8Array, box: HeadBox, out: Uin
   ]);
   const toned = await transferTone(origAt, refined, paste, Math.max(2, paste * TONE_SIGMA));
   // 蒙版按原裁切的脸部位置画在贴回方块的坐标里。
-  const mask = ellipseMask(paste, box.left + FACE_CX * size - left, box.top + FACE_CY * size - top, FACE_RX * size, FACE_RY * size);
+  const e = FACE_ELLIPSE[angle];
+  const mask = ellipseMask(paste, box.left + e.cx * size - left, box.top + e.cy * size - top, e.rx * size, e.ry * size);
   const rgba = await sharp(toned, { raw: { width: paste, height: paste, channels: 3 } })
     .joinChannel(mask, { raw: { width: paste, height: paste, channels: 1 } })
     .png()
@@ -279,7 +293,7 @@ export function faceDetailEnabled(): boolean {
 }
 
 /**
- * 对一张全身标准形象照做脸部精修。refs.face 为正脸参考（data URI 或 https），refs.profile 为侧脸参考（可无）。
+ * 对一张全身标准形象照（正面或四分之三侧面）做脸部精修。refs.face 为正脸参考（data URI 或 https），refs.profile 为侧脸参考（可无）。
  * 构图被改动或生成失败（输入问题除外）时，剩余时间够就再试一次；最终不成功返回原图（applied = false，reason 说明原因）。
  */
 export async function refineFace(
@@ -288,6 +302,7 @@ export async function refineFace(
   gender: TwinGender,
   signal: AbortSignal,
   deadline = Infinity,
+  angle: FaceAngle = "front",
 ): Promise<FaceDetailResult> {
   try {
     await loadSharp();
@@ -300,8 +315,8 @@ export async function refineFace(
   for (let attempt = 0; attempt < 2; attempt++) {
     if (signal.aborted || deadline - Date.now() < FACE_DETAIL_MIN_LEFT_MS) return last;
     try {
-      const out = await requestFaceDetail(full, box, refs, gender, signal);
-      last = await composeFaceDetail(full, box, out).catch(() => ({ bytes: full, applied: false, reason: "compose-error" }));
+      const out = await requestFaceDetail(full, box, refs, gender, signal, angle);
+      last = await composeFaceDetail(full, box, out, angle).catch(() => ({ bytes: full, applied: false, reason: "compose-error" }));
       if (last.applied || last.reason === "compose-error") return last;
     } catch (e) {
       last = { bytes: full, applied: false, reason: e instanceof GenError ? `gen-${e.status}` : "gen-error" };

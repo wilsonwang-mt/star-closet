@@ -10,14 +10,15 @@
  *     --variant baseline --angles front,side --runs 2 [--resolution 2K] [--shot full|portrait] [--refine-from baseline] \
  *     --out DIR --ledger DIR/ledger.csv --budget 15
  * --shot portrait 是诊断用的半身正面特写（脸占画面约一半），用来区分“全身图里脸太小”与“模型把脸画偏”。
- * --refine-from <方案> 不重新生成，而是对该方案已生成的图逐张做脸部精修（lib/avatar/twin-face.ts），每张一次调用；
- *   模型原始输出与头部方块存在 <out>/<方案>/raw/，加 --recompose 可只在本地重新合成、不再调用 fal。
+ * --refine-from <方案> 不重新生成，而是对该方案已生成的图逐张做脸部精修（lib/avatar/twin-face.ts，按 --angles 用正面或侧面的
+ *   提示词与脸部椭圆，不支持 back），每张一次调用；模型原始输出与头部方块存在 <out>/<方案>/raw/，
+ *   加 --recompose 可只在本地重新合成、不再调用 fal。
  * 照片命名：DIR/<id>-<slot>.jpg，slot 取 face（正脸）、extra（侧脸）、front（全身正面）、side（全身侧面）、back（半身或其他）。
  */
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
-import { composeFaceDetail, type HeadBox, locateHead, requestFaceDetail } from "../lib/avatar/twin-face";
+import { composeFaceDetail, type FaceAngle, type HeadBox, locateHead, requestFaceDetail } from "../lib/avatar/twin-face";
 import {
   generateOne,
   REFERENCE_ORDER,
@@ -68,6 +69,7 @@ const angles = values.angles!.split(",") as TwinAngle[];
 const runs = Number(values.runs);
 const shot = values.shot === "portrait" ? "portrait" : "full";
 const refineFrom = values["refine-from"] ? path.join(path.dirname(outDir), values["refine-from"]) : null;
+if (refineFrom && angles.includes("back")) throw new Error("脸部精修只支持 front、side");
 
 /** 诊断用：半身正面特写，其余约束与线上全身模板一致。 */
 function portraitPrompt(gender: TwinGender, slots: readonly string[]): string {
@@ -164,11 +166,11 @@ async function main() {
                 writeFileSync(file, full);
                 break;
               }
-              out = await requestFaceDetail(full, box, { face: t.faceRef, profile: t.profileRef }, t.persona.gender, AbortSignal.timeout(300_000));
+              out = await requestFaceDetail(full, box, { face: t.faceRef, profile: t.profileRef }, t.persona.gender, AbortSignal.timeout(300_000), t.angle as FaceAngle);
               writeFileSync(rawFile, out);
               writeFileSync(boxFile, JSON.stringify(box));
             }
-            const r = await composeFaceDetail(full, box, out);
+            const r = await composeFaceDetail(full, box, out, t.angle as FaceAngle);
             writeFileSync(file, r.bytes);
             if (!r.applied) status = `skipped:${r.reason}`;
             if (values.recompose) {
