@@ -2,13 +2,28 @@
 // 目录对外只读、变化很少：进程内缓存 5 分钟，规则层的第一行结果不必每次都等数据库。
 import { toClosetView } from "@/components/closet/data";
 import { getCurators, getOutfits } from "../catalog";
-import type { LocateCatalog, LocateCloset, LocateOutfit, PageKey } from "../locate/core";
+import type { LocateCloset, LocateOutfit, PageKey } from "../locate/core";
 import type { ClosetCard, OutfitCard, PageCard } from "./protocol";
 
-const TTL_MS = 5 * 60 * 1000;
-let cache: { at: number; data: Promise<LocateCatalog> } | null = null;
+/** 单品的精简信息：给 AI 回答“鞋子是什么”“配什么裤子”这类细节问题用。 */
+export type ChatItem = {
+  id: string;
+  name: string;
+  category: string;
+  subcategory: string | null;
+  color: string;
+  material: string | null;
+  price: number;
+  gender: string;
+};
+export type ChatOutfit = LocateOutfit & { itemIds: string[] };
+/** 规则层用到的部分（LocateCatalog）+ 单品明细。 */
+export type ChatCatalog = { closets: LocateCloset[]; outfits: ChatOutfit[]; items: ChatItem[] };
 
-async function load(): Promise<LocateCatalog> {
+const TTL_MS = 5 * 60 * 1000;
+let cache: { at: number; data: Promise<ChatCatalog> } | null = null;
+
+async function load(): Promise<ChatCatalog> {
   const [curators, outfits] = await Promise.all([getCurators(), getOutfits()]);
   const closets: LocateCloset[] = curators.map((c) => {
     const v = toClosetView(c);
@@ -27,7 +42,21 @@ async function load(): Promise<LocateCatalog> {
   });
   // N° 与衣橱页一致：这套在所属衣橱里按目录顺序的位置
   const seen = new Map<string, number>();
-  const list: LocateOutfit[] = outfits.map((o) => {
+  const items = new Map<string, ChatItem>();
+  const list: ChatOutfit[] = outfits.map((o) => {
+    for (const i of o.items) {
+      if (!items.has(i.id))
+        items.set(i.id, {
+          id: i.id,
+          name: i.name.replace(/^占位：/, ""),
+          category: i.category,
+          subcategory: i.subcategory,
+          color: i.color,
+          material: i.material,
+          price: i.price,
+          gender: i.gender,
+        });
+    }
     const no = (seen.get(o.curatorId) ?? 0) + 1;
     seen.set(o.curatorId, no);
     return {
@@ -43,12 +72,13 @@ async function load(): Promise<LocateCatalog> {
       total: o.total,
       cover: o.cover,
       no,
+      itemIds: o.items.map((i) => i.id),
     };
   });
-  return { closets, outfits: list };
+  return { closets, outfits: list, items: [...items.values()] };
 }
 
-export function getChatCatalog(): Promise<LocateCatalog> {
+export function getChatCatalog(): Promise<ChatCatalog> {
   if (!cache || Date.now() - cache.at > TTL_MS) {
     const data = load();
     cache = { at: Date.now(), data };
@@ -90,7 +120,7 @@ export function outfitCard(o: LocateOutfit, closets: LocateCloset[]): OutfitCard
 
 /** 2D 试穿只在配置了 FAL_KEY 时才有入口（AGENTS.md D55）。 */
 export function availablePages(): PageKey[] {
-  const all: PageKey[] = ["closets", "fitting-room", "avatar", "tryon", "profile", "login"];
+  const all: PageKey[] = ["closets", "fitting-room", "avatar", "tryon", "bag", "profile", "login"];
   return all.filter((p) => p !== "tryon" || Boolean(process.env.FAL_KEY));
 }
 
@@ -99,6 +129,7 @@ const PAGES: Record<PageKey, Omit<PageCard, "kind" | "page">> = {
   "fitting-room": { href: "/fitting-room", title: "个人试衣间", kicker: "Fitting Room", desc: "加入试衣间的搭配都在这里" },
   avatar: { href: "/profile/avatar", title: "我的数字分身", kicker: "Avatar", desc: "上传 3–5 张照片，生成你本人的形象照，之后每件都能一键试穿" },
   tryon: { href: "/fitting-room", title: "2D 试穿", kicker: "Try On", desc: "在试衣间里把整套衣服穿到你的正面照上" },
+  bag: { href: "/bag", title: "购物袋", kicker: "Bag", desc: "放进购物袋的单品、尺码与合计都在这里" },
   profile: { href: "/profile", title: "个人档案", kicker: "Profile", desc: "尺码、预算和喜欢的风格，只有你自己可见" },
   login: { href: "/login", title: "登录", kicker: "Sign In", desc: "登录后可以保存搭配、生成形象" },
 };

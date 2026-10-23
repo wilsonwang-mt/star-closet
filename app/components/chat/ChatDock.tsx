@@ -2,8 +2,9 @@
 
 // 全站悬浮对话（D66）：右下角圆形入口，点开后手机是底部抽屉（模态），桌面是右下角浮窗（非模态，可以边聊边看页面）。
 // - 挂在根布局，路由切换不卸载；对话与上一轮解析的条件存 sessionStorage，刷新后还在。
-// - 一次发送 = 一条 NDJSON 流：先到规则结果（卡片 + 一句话），再流式替换成 AI 的话与卡片（见 app/api/chat/route.ts）。
-// - 入口会抬到吸底操作条（.cta-bar、[data-dock-avoid]）上方，不盖住主按钮。
+// - 一次发送 = 一条 NDJSON 流：立刻出“理解行”（这句话里听到的条件）与打字动画，再流式出 AI 的回复与卡片；
+//   没有 AI 或出错时才显示规则层的兜底回复（见 app/api/chat/route.ts，D68）。请求带上当前页面，“这套”“这件”有着落。
+// - 手机上遇到吸底操作条（.cta-bar）时入口停靠进操作条右侧；[data-dock-avoid] 元素让入口抬到它上方。
 // - 其他地方用 window 事件 `sc-chat:open` 打开（首页标题旁的引导胶囊）。
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
@@ -28,10 +29,10 @@ type Msg = {
   text: string;
   cards: ChatCard[];
   chips: string[];
-  /** pending：还没收到任何结果；live：正在流式；done：结束 */
+  /** pending：还没收到文字或卡片；live：正在流式；done：结束 */
   status: "pending" | "live" | "done";
-  /** 规则那句话；AI 中途失败时恢复它 */
-  rulesText?: string;
+  /** 理解行：这句话里识别到的条件（户外婚礼、1500 以内…），发送后立刻显示；不是回复本身 */
+  labels?: string[];
   aiStarted?: boolean;
 };
 
@@ -138,6 +139,9 @@ function useDockLift(active: boolean, fabRef: React.RefObject<HTMLElement | null
   return state;
 }
 
+const STAR_PATH =
+  "M12 1.5c.5 4.6 1.6 7.4 3.2 8.9 1.6 1.5 4.3 2.2 7.3 2.6-3 .4-5.7 1.1-7.3 2.6-1.6 1.5-2.7 4.3-3.2 8.9-.5-4.6-1.6-7.4-3.2-8.9C7.2 14.1 4.5 13.4 1.5 13c3-.4 5.7-1.1 7.3-2.6C10.4 8.9 11.5 6.1 12 1.5Z";
+
 function StarIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
@@ -149,7 +153,7 @@ function StarIcon() {
         </linearGradient>
       </defs>
       <path
-        d="M12 1.5c.5 4.6 1.6 7.4 3.2 8.9 1.6 1.5 4.3 2.2 7.3 2.6-3 .4-5.7 1.1-7.3 2.6-1.6 1.5-2.7 4.3-3.2 8.9-.5-4.6-1.6-7.4-3.2-8.9C7.2 14.1 4.5 13.4 1.5 13c3-.4 5.7-1.1 7.3-2.6C10.4 8.9 11.5 6.1 12 1.5Z"
+        d={STAR_PATH}
         fill="url(#sc-chat-star)"
       />
     </svg>
@@ -259,7 +263,12 @@ export default function ChatDock() {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: [...history, { role: "user", text }], query: queryRef.current }),
+          // 当前页面一起带上：用户说“这套”“这件”时，AI 知道指哪一套
+          body: JSON.stringify({
+            messages: [...history, { role: "user", text }],
+            query: queryRef.current,
+            path: `${window.location.pathname}${window.location.search}`,
+          }),
           signal: ctrl.signal,
         });
         if (!res.ok || !res.body) throw new Error(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? "");
@@ -274,17 +283,20 @@ export default function ChatDock() {
           setMsgs((list) => list.map((m) => (m.id === bot.id ? snap : m)));
         };
         const apply = (ev: ChatEvent) => {
-          if (ev.t === "rules") {
+          if (ev.t === "understood") {
             setQuery(ev.query);
-            commit({ text: cur.aiStarted ? cur.text : ev.text, rulesText: ev.text, cards: ev.cards, chips: ev.chips, status: "live" });
+            commit({ labels: ev.labels });
           } else if (ev.t === "delta") {
-            commit({ text: cur.aiStarted ? cur.text + ev.d : ev.d, aiStarted: true, status: "live" });
+            // 模型偶尔会写 Markdown 加粗记号，界面不渲染 Markdown，直接去掉（跨段的 ** 在拼接后才能识别）
+            commit({ text: (cur.text + ev.d).replace(/\*\*/g, ""), aiStarted: true, status: "live" });
           } else if (ev.t === "cards") {
-            commit({ cards: ev.cards });
+            commit({ cards: ev.cards, status: "live" });
           } else if (ev.t === "chips") {
             commit({ chips: ev.chips });
           } else if (ev.t === "revert") {
-            commit({ text: cur.rulesText ?? "", aiStarted: false });
+            commit({ text: "", cards: [], chips: [], aiStarted: false });
+          } else if (ev.t === "fallback") {
+            commit({ text: ev.text, cards: ev.cards, chips: ev.chips, aiStarted: false, status: "live" });
           }
         };
         for (;;) {
@@ -460,7 +472,7 @@ export default function ChatDock() {
             {sheet ? <span className={styles.grabber} aria-hidden="true" /> : null}
             <header className={styles.head}>
               <div>
-                <span className="sc-kicker">Ask Star Closet</span>
+                <span className="sc-kicker">Ask SEEN.</span>
                 <h2 id={titleId} className={styles.title}>
                   想穿去哪儿？
                 </h2>
@@ -501,15 +513,24 @@ export default function ChatDock() {
                   </div>
                 ) : (
                   <div key={m.id} className={styles.bot}>
-                    {m.status === "pending" && !m.text ? (
-                      <p className={styles.thinking} aria-label="正在找">
+                    {m.labels?.length ? (
+                      <p className={styles.understood}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d={STAR_PATH} fill="currentColor" />
+                        </svg>
+                        <span className="sr-only">听到的条件：</span>
+                        {m.labels.join(" · ")}
+                      </p>
+                    ) : null}
+                    {m.text ? (
+                      <p className={`${styles.botText} ${m.status === "live" && m.aiStarted ? styles.streaming : ""}`}>{m.text}</p>
+                    ) : m.status !== "done" ? (
+                      <p className={styles.thinking} aria-label="正在想">
                         <span />
                         <span />
                         <span />
                       </p>
-                    ) : (
-                      <p className={`${styles.botText} ${m.status === "live" && m.aiStarted ? styles.streaming : ""}`}>{m.text}</p>
-                    )}
+                    ) : null}
                     <ChatCards cards={m.cards} reduced={reduced} onNavigate={onNavigate} />
                     {m.id === lastId && m.status === "done" && m.chips.length ? (
                       <div className={styles.chips}>
