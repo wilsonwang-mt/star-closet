@@ -5,11 +5,13 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import ItemThumb from "@/components/ItemThumb";
+import { useT, useTerm } from "@/lib/i18n/client";
+import type { Translator } from "@/lib/i18n/types";
 import { reducedFade, springs } from "@/lib/motion";
 import { wearableInOrder } from "@/lib/tryon/plan";
 import type { TryonView } from "@/lib/tryon/service";
 import type { TryOnItem } from "./TryOn";
-import { cleanName, CloseIcon, HangerIcon, stageLabel } from "./shared";
+import { cleanName, CloseIcon, HangerIcon, stageLabel, useConsentLabel } from "./shared";
 import type { LookTryon } from "./useLookTryon";
 import base from "./TryOn.module.css";
 import s from "./LookTryOn.module.css";
@@ -35,10 +37,11 @@ function useElapsed(startedAt: number | null) {
   return startedAt ? Math.max(0, Math.floor((now - startedAt) / 1000)) : 0;
 }
 
-const fmtElapsed = (sec: number) => (sec < 60 ? `${sec} 秒` : `${Math.floor(sec / 60)} 分 ${String(sec % 60).padStart(2, "0")} 秒`);
+const fmtElapsed = (tx: Translator<"tryon">, sec: number) =>
+  sec < 60 ? tx("elapsed.seconds", { sec }) : tx("elapsed.minutes", { min: Math.floor(sec / 60), sec: String(sec % 60).padStart(2, "0") });
 
-function frameCaption(f: TryonView) {
-  return f.kind === "outfit" ? "整套" : `第 ${Math.max(1, f.appliedItemIds.length)} 件`;
+function frameCaption(tx: Translator<"tryon">, f: TryonView) {
+  return f.kind === "outfit" ? tx("look.frameOutfit") : tx("look.frameStep", { n: Math.max(1, f.appliedItemIds.length) });
 }
 
 function Chevron() {
@@ -60,6 +63,7 @@ function Check() {
 /** 缩略图外包一层：穿在当前这张试穿图上的单品，左下角浮出“已穿上”。 */
 export function WornMark({ worn, children, className = "" }: { worn: boolean; children: ReactNode; className?: string }) {
   const reduce = useReducedMotion();
+  const tx = useT("tryon");
   return (
     <span className={`${s.thumbWrap} ${className}`}>
       {children}
@@ -73,7 +77,7 @@ export function WornMark({ worn, children, className = "" }: { worn: boolean; ch
             exit={{ opacity: 0, transition: { duration: 0.2 } }}
             transition={reduce ? reducedFade : { ...springs.drop, opacity: { duration: 0.25 } }}
           >
-            已穿上
+            {tx("look.worn")}
           </motion.span>
         ) : null}
       </AnimatePresence>
@@ -83,21 +87,22 @@ export function WornMark({ worn, children, className = "" }: { worn: boolean; ch
 
 /** 卡片单品行下方的试穿操作：试穿这件 / 正在穿上 · 已用时间 / 查看试穿。 */
 export function TryOnRowAction({ t, item }: { t: LookTryon; item: TryOnItem }) {
+  const tx = useT("tryon");
   const busyThis = t.pending?.itemId === item.id;
   const elapsed = useElapsed(busyThis ? t.pending!.startedAt : null);
   const name = cleanName(item.name);
   if (busyThis) {
     return (
-      <button type="button" className={`${s.rowAction} ${s.rowBusy}`} onClick={t.openPanel} aria-label={`正在穿上${name}，查看`}>
+      <button type="button" className={`${s.rowAction} ${s.rowBusy}`} onClick={t.openPanel} aria-label={tx("look.rowBusyAria", { name })}>
         <span className={s.pulse} aria-hidden="true" />
-        正在穿上 · {fmtElapsed(elapsed)}
+        {tx("look.rowBusy", { elapsed: fmtElapsed(tx, elapsed) })}
       </button>
     );
   }
   if (t.wornIds.has(item.id)) {
     return (
       <button type="button" className={`${s.rowAction} ${s.rowWorn}`} onClick={t.openPanel}>
-        查看试穿
+        {tx("look.rowView")}
         <Chevron />
       </button>
     );
@@ -109,16 +114,17 @@ export function TryOnRowAction({ t, item }: { t: LookTryon; item: TryOnItem }) {
       disabled={!!t.pending}
       onClick={() => t.tryItem(item.id)}
       aria-haspopup="dialog"
-      aria-label={`试穿这件：${name}`}
+      aria-label={tx("look.rowTryAria", { name })}
     >
       <HangerIcon size={14} />
-      试穿这件
+      {tx("look.rowTry")}
     </button>
   );
 }
 
 /** 试衣间卡片上的“整套试穿”（D67）：醒目的金色主按钮；把这一套可上身的单品依次穿到形象上。 */
 export function WearAllButton({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
+  const tx = useT("tryon");
   const n = wearableInOrder(items).length;
   if (!t.enabled || n === 0) return null;
   const running = !!t.chain;
@@ -131,13 +137,18 @@ export function WearAllButton({ t, items }: { t: LookTryon; items: TryOnItem[] }
       aria-haspopup="dialog"
     >
       <HangerIcon size={16} />
-      {running ? `正在穿上 ${t.chain!.step}/${t.chain!.total}` : n > 1 ? `整套试穿（${n} 件）` : "试穿这一套"}
+      {running
+        ? tx("look.wearAllRunning", { step: t.chain!.step, total: t.chain!.total })
+        : n > 1
+          ? tx("look.wearAll", { n })
+          : tx("look.wearOne")}
     </button>
   );
 }
 
 /** 卡片上的“穿搭进度”入口：有试穿结果或正在穿时出现，点开面板。 */
 export function TryOnPeek({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
+  const tx = useT("tryon");
   const elapsed = useElapsed(t.pending?.startedAt ?? null);
   if (!t.enabled || (!t.frames.length && !t.pending)) return null;
   const pendingItem = t.pending ? items.find((i) => i.id === t.pending!.itemId) : null;
@@ -154,16 +165,18 @@ export function TryOnPeek({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
         <span className={s.peekTitle}>
           {pendingItem
             ? t.chain
-              ? `正在穿上 ${t.chain.step}/${t.chain.total}：${cleanName(pendingItem.name)}`
-              : `正在为你穿上 ${cleanName(pendingItem.name)}`
-            : wornCount ? `已穿上 ${wornCount} 件` : "从你的照片开始"}
+              ? tx("look.peekChain", { step: t.chain.step, total: t.chain.total, name: cleanName(pendingItem.name) })
+              : tx("look.peekPending", { name: cleanName(pendingItem.name) })
+            : wornCount
+              ? tx("look.peekWorn", { n: wornCount })
+              : tx("look.startFromPhoto")}
         </span>
         <span className="sc-meta">
           {t.pending
-            ? `${stageLabel(t.pending.stage, t.pending.queuePosition)} · 已用 ${fmtElapsed(elapsed)}`
+            ? tx("look.peekStage", { stage: stageLabel(tx, t.pending.stage, t.pending.queuePosition), elapsed: fmtElapsed(tx, elapsed) })
             : t.selected?.refining
-              ? "正在细化"
-              : `穿搭进度 · ${t.frames.length} 张`}
+              ? tx("stage.refining")
+              : tx("look.peekFrames", { n: t.frames.length })}
         </span>
       </span>
       <Chevron />
@@ -181,6 +194,10 @@ export function LookTryOnSheet({ t, items }: { t: LookTryon; items: TryOnItem[] 
 
 function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
   const reduce = useReducedMotion();
+  const tx = useT("tryon");
+  const tc = useT("common");
+  const term = useTerm();
+  const consentLabel = useConsentLabel(t.providerName);
   const [zoom, setZoom] = useState(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const stripRef = useRef<HTMLOListElement | null>(null);
@@ -196,10 +213,10 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
   const shownKey = t.selected ? `${t.selected.id}:${t.selected.mode}` : `photo:${t.photoUrl ?? ""}`;
   const refiningShown = !!t.selected?.refining && !t.pending;
   const ready = t.hasBase && (t.consented || t.agree) && !t.uploading;
-  const baseAlt = t.isTwin ? "你的数字分身" : "你的正面全身照";
+  const baseAlt = t.isTwin ? tx("avatar.twinAlt") : tx("avatar.photoAlt");
   const wornName = (f: TryonView) => {
     const it = f.wornItemId ? byId.get(f.wornItemId) : null;
-    return it ? cleanName(it.name) : f.applied.join("、");
+    return it ? cleanName(it.name) : f.applied.map((l) => term(l)).join(tx("listSep"));
   };
 
   // 打开时锁住页面滚动、聚焦面板；Esc 关闭（放大时先退出放大）；左右方向键在穿搭进度里前后翻看。
@@ -306,10 +323,10 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
           <div>
             <span className="sc-kicker">{t.selected ? "On You" : "Try It On"}</span>
             <h2 id={`look-tryon-${t.lookId}`} className="section-title">
-              穿在我身上
+              {tx("onMe")}
             </h2>
           </div>
-          <button type="button" className={base.close} onClick={t.close} aria-label="关闭">
+          <button type="button" className={base.close} onClick={t.close} aria-label={tc("close")}>
             <CloseIcon />
           </button>
         </div>
@@ -322,7 +339,7 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
                   <motion.img
                     key={shownKey}
                     src={shownUrl}
-                    alt={t.selected ? `穿上${wornName(t.selected)}的你` : baseAlt}
+                    alt={t.selected ? tx("avatar.wearingAlt", { name: wornName(t.selected) }) : baseAlt}
                     className={s.frame}
                     onError={t.selected ? () => t.drop(t.selected!.id) : undefined}
                     {...crossfade}
@@ -333,14 +350,14 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
               {!shownUrl ? (
                 <div className={`${base.upload} ${s.stageUpload}`} style={{ gap: 12, alignContent: "center", cursor: "default" }}>
                   <span>
-                    <strong>还没有你的形象</strong>
-                    上传 3–5 张照片，生成你的数字分身
+                    <strong>{tx("look.noAvatar")}</strong>
+                    {tx("look.noAvatarHint")}
                   </span>
                   <Link href="/profile/avatar" className="sc-cta compact">
-                    先建立你的形象
+                    {tx("avatar.createFirst")}
                   </Link>
                   <label className={`link-btn ${base.fileBtn}`}>
-                    {t.uploading ? "上传中…" : "或直接上传一张正面全身照"}
+                    {t.uploading ? tx("actions.uploading") : tx("look.uploadDirect")}
                     <input
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
@@ -352,7 +369,7 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
               ) : null}
 
               {shownUrl && !t.pending ? (
-                <button type="button" className={s.zoomHit} onClick={() => setZoom(true)} aria-label="放大查看" />
+                <button type="button" className={s.zoomHit} onClick={() => setZoom(true)} aria-label={tx("actions.enlarge")} />
               ) : null}
               {shownUrl && !t.selected && !t.pending ? <span className={base.stageLabel}>You</span> : null}
               <AnimatePresence>
@@ -367,7 +384,7 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
                     transition={{ duration: 0.3 }}
                   >
                     <span className={s.pulse} aria-hidden="true" />
-                    正在细化
+                    {tx("stage.refining")}
                   </motion.span>
                 ) : null}
               </AnimatePresence>
@@ -391,11 +408,11 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
                         <img className={s.waitGarment} src={pendingItem.image} alt="" />
                       ) : null}
                       <p className={s.waitKicker} role="status">
-                        {t.chain ? `正在穿上 ${t.chain.step}/${t.chain.total}：` : "正在为你穿上 "}
+                        {t.chain ? tx("look.waitChain", { step: t.chain.step, total: t.chain.total }) : tx("look.waitSingle")}
                         <span className={s.waitName}>{pendingItem ? cleanName(pendingItem.name) : ""}</span>
                       </p>
                       <p className={s.waitTime} aria-live="polite">
-                        {t.pending ? stageLabel(t.pending.stage, t.pending.queuePosition) : ""} · {fmtElapsed(elapsed)}
+                        {t.pending ? stageLabel(tx, t.pending.stage, t.pending.queuePosition) : ""} · {fmtElapsed(tx, elapsed)}
                       </p>
                       <AnimatePresence>
                         {elapsed >= 30 ? (
@@ -407,7 +424,7 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.6 }}
                           >
-                            比平时稍久，仍在进行
+                            {tx("look.slow")}
                           </motion.p>
                         ) : null}
                       </AnimatePresence>
@@ -421,38 +438,38 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
             <div className={s.stageBar}>
               <span className="sc-meta">
                 {t.chain
-                  ? `整套试穿 · 第 ${t.chain.step} 件，共 ${t.chain.total} 件`
+                  ? tx("look.barChain", { step: t.chain.step, total: t.chain.total })
                   : t.pending
-                  ? "可以先关掉，穿好后会出现在这一套里"
+                  ? tx("look.barPending")
                   : t.selected
-                    ? "下一件穿在这一张上"
+                    ? tx("look.barSelected")
                     : t.photoUrl
                       ? t.isTwin
-                        ? "从你的数字分身开始，一件一件穿上"
-                        : "从你的照片开始"
-                      : "先建立你的形象"}
+                        ? tx("look.barTwin")
+                        : tx("look.startFromPhoto")
+                      : tx("avatar.createFirst")}
               </span>
               <span className={s.stageActions}>
                 {t.pending ? null : t.selected ? (
                   <>
                     {t.photoUrl ? (
                       <button type="button" className="link-btn" onClick={() => t.select(null)}>
-                        {t.isTwin ? "从我的分身重新开始" : "从我的照片重新开始"}
+                        {t.isTwin ? tx("look.restartTwin") : tx("look.restartPhoto")}
                       </button>
                     ) : (
-                      photoInput("上传照片重新开始", `link-btn ${base.fileBtn}`)
+                      photoInput(tx("look.restartUpload"), `link-btn ${base.fileBtn}`)
                     )}
                     <button type="button" className="link-btn" onClick={() => void t.remove(t.selected!.id)}>
-                      删除这张
+                      {tx("actions.deleteImage")}
                     </button>
                   </>
                 ) : t.photoUrl ? (
                   t.isTwin ? (
                     <Link href="/profile/avatar" className="link-btn">
-                      管理我的形象
+                      {tx("avatar.manage")}
                     </Link>
                   ) : (
-                    photoInput(t.uploading ? "上传中…" : "换一张照片", `link-btn ${base.fileBtn}`)
+                    photoInput(t.uploading ? tx("actions.uploading") : tx("look.changePhoto"), `link-btn ${base.fileBtn}`)
                   )
                 ) : null}
               </span>
@@ -461,14 +478,14 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
 
           <div className={s.side}>
             <div className={s.block}>
-              <span className="sc-meta">穿搭进度</span>
-              <ol className={s.strip} ref={stripRef} aria-label="穿搭进度">
+              <span className="sc-meta">{tx("look.progress")}</span>
+              <ol className={s.strip} ref={stripRef} aria-label={tx("look.progress")}>
                 <li className={s.stripItem}>
                   <button
                     type="button"
                     className={s.frameBtn}
                     aria-pressed={t.selectedId === null}
-                    aria-label={t.isTwin ? "你的数字分身" : "你的照片"}
+                    aria-label={t.isTwin ? tx("avatar.twinAlt") : tx("avatar.photo")}
                     disabled={!!t.pending}
                     onClick={() => t.select(null)}
                   >
@@ -476,7 +493,7 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       {t.photoUrl ? <img className={s.frameShot} src={t.photoUrl} alt="" /> : <span className={s.framePlaceholder}>+</span>}
                     </span>
-                    <span className={s.frameCap}>{t.isTwin ? "分身" : "照片"}</span>
+                    <span className={s.frameCap}>{t.isTwin ? tx("look.frameTwin") : tx("look.framePhoto")}</span>
                   </button>
                 </li>
                 {/* popLayout：退场的“穿上中”立刻让出位置，新的一张在同一格里接替 */}
@@ -489,7 +506,7 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
                           type="button"
                           className={s.frameBtn}
                           aria-pressed={t.selectedId === f.id}
-                          aria-label={`${frameCaption(f)}：${wornName(f)}`}
+                          aria-label={tx("look.frameAria", { caption: frameCaption(tx, f), name: wornName(f) })}
                           disabled={!!t.pending}
                           onClick={() => t.select(f.id)}
                         >
@@ -502,7 +519,7 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
                               <img className={s.frameGarment} src={worn.image} alt="" />
                             ) : null}
                           </span>
-                          <span className={s.frameCap}>{frameCaption(f)}</span>
+                          <span className={s.frameCap}>{frameCaption(tx, f)}</span>
                         </button>
                       </motion.li>
                     );
@@ -514,7 +531,7 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           {pendingItem?.image ? <img className={s.framePendingGarment} src={pendingItem.image} alt="" /> : null}
                         </span>
-                        <span className={s.frameCap}>穿上中</span>
+                        <span className={s.frameCap}>{tx("look.framePending")}</span>
                       </span>
                     </motion.li>
                   ) : null}
@@ -523,7 +540,7 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
             </div>
 
             <div className={s.block}>
-              <span className="sc-meta">这一套 · 一件一件穿上</span>
+              <span className="sc-meta">{tx("look.piecesTitle")}</span>
               <ul className={s.pieces}>
                 {pieces.map(({ item, step }) => {
                   const worn = t.wornIds.has(item.id);
@@ -536,15 +553,15 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
                       </WornMark>
                       <span className={s.pieceText}>
                         <span className="item-name">{name}</span>
-                        <span className="sc-meta">{step.label}</span>
+                        <span className="sc-meta">{term(step.label)}</span>
                       </span>
                       {busyThis ? (
                         <span className={s.pieceBusy}>
                           <span className={s.pulse} aria-hidden="true" />
-                          穿上中
+                          {tx("look.framePending")}
                         </span>
                       ) : worn ? (
-                        <span className={s.pieceDone} role="img" aria-label="已穿上">
+                        <span className={s.pieceDone} role="img" aria-label={tx("look.worn")}>
                           <Check />
                         </span>
                       ) : (
@@ -553,9 +570,9 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
                           className={s.pieceBtn}
                           disabled={!!t.pending}
                           onClick={() => t.tryItem(item.id)}
-                          aria-label={`穿上${name}`}
+                          aria-label={tx("look.putOnAria", { name })}
                         >
-                          穿上
+                          {tx("look.putOn")}
                         </button>
                       )}
                     </li>
@@ -567,7 +584,7 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
             {!t.consented ? (
               <label className={base.consent}>
                 <input type="checkbox" checked={t.agree} onChange={(e) => t.setAgree(e.target.checked)} />
-                <span>同意把我的形象照片发送给 {t.providerName} 生成试穿图</span>
+                <span>{consentLabel}</span>
               </label>
             ) : null}
             {t.error ? (
@@ -578,15 +595,15 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
             <div className={`${base.actions} ${queuedItem ? s.actionsBar : ""}`}>
               {t.chainReady && !t.pending ? (
                 <button type="button" className="sc-cta" disabled={!ready} onClick={() => void t.wearAll()}>
-                  整套试穿（{t.chainReady.length} 件）
+                  {tx("look.wearAll", { n: t.chainReady.length })}
                 </button>
               ) : queuedItem ? (
                 <button type="button" className="sc-cta" disabled={!ready} onClick={t.startQueued}>
-                  {t.error ? "再试一次" : `穿上 ${cleanName(queuedItem.name)}`}
+                  {t.error ? tx("actions.tryAgain") : tx("look.putOnNamed", { name: cleanName(queuedItem.name) })}
                 </button>
               ) : (
                 <button type="button" className="sc-cta sc-cta--ghost" onClick={t.close}>
-                  完成
+                  {tx("actions.done")}
                 </button>
               )}
             </div>
@@ -605,11 +622,11 @@ function Sheet({ t, items }: { t: LookTryon; items: TryOnItem[] }) {
             transition={{ duration: 0.25 }}
             onClick={() => setZoom(false)}
             role="dialog"
-            aria-label="试穿图大图"
+            aria-label={tx("zoom.dialog")}
           >
             <motion.img
               src={shownUrl}
-              alt={t.selected ? `穿上${wornName(t.selected)}的你` : baseAlt}
+              alt={t.selected ? tx("avatar.wearingAlt", { name: wornName(t.selected) }) : baseAlt}
               initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.92 }}
               animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1 }}
               exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}

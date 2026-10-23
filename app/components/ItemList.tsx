@@ -13,6 +13,8 @@ import { PickCheck, type Pick } from "./closet/LookActions";
 import { QuickTryButton } from "./tryon/QuickTryOn";
 import type { Item } from "@/lib/catalog";
 import { interchangeable } from "@/lib/adapt/rules";
+import { LOCALE_META } from "@/lib/i18n/config";
+import { useLocale, useT, useTerm } from "@/lib/i18n/client";
 import { springs } from "@/lib/motion";
 
 export type ListedItem = Item & { reason?: string | null };
@@ -143,11 +145,15 @@ function Row({
   pick?: Pick;
   source?: { outfitId?: string | null; outfitName?: string | null };
 }) {
+  const t = useT("outfit");
+  const term = useTerm();
+  const locale = useLocale();
+  const yuan = (n: number) => `¥${n.toLocaleString(LOCALE_META[locale].intl)}`;
   const own = ownCuratorId ? alts.filter((a) => a.curatorId === ownCuratorId) : alts;
   const others = ownCuratorId ? alts.filter((a) => a.curatorId !== ownCuratorId) : [];
   const option = (a: Item) => (
     <option key={a.id} value={a.id}>
-      {a.name.replace(/^占位：/, "")} ¥{a.price}
+      {a.name.replace(/^占位：/, "")} {yuan(a.price)}
     </option>
   );
   return (
@@ -161,7 +167,7 @@ function Row({
           {it.name.replace(/^占位：/, "")}
         </Link>
         <div className="sc-meta">
-          {it.displayCategory || it.category} · {it.color}
+          {term(it.displayCategory || it.category)} · {term(it.color)}
           {it.sizeNote ? ` · ${it.sizeNote}` : ""}
         </div>
         {it.reason ? (
@@ -170,15 +176,20 @@ function Row({
           </div>
         ) : null}
         {onSwap && alts.length > 0 ? (
-          <select className="swap" aria-label={`替换${it.name}`} value="" onChange={(e) => e.target.value && onSwap(it.id, e.target.value)}>
-            <option value="">换一件{it.displayCategory || it.category}…</option>
-            {others.length && own.length ? <optgroup label="这间衣橱">{own.map(option)}</optgroup> : own.map(option)}
-            {others.length ? <optgroup label="其他衣橱">{others.map(option)}</optgroup> : null}
+          <select
+            className="swap"
+            aria-label={t("list.swapAria", { name: it.name })}
+            value=""
+            onChange={(e) => e.target.value && onSwap(it.id, e.target.value)}
+          >
+            <option value="">{t("list.swapPlaceholder", { category: term(it.displayCategory || it.category) })}</option>
+            {others.length && own.length ? <optgroup label={t("list.ownCloset")}>{own.map(option)}</optgroup> : own.map(option)}
+            {others.length ? <optgroup label={t("list.otherClosets")}>{others.map(option)}</optgroup> : null}
           </select>
         ) : null}
       </div>
       <div style={{ display: "grid", justifyItems: "end", gap: 8 }}>
-        <div className="price">¥{it.price}</div>
+        <div className="price">{yuan(it.price)}</div>
         {/* 浏览中的一键试穿（D67）：可上身的单品与鞋包配饰都有；服务未开放时不渲染 */}
         <QuickTryButton item={it} source={source} />
       </div>

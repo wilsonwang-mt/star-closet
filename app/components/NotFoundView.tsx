@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { getT } from "@/lib/i18n/server";
 import Scene from "./Scene";
 
-// 404 错误态：沿用全站场景与 tokens，中文文案，主按钮回到全部衣橱。
+// 404 错误态：沿用全站场景与 tokens，文案按当前语言（system 命名空间），主按钮回到全部衣橱。
 // app/not-found.tsx、closet/[id]/not-found.tsx、outfit/[id]/not-found.tsx 共用。
-export default function NotFoundView({ title, note }: { title: string; note: string }) {
+export default async function NotFoundView({ title, note }: { title: string; note: string }) {
+  const t = await getT("system");
   return (
     <>
       <Scene dim />
@@ -17,10 +19,10 @@ export default function NotFoundView({ title, note }: { title: string; note: str
         </p>
         <div className="stack" style={{ gap: 8, marginTop: 6 }}>
           <Link href="/" className="sc-cta">
-            回到全部衣橱
+            {t("notFound.home")}
           </Link>
           <Link href="/fitting-room" className="link-btn" style={{ justifySelf: "center", alignSelf: "center" }}>
-            去我的试衣间
+            {t("notFound.fittingRoom")}
           </Link>
         </div>
       </section>

@@ -4,10 +4,15 @@
 // 加入成功后按钮短暂变成“已加入购物袋”，导航角标同步更新。
 import Link from "next/link";
 import { useState } from "react";
-import { addItemsToBag } from "@/lib/bag/client";
+import { addItemsToBag, useBagErrors } from "@/lib/bag/client";
+import { useT, useTerm } from "@/lib/i18n/client";
 import s from "./AddToBag.module.css";
 
+// 尺码值保持目录原文（发给接口）；只把显示的标签按当前语言翻译（如“均码”）。
 export default function AddToBag({ itemId, sizes }: { itemId: string; sizes: string[] }) {
+  const t = useT("item");
+  const term = useTerm();
+  const bagErrors = useBagErrors();
   const [size, setSize] = useState(sizes.length === 1 ? sizes[0] : "");
   const [state, setState] = useState<"idle" | "busy" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -15,12 +20,12 @@ export default function AddToBag({ itemId, sizes }: { itemId: string; sizes: str
 
   async function add() {
     if (needSize) {
-      setError("先选一个尺码");
+      setError(t("bag.pickSize"));
       return;
     }
     setState("busy");
     setError(null);
-    const r = await addItemsToBag([{ itemId, size, qty: 1 }]);
+    const r = await addItemsToBag([{ itemId, size, qty: 1 }], bagErrors);
     if (r.ok) {
       setState("done");
       window.setTimeout(() => setState("idle"), 2400);
@@ -33,7 +38,7 @@ export default function AddToBag({ itemId, sizes }: { itemId: string; sizes: str
   return (
     <div className={s.wrap}>
       {sizes.length > 1 ? (
-        <div className={s.sizes} role="radiogroup" aria-label="尺码">
+        <div className={s.sizes} role="radiogroup" aria-label={t("bag.sizes")}>
           {sizes.map((z) => (
             <button
               key={z}
@@ -46,18 +51,18 @@ export default function AddToBag({ itemId, sizes }: { itemId: string; sizes: str
                 setError(null);
               }}
             >
-              {z}
+              {term(z)}
             </button>
           ))}
         </div>
       ) : null}
       <div className={s.row}>
         <button type="button" className={`sc-cta sc-cta--ghost ${s.add}`} disabled={state === "busy"} onClick={() => void add()}>
-          {state === "done" ? "已加入购物袋" : "加入购物袋"}
+          {state === "done" ? t("bag.added") : t("bag.add")}
         </button>
         {state === "done" ? (
           <Link href="/bag" className="link-btn fade-in">
-            查看购物袋
+            {t("bag.view")}
           </Link>
         ) : null}
       </div>

@@ -187,3 +187,8 @@
 
 /* 试衣间整套试穿（D67）：主按钮尺寸，移动端易点 */
 .wearAll { width: 100%; min-height: 52px; gap: 10px; font-size: 14px; letter-spacing: .12em; }
+
+/* 英文（D70）：文案比中文长，收窄为中文设的宽字距（“已穿上”角标、进度缩略图说明、整套试穿按钮）。 */
+:global(html[lang="en"]) .wearAll { letter-spacing: .06em; line-height: 1.25; text-align: center; }
+:global(html[lang="en"]) .worn { letter-spacing: .06em; }
+:global(html[lang="en"]) .frameCap { letter-spacing: .04em; }

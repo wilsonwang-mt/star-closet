@@ -1,5 +1,7 @@
 import NotFoundView from "@/components/NotFoundView";
+import { getT } from "@/lib/i18n/server";
 
-export default function OutfitNotFound() {
-  return <NotFoundView title="这套搭配不存在或已下架" note="主理人可能已经换掉了这一套，回到衣橱看看别的吧。" />;
+export default async function OutfitNotFound() {
+  const t = await getT("system");
+  return <NotFoundView title={t("notFound.outfit.title")} note={t("notFound.outfit.note")} />;
 }

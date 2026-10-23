@@ -534,3 +534,8 @@ html[data-vt]::view-transition-new(root) { animation: vt-fade-in .42s ease-out .
 html[lang="en"] { --sc-font-serif: "Bodoni Moda", "Noto Serif SC", "Songti SC", serif; }
 html[lang="en"] .sc-display { letter-spacing: .01em; }
 html[lang="en"] .site-menu__label { letter-spacing: .03em; }
+html[lang="en"] .sc-meta, html[lang="en"] .sc-badge { letter-spacing: .04em; }
+html[lang="en"] .sc-cta { letter-spacing: .08em; }
+html[lang="en"] .sc-cta.compact, html[lang="en"] .site-menu__signout, html[lang="en"] .back-link { letter-spacing: .06em; }
+html[lang="en"] .section-title { letter-spacing: .01em; }
+html[lang="en"] .link-btn { letter-spacing: .03em; }

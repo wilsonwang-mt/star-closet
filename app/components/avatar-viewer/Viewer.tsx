@@ -7,6 +7,7 @@ import { AnimationMixer, Box3, LoopRepeat, Vector3, type AnimationClip, type Gro
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
+import { useT } from "@/lib/i18n/client";
 import ViewerErrorBoundary from "./ErrorBoundary";
 import styles from "./AvatarViewer.module.css";
 
@@ -252,6 +253,8 @@ export type ViewerProps = {
 type Status = { phase: "loading"; progress: number | null } | { phase: "ready" };
 
 export default function Viewer({ src, animate, resetSignal = 0, onMoved }: ViewerProps) {
+  const t = useT("avatar");
+  const tc = useT("common");
   const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState<Status>({ phase: "loading", progress: null });
   const [settled, setSettled] = useState(false);
@@ -273,7 +276,12 @@ export default function Viewer({ src, animate, resetSignal = 0, onMoved }: Viewe
   const onSettled = useCallback(() => setSettled(true), []);
 
   return (
-    <ViewerErrorBoundary key={`${src}#${attempt}`} onRetry={retry}>
+    <ViewerErrorBoundary
+      key={`${src}#${attempt}`}
+      onRetry={retry}
+      message={t("viewer.loadFailed")}
+      retryLabel={tc("retry")}
+    >
       <Canvas
         className={styles.canvas}
         dpr={[1, 2]}
@@ -317,7 +325,9 @@ export default function Viewer({ src, animate, resetSignal = 0, onMoved }: Viewe
         <div className={styles.overlay} role="status" aria-live="polite">
           <span className={styles.spinner} aria-hidden="true" />
           <span className="sc-meta">
-            {status.progress === null ? "正在加载 3D 形象…" : `正在加载 3D 形象 ${Math.round(status.progress * 100)}%`}
+            {status.progress === null
+              ? t("viewer.loading")
+              : t("viewer.loadingPct", { pct: Math.round(status.progress * 100) })}
           </span>
         </div>
       )}

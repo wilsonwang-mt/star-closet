@@ -3,6 +3,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "@/lib/db";
+import { DEFAULT_LOCALE, isLocale, type Locale } from "@/lib/i18n/config";
 import { getProfile } from "@/lib/profile";
 import { avatarKey, getStorage, isValidKey } from "@/lib/storage";
 import { cleanSummary } from "./body";
@@ -44,6 +45,8 @@ export {
 // 4. 结果存私有存储 `<userId>/avatars/twin-<jobId>-front.jpg` 等，写一条 avatar_job（provider = twin，result_images 存 key 与分析结果）。
 //    新分身成功后才删除旧分身；一键删除（deleteAll）随用户前缀清理全部文件并清空 result_images。
 // 试穿（另一个任务）通过 getTwin / readTwinImageDataUri / getIdentityRefs 使用这组照片。
+// 多语言（D70）：概括与特征标签按发起生成时的界面语言写（接口传 locale，默认中文），记在 result_images.lang；
+// 界面语言不同时接口边界不显示这两项（lib/avatar/l10n.ts），图片不受影响。
 
 const ANALYSIS_MODEL = "claude-opus-5-5";
 /** 整个生成（含分析与重试）的上限；路由 maxDuration 为 120 秒。 */
@@ -70,6 +73,8 @@ export type Twin = {
 export type TwinRecord = TwinImages & {
   summary: string | null;
   traits: Record<string, string> | null;
+  /** summary 与 traits 的语言（旧记录没有，视为中文）。 */
+  lang?: Locale;
   gender: TwinGender | null;
   /** 分析给出的英文外观描述（只用于提示词，不显示）。 */
   descriptor?: string | null;
@@ -93,6 +98,7 @@ export function parseTwinRecord(raw: unknown): TwinRecord | null {
     back: keyOrNull(r.back),
     summary: typeof r.summary === "string" ? r.summary : null,
     traits: traits && Object.keys(traits).length ? traits : null,
+    lang: isLocale(r.lang) ? r.lang : DEFAULT_LOCALE,
     gender: isGender(r.gender) ? r.gender : null,
     descriptor: typeof r.descriptor === "string" ? r.descriptor : null,
   };
@@ -126,6 +132,8 @@ export type TwinView = {
   shots: { angle: TwinAngle; label: string; url: string }[];
   summary: string | null;
   tags: string[];
+  /** summary 与 tags 的语言；与界面语言不同时接口边界不显示（lib/avatar/l10n.ts）。 */
+  lang: Locale;
   gender: TwinGender | null;
   createdAt: string;
 };
@@ -144,6 +152,7 @@ export function twinViewOf(job: { id: string; resultImages: unknown; createdAt: 
       .map((k) => r.traits?.[k])
       .filter((v): v is string => !!v)
       .slice(0, 8),
+    lang: r.lang ?? DEFAULT_LOCALE,
     gender: r.gender,
     createdAt: job.createdAt.toISOString(),
   };
@@ -207,21 +216,26 @@ export async function getIdentityRefs(userId: string): Promise<string[]> {
 
 // ---------- 分析（Claude） ----------
 
-const TraitsSchema = z.object({
-  summary: z.string().describe("不超过 30 字的中文体型与整体形象概括"),
-  gender: z.enum(["female", "male"]).describe("最接近的服装版型"),
-  hair: z.string().describe("发型，中文短语，如“齐肩直发”"),
-  hairColor: z.string().describe("发色，中文短语"),
-  faceShape: z.string().describe("脸型，中文短语"),
-  skinTone: z.string().describe("肤色，中文短语"),
-  bodyType: z.string().describe("身材类型，中文短语"),
-  shoulders: z.string().describe("肩宽相对比例，中文短语"),
-  waist: z.string().describe("腰线相对比例，中文短语"),
-  hips: z.string().describe("臀胯相对比例，中文短语"),
-  legs: z.string().describe("腿长相对比例，中文短语"),
-  glasses: z.boolean().describe("是否戴眼镜"),
-  descriptorEn: z.string().describe("给图像模型的英文外观描述，一到三句"),
-});
+const traitsSchema = (locale: Locale) => {
+  const en = locale === "en";
+  const phrase = en ? "short English phrase" : "中文短语";
+  return z.object({
+    summary: z.string().describe(en ? "One-sentence summary of body proportions and overall look in English, at most 15 words" : "不超过 30 字的中文体型与整体形象概括"),
+    gender: z.enum(["female", "male"]).describe("最接近的服装版型"),
+    hair: z.string().describe(en ? "Hairstyle, short English phrase, e.g. “Shoulder-length straight hair”" : "发型，中文短语，如“齐肩直发”"),
+    hairColor: z.string().describe(`发色，${phrase}`),
+    faceShape: z.string().describe(`脸型，${phrase}`),
+    skinTone: z.string().describe(`肤色，${phrase}`),
+    bodyType: z.string().describe(`身材类型，${phrase}`),
+    shoulders: z.string().describe(`肩宽相对比例，${phrase}`),
+    waist: z.string().describe(`腰线相对比例，${phrase}`),
+    hips: z.string().describe(`臀胯相对比例，${phrase}`),
+    legs: z.string().describe(`腿长相对比例，${phrase}`),
+    glasses: z.boolean().describe("是否戴眼镜"),
+    descriptorEn: z.string().describe("给图像模型的英文外观描述，一到三句"),
+  });
+};
+const TraitsSchema = traitsSchema(DEFAULT_LOCALE);
 export type ModelTraits = z.infer<typeof TraitsSchema>;
 
 const ANALYSIS_SYSTEM = `你在为线上买手店 Star Closet 生成用户的“数字分身”标准形象照做准备。输入是同一个人的几张照片（正脸、全身正面，可能还有侧脸、全身侧面、半身照），以及可选的身高。
@@ -238,12 +252,24 @@ const ANALYSIS_SYSTEM = `你在为线上买手店 Star Closet 生成用户的“
 2. 用中性、不评判的语言：不写体重数字，不用“胖”“瘦”“身材好/差”“美/丑”等评价词，不写“精准”“还原”“复刻”之类的说法。
 3. 不识别、不猜测人物身份、姓名、年龄、民族或其他与穿搭无关的敏感特征。`;
 
+// 英文界面：给用户看的特征短语与概括改用英文；descriptorEn 本来就是英文。
+const ANALYSIS_SYSTEM_EN = ANALYSIS_SYSTEM.replace("用简短中文短语；", "用简短英文短语（English）；")
+  .replace("用中性的服装版型语言（如“肩线偏窄”“腰线较高”“腿部比例修长”）；", "用中性的服装版型语言写英文短语（如 “Narrow shoulders”“High waist”“Long legs”）；")
+  .replace("- summary：一句不超过 30 字的中文概括，只描述比例、线条与整体气质；", "- summary：一句不超过 15 个词的英文概括，只描述比例、线条与整体气质；")
+  .replace("1. 只依据照片里看得清的特征；看不清的填“看不清”。", "1. 只依据照片里看得清的特征；看不清的填 “unclear”。除 gender 外，所有文字字段都用英文写，不要夹带中文。")
+  .replace("不写“精准”“还原”“复刻”之类的说法。", "不写 precise、exact、replica、1:1 之类的说法。");
+
+/** 给模型的系统提示：特征短语与概括用哪种语言写。 */
+export function twinAnalysisSystem(locale: Locale = DEFAULT_LOCALE): string {
+  return locale === "en" ? ANALYSIS_SYSTEM_EN : ANALYSIS_SYSTEM;
+}
+
 export type TwinImage = { slot: string; mime: string; base64: string };
-export type TraitsCall = (input: { images: TwinImage[]; heightCm: number | null }) => Promise<ModelTraits | null>;
+export type TraitsCall = (input: { images: TwinImage[]; heightCm: number | null; locale?: Locale }) => Promise<ModelTraits | null>;
 
 const SLOT_TEXT: Record<string, string> = { face: "正脸：", front: "全身正面：", extra: "侧脸：", side: "全身侧面：", back: "半身或其他角度：" };
 
-export const callTraitsClaude: TraitsCall = async ({ images, heightCm }) => {
+export const callTraitsClaude: TraitsCall = async ({ images, heightCm, locale = DEFAULT_LOCALE }) => {
   const client = new Anthropic({ timeout: ANALYSIS_TIMEOUT_MS, maxRetries: 0 });
   const content: Anthropic.ContentBlockParam[] = [];
   for (const img of images) {
@@ -256,8 +282,8 @@ export const callTraitsClaude: TraitsCall = async ({ images, heightCm }) => {
   const response = await client.messages.parse({
     model: ANALYSIS_MODEL,
     max_tokens: 4000,
-    system: ANALYSIS_SYSTEM,
-    output_config: { effort: "low", format: zodOutputFormat(TraitsSchema) },
+    system: twinAnalysisSystem(locale),
+    output_config: { effort: "low", format: zodOutputFormat(locale === DEFAULT_LOCALE ? TraitsSchema : traitsSchema(locale)) },
     messages: [{ role: "user", content }],
   });
   if (response.stop_reason === "refusal") return null;
@@ -265,23 +291,37 @@ export const callTraitsClaude: TraitsCall = async ({ images, heightCm }) => {
 };
 
 const UNCLEAR = /看不清|不清楚|无法判断|未知/;
+const UNCLEAR_EN = /\b(?:unclear|not (?:clearly )?visible|can'?t tell|cannot tell|hard to tell|unknown|n\/a)\b/i;
+const OVERCLAIM_EN = /\b(?:precise(?:ly)?|exact(?:ly)?|accurate(?:ly)?|replica|replicat\w*)\b/i;
 const short = (s: unknown, max = 12) => {
   if (typeof s !== "string") return null;
   const t = s.replace(/\s+/g, "").replace(/[。．.!！]+$/u, "");
   if (!t || UNCLEAR.test(t) || /精准|精确|还原|复刻/.test(t)) return null;
   return Array.from(t).slice(0, max).join("");
 };
+/** 英文特征短语：保留单词间空格，超过上限时在词边界截断，首字母大写；夹带中文时丢弃。 */
+const shortEn = (s: unknown, max = 32) => {
+  if (typeof s !== "string") return null;
+  let t = s.replace(/\s+/g, " ").trim().replace(/[.!。！]+$/u, "");
+  if (!t || UNCLEAR_EN.test(t) || UNCLEAR.test(t) || OVERCLAIM_EN.test(t) || /[\u3400-\u9fff]/.test(t)) return null;
+  if (t.length > max) t = t.slice(0, max).replace(/\s+\S*$/, "") || t.slice(0, max);
+  return t.charAt(0).toUpperCase() + t.slice(1);
+};
 
-/** 把模型输出整理成可显示的特征标签（去掉看不清的项）与提示词描述。 */
-export function normalizeTraits(out: ModelTraits): { summary: string | null; traits: Record<string, string> | null; gender: TwinGender | null; descriptor: string | null } {
+/** 把模型输出整理成可显示的特征标签（去掉看不清的项）与提示词描述。locale 为特征短语与概括的语言。 */
+export function normalizeTraits(
+  out: ModelTraits,
+  locale: Locale = DEFAULT_LOCALE,
+): { summary: string | null; traits: Record<string, string> | null; gender: TwinGender | null; descriptor: string | null } {
+  const en = locale === "en";
   const traits: Record<string, string> = {};
   for (const k of ["hair", "hairColor", "faceShape", "skinTone", "bodyType", "shoulders", "waist", "hips", "legs"] as const) {
-    const v = short(out[k]);
+    const v = en ? shortEn(out[k]) : short(out[k]);
     if (v) traits[k] = v;
   }
-  traits.glasses = out.glasses ? "戴眼镜" : "不戴眼镜";
+  traits.glasses = out.glasses ? (en ? "Glasses" : "戴眼镜") : en ? "No glasses" : "不戴眼镜";
   const descriptor = typeof out.descriptorEn === "string" ? out.descriptorEn.replace(/\s+/g, " ").trim().slice(0, 600) || null : null;
-  return { summary: cleanSummary(out.summary), traits, gender: isGender(out.gender) ? out.gender : null, descriptor };
+  return { summary: cleanSummary(out.summary, locale), traits, gender: isGender(out.gender) ? out.gender : null, descriptor };
 }
 
 // ---------- 参考图 ----------
@@ -302,9 +342,15 @@ export type GenerateDeps = { analyze?: TraitsCall };
 
 /**
  * POST /api/avatar/twin 的实现。需已同意由 fal.ai 上的 AI 图像模型生成形象（requireTwinConsent）。
+ * input.locale：概括与特征标签用哪种语言写（接口在 after() 之前取 getLocale() 传入）；不传为中文。
  * 返回新作业 id；失败时作业记为 failed 并抛 AvatarError。
  */
-export async function generateTwin(userId: string, input: { gender?: unknown }, deps: GenerateDeps = {}): Promise<{ jobId: string }> {
+export async function generateTwin(
+  userId: string,
+  input: { gender?: unknown; locale?: Locale },
+  deps: GenerateDeps = {},
+): Promise<{ jobId: string }> {
+  const lang = input.locale ?? DEFAULT_LOCALE;
   const { consent } = await requireTwinConsent(userId);
   if (inflight.has(userId)) throw new AvatarError(409, "正在生成你的形象，请稍候");
   // 进程内的 inflight 只管同一实例；多实例部署时再看数据库里是否有仍在进行的生成。
@@ -353,10 +399,10 @@ export async function generateTwin(userId: string, input: { gender?: unknown }, 
         const { heightCm } = await getProfile(userId);
         const call = deps.analyze ?? callTraitsClaude;
         const out = await Promise.race([
-          call({ images, heightCm }),
+          call({ images, heightCm, locale: lang }),
           new Promise<null>((r) => setTimeout(() => r(null), ANALYSIS_TIMEOUT_MS)),
         ]);
-        if (out) return { analysis: normalizeTraits(out), glasses: !!out.glasses };
+        if (out) return { analysis: normalizeTraits(out, lang), glasses: !!out.glasses };
         console.warn(`[avatar] ${BODY_ANALYSIS_NAME} 分析未返回结果，跳过`);
       } catch (e) {
         // 只记错误类型，不记响应内容。
@@ -422,6 +468,7 @@ export async function generateTwin(userId: string, input: { gender?: unknown }, 
       back: keys.back ?? null,
       summary: analysis?.summary ?? null,
       traits: analysis?.traits ?? null,
+      lang,
       gender,
       descriptor: analysis?.descriptor ?? null,
     };

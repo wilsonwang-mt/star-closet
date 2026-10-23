@@ -1,16 +1,22 @@
 "use client";
 
 import { forwardRef, useEffect, useState } from "react";
+import { LOCALE_META } from "@/lib/i18n/config";
+import { useLocale, useT, useTerm } from "@/lib/i18n/client";
 import ItemThumb from "./ItemThumb";
 
 // AI 改编约需 10–13 秒的等待卡：轮换说明当前在做什么（不显示假进度百分比），附已等待秒数。
 // 下方列出当前这一套（改编前的单品），一道香槟光束反复扫过它们（视觉规范 §7.1「等待时光束扫过当前搭配」）；
 // 结果出来后由改编结果卡替换，结果卡先以同样的单品开场，再把被换的那几件换掉。
-const STEPS = ["读懂你的要求", "在这间衣橱里挑选", "保留原搭配的风格", "核对类别与预算", "写下每件的理由"];
+// 文案在 outfit 字典 waiting.steps，这里只定顺序
+const STEPS = ["waiting.steps.read", "waiting.steps.pick", "waiting.steps.keep", "waiting.steps.check", "waiting.steps.write"] as const;
 
 type Current = { id: string; name: string; image: string | null; color: string; category: string; displayCategory?: string | null; price: number };
 
 const AdaptWaiting = forwardRef<HTMLElement, { aiEnabled: boolean; items: Current[] }>(function AdaptWaiting({ aiEnabled, items }, ref) {
+  const t = useT("outfit");
+  const term = useTerm();
+  const locale = useLocale();
   const [step, setStep] = useState(0);
   const [seconds, setSeconds] = useState(0);
 
@@ -29,12 +35,12 @@ const AdaptWaiting = forwardRef<HTMLElement, { aiEnabled: boolean; items: Curren
       <div className="spread">
         <div>
           <span className="sc-kicker">Re-styling</span>
-          <h2 className="section-title">正在为你改编</h2>
+          <h2 className="section-title">{t("waiting.title")}</h2>
         </div>
-        <span className="sc-meta">{aiEnabled ? `AI 思考中 · ${seconds}s` : `${seconds}s`}</span>
+        <span className="sc-meta">{aiEnabled ? t("waiting.thinking", { s: seconds }) : `${seconds}s`}</span>
       </div>
       <p className="serif-note wait-step" key={step}>
-        {STEPS[step]}…
+        {t(STEPS[step])}…
       </p>
       <div className="rows adapt-scan" aria-hidden="true">
         {items.map((it) => (
@@ -43,15 +49,15 @@ const AdaptWaiting = forwardRef<HTMLElement, { aiEnabled: boolean; items: Curren
             <div>
               <div className="item-name">{it.name.replace(/^占位：/, "")}</div>
               <div className="sc-meta">
-                {it.displayCategory || it.category} · {it.color}
+                {term(it.displayCategory || it.category)} · {term(it.color)}
               </div>
             </div>
-            <div className="price">¥{it.price}</div>
+            <div className="price">¥{it.price.toLocaleString(LOCALE_META[locale].intl)}</div>
           </div>
         ))}
       </div>
       <p className="sc-meta" style={{ margin: 0 }}>
-        正在从衣橱里为你挑选最合适的一套
+        {t("waiting.footer")}
       </p>
     </section>
   );

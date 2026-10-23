@@ -1,5 +1,7 @@
 import { json, readBodyLimited, withUser } from "@/lib/avatar/http";
+import { localizeAvatarState } from "@/lib/avatar/l10n";
 import { AvatarError, importMetaperson } from "@/lib/avatar/service";
+import { getLocale } from "@/lib/i18n/server";
 
 // 导入 MetaPerson 导出的形象：body { url, avatarCode }。
 // 服务端立即下载导出文件（仅 https、主机白名单：avatarsdk.com 及子域 + AVATARSDK_EXPORT_HOSTS），
@@ -15,6 +17,7 @@ export async function POST(req: Request) {
     }
     if (!body || typeof body !== "object") throw new AvatarError(400, "请求格式不对");
     const b = body as { url?: unknown; avatarCode?: unknown };
-    return json(await importMetaperson(userId, { url: b.url, avatarCode: b.avatarCode }), 201);
+    const state = await importMetaperson(userId, { url: b.url, avatarCode: b.avatarCode });
+    return json(localizeAvatarState(state, await getLocale()), 201);
   });
 }

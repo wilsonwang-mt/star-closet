@@ -1,6 +1,8 @@
 import { after } from "next/server";
 import { readBodyLimited } from "@/lib/avatar/http";
+import { getLocale } from "@/lib/i18n/server";
 import { json, withTryonUser } from "@/lib/tryon/http";
+import { localizeTryonView } from "@/lib/tryon/l10n";
 import { createTryon, TryonError, type TryonInput } from "@/lib/tryon/service";
 import { withQuota } from "@/lib/usage";
 
@@ -32,6 +34,7 @@ export async function POST(req: Request) {
       consent: body.consent === true,
     };
     // 每用户每日试穿上限（D64）：预热、缓存命中也计一次；校验类错误退回。
-    return json(await withQuota(userId, "tryon", () => createTryon(userId, input, (task) => after(task))), 201);
+    const view = await withQuota(userId, "tryon", () => createTryon(userId, input, (task) => after(task)));
+    return json(localizeTryonView(view, await getLocale()), 201);
   });
 }

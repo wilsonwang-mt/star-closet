@@ -1,6 +1,8 @@
 import { after } from "next/server";
 import { readBodyLimited } from "@/lib/avatar/http";
+import { getLocale } from "@/lib/i18n/server";
 import { json, withTryonUser } from "@/lib/tryon/http";
+import { localizeTryonView } from "@/lib/tryon/l10n";
 import { createQuickTryon, TryonError } from "@/lib/tryon/service";
 import { withQuota } from "@/lib/usage";
 
@@ -27,6 +29,6 @@ export async function POST(req: Request) {
     const view = await withQuota(userId, "tryon", () =>
       createQuickTryon(userId, itemId, { consent: body?.consent === true }, (task) => after(task)),
     );
-    return json(view, 201);
+    return json(localizeTryonView(view, await getLocale()), 201);
   });
 }

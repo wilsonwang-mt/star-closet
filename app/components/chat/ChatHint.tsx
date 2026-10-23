@@ -1,10 +1,12 @@
 "use client";
 
 // 首页标题旁的引导胶囊：取代手机首屏的筛选行（D51），点开就是全站悬浮对话（D66）。
+import { useT } from "@/lib/i18n/client";
 import { CHAT_OPEN_EVENT } from "./ChatDock";
 import styles from "./ChatDock.module.css";
 
 export default function ChatHint() {
+  const t = useT("chat");
   return (
     <button
       type="button"
@@ -18,8 +20,8 @@ export default function ChatHint() {
           fill="#c9a96e"
         />
       </svg>
-      <span className={styles.hintShort}>说场合和预算</span>
-      <span className={styles.hintLong}>告诉我场合和预算</span>
+      <span className={styles.hintShort}>{t("hint.short")}</span>
+      <span className={styles.hintLong}>{t("hint.long")}</span>
     </button>
   );
 }

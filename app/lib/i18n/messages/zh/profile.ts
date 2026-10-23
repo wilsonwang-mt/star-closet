@@ -1,4 +1,85 @@
 // 中文（源）· 个人档案。键名用英文小驼峰，按界面区域分组；占位符写 {name}，复数写 {n, plural, other {# 件}}。
-const profile = {};
+const profile = {
+  kicker: "My Profile",
+  title: "我的档案",
+  intro: "记下你的风格、尺码与预算，让每一次挑选都更懂你。",
+  loading: "正在打开我的档案",
+  signOut: "退出登录",
+  basics: {
+    title: "基本信息",
+    name: "昵称",
+    city: "所在城市",
+    bio: "一句话介绍",
+    bioPlaceholder: "比如：上班族，喜欢简洁但有一点细节的穿搭",
+  },
+  style: {
+    title: "风格偏好",
+    styles: "风格",
+    colors: "喜欢的颜色",
+    customPlaceholder: "自定义，回车添加",
+    customStyleAria: "自定义风格",
+    customColorAria: "自定义喜欢的颜色",
+    add: "添加",
+  },
+  // 预设标签的显示名。存进数据库的值始终是中文原词（见 ProfileForm 的 STYLE_PRESETS / COLOR_PRESETS），这里只管显示。
+  presets: {
+    style: {
+      commute: "通勤",
+      minimal: "极简",
+      french: "法式",
+      vintage: "复古",
+      street: "街头",
+      sporty: "运动",
+      sweet: "甜美",
+      androgynous: "中性",
+      resort: "度假",
+      date: "约会",
+    },
+    color: {
+      black: "黑",
+      white: "白",
+      gray: "灰",
+      beige: "米",
+      camel: "驼",
+      navy: "藏青",
+      burgundy: "酒红",
+      forest: "墨绿",
+      pink: "粉",
+      blue: "蓝",
+    },
+  },
+  sizes: {
+    title: "尺码与预算",
+    top: "上装",
+    bottom: "下装",
+    shoe: "鞋码",
+    budgetMin: "整套预算下限（元）",
+    budgetMax: "整套预算上限（元）",
+  },
+  body: {
+    title: "身体数据",
+    private: "仅你可见",
+    height: "身高（cm）",
+    weight: "体重（kg）",
+    clear: "清空身高与体重",
+    clearConfirm: "确定清空身高和体重吗？",
+  },
+  avatar: {
+    kicker: "3D Avatar",
+    title: "我的 3D 形象",
+    intro: "上传三张全身照，AI 为你生成可 360° 查看的 3D 形象。",
+    cta: "生成我的 3D 形象",
+  },
+  messages: {
+    integersOnly: "身高、体重和预算请填整数",
+    budgetOrder: "预算下限不能高于上限",
+    saveFailed: "保存失败，请稍后再试",
+    saved: "已保存",
+    clearFailed: "清空失败，请稍后再试",
+    cleared: "身体数据已清空",
+  },
+  save: "保存档案",
+  saving: "保存中…",
+};
 
 export default profile;

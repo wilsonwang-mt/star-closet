@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useT } from "@/lib/i18n/client";
 import { wearableInOrder, type PlanItem } from "@/lib/tryon/plan";
 import type { TryonContext, TryonStage, TryonView } from "@/lib/tryon/service";
-import { compress, fetchView, pollDelay, preload, readError, sleep, waitFirst } from "./shared";
+import { compress, fetchView, pollDelay, preload, readError, sleep, waitErrors, waitFirst } from "./shared";
 
 // 试衣间一套搭配的逐件试穿状态。放在 LookCard 里（而不是面板里）：生成途中关掉面板也不丢，
 // 穿好后卡片上的单品直接标“已穿上”。
@@ -26,6 +27,7 @@ const REFINE_POLL_MS = 1500;
 const needsRefine = (v: TryonView) => v.refining || (v.kind === "item" && v.mode === "performance" && v.status === "succeeded");
 
 export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; ctx?: TryonContext; initial?: TryonView[]; items?: PlanItem[] }) {
+  const tx = useT("tryon");
   const enabled = !!ctx?.enabled && !!ctx?.signedIn;
   const [frames, setFrames] = useState<TryonView[]>(() => (initial ?? []).filter((f) => !!f.resultUrl));
   const [selectedId, setSelectedId] = useState<string | null>(() => frames.at(-1)?.id ?? null);
@@ -33,7 +35,8 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
   const [photoUrl, setPhotoUrl] = useState<string | null>(ctx?.frontPhotoUrl ?? null);
   const [baseSource, setBaseSource] = useState<"twin" | "photo" | null>(ctx?.baseSource ?? null);
   const isTwin = baseSource === "twin";
-  const providerName = ctx?.providerName ?? "fal.ai 上的 AI 模型";
+  // 同意文案里的处理方；缺省时由 useConsentLabel 用字典里的处理方名称。
+  const providerName = ctx?.providerName ?? null;
   const [consented, setConsented] = useState(!!ctx?.consented);
   const [agree, setAgree] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -149,7 +152,7 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
           body: JSON.stringify({ lookId, itemIds: [itemId], ...(baseId ? { baseTryonId: baseId } : {}), consent: !consented && agree }),
         }).catch(() => null);
         if (!res || !res.ok) {
-          const message = await readError(res, "试穿失败，请稍后再试");
+          const message = await readError(res, tx("errors.failed"), tx("errors.network"));
           // 服务端在调用 FASHN 之前就记下了同意：只要不是“未同意”，下次不用再勾。
           if (res && res.status !== 403 && res.status !== 401 && agree) setConsented(true);
           if (res?.status === 404 && baseId) setFrames((f) => f.filter((x) => x.id !== baseId));
@@ -172,11 +175,11 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
         }
         if (!view.resultUrl && view.status === "processing") {
           onStage(view);
-          view = await waitFirst(view, { alive: () => alive.current, onStage });
+          view = await waitFirst(view, { alive: () => alive.current, onStage, errors: waitErrors(tx) });
         }
         if (!alive.current) return null;
         if (view.status === "failed" || !view.resultUrl) {
-          setError(view.error ?? "试穿失败，请稍后再试");
+          setError(view.error ?? tx("errors.failed"));
           setQueued(itemId);
           return null;
         }
@@ -195,7 +198,7 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
         busy.current = false;
       }
     },
-    [agree, consented, lookId, refine, selectedId],
+    [agree, consented, lookId, refine, selectedId, tx],
   );
 
   const runRef = useRef(run);
@@ -296,7 +299,7 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
       if (busy.current) return;
       const res = await fetch(`/api/tryon/${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => null);
       if (!res || (!res.ok && res.status !== 404)) {
-        setError(await readError(res, "删除失败，请稍后再试"));
+        setError(await readError(res, tx("errors.deleteFailed"), tx("errors.network")));
         return;
       }
       setError(null);
@@ -310,7 +313,7 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
         setSelectedId(back);
       }
     },
-    [frames, selectedId],
+    [frames, selectedId, tx],
   );
 
   const upload = useCallback(async (file: File | undefined) => {
@@ -323,7 +326,7 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
       form.append("file", blob, "front.jpg");
       const res = await fetch("/api/tryon/photo", { method: "POST", body: form }).catch(() => null);
       if (!res || !res.ok) {
-        setError(await readError(res, "上传失败，请稍后再试"));
+        setError(await readError(res, tx("errors.uploadFailed"), tx("errors.network")));
         return;
       }
       const data = (await res.json()) as { frontPhotoUrl: string };
@@ -337,7 +340,7 @@ export function useLookTryon({ lookId, ctx, initial, items }: { lookId: string; 
     } finally {
       setUploading(false);
     }
-  }, []);
+  }, [tx]);
 
   const openPanel = useCallback(() => {
     if (enabled) setOpen(true);

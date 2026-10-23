@@ -1,5 +1,7 @@
 import { after } from "next/server";
+import { getLocale } from "@/lib/i18n/server";
 import { json, notFound, withTryonUser } from "@/lib/tryon/http";
+import { localizeTryonView } from "@/lib/tryon/l10n";
 import { deleteTryon, pollTryon } from "@/lib/tryon/service";
 
 // 本人的单个试穿结果，也是前端的轮询接口：还在生成或细化时，服务端顺带查一次 fal 状态；
@@ -10,7 +12,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   return withTryonUser(async (userId) => {
     const { id } = await params;
     const view = await pollTryon(userId, id, (task) => after(task));
-    return view ? json(view) : notFound();
+    return view ? json(localizeTryonView(view, await getLocale())) : notFound();
   });
 }
 

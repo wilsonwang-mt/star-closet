@@ -2,9 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { useT } from "@/lib/i18n/client";
 
 export default function SignOutButton() {
   const router = useRouter();
+  const t = useT("profile");
   return (
     <button
       type="button"
@@ -15,7 +17,7 @@ export default function SignOutButton() {
         router.refresh();
       }}
     >
-      退出登录
+      {t("signOut")}
     </button>
   );
 }

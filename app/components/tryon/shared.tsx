@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale, useT } from "@/lib/i18n/client";
+import type { Translator } from "@/lib/i18n/types";
 import type { TryonStage, TryonView } from "@/lib/tryon/service";
 
 // 试穿组件共用的小工具：照片压缩、轮询、错误读取、图片预解码、名称清理与衣架图标。
@@ -45,8 +47,14 @@ export async function fetchView(id: string): Promise<Polled> {
   return view ? { kind: "ok", view } : { kind: "error" };
 }
 
+/** 轮询失败时写进结果的提示（当前语言）；不传时 error 为 null，由调用方用自己的兜底提示。 */
+export type WaitErrors = { gone: string; network: string };
+
 /** 等到出第一张图（或失败）；每次拿到新进度时回调 onStage。 */
-export async function waitFirst(view: TryonView, opts: { alive: () => boolean; onStage?: (v: TryonView) => void; pollMs?: number }) {
+export async function waitFirst(
+  view: TryonView,
+  opts: { alive: () => boolean; onStage?: (v: TryonView) => void; pollMs?: number; errors?: WaitErrors },
+) {
   let v = view;
   let misses = 0;
   let first = true;
@@ -57,9 +65,9 @@ export async function waitFirst(view: TryonView, opts: { alive: () => boolean; o
     const startedAt = Date.now();
     const r = await fetchView(v.id);
     lastMs = Date.now() - startedAt;
-    if (r.kind === "gone") return { ...v, status: "failed", stage: "failed" as const, error: "没有找到这次试穿，请再试一次" };
+    if (r.kind === "gone") return { ...v, status: "failed", stage: "failed" as const, error: opts.errors?.gone ?? null };
     if (r.kind === "error") {
-      if (++misses >= 8) return { ...v, status: "failed", stage: "failed" as const, error: "网络异常，请稍后再试" };
+      if (++misses >= 8) return { ...v, status: "failed", stage: "failed" as const, error: opts.errors?.network ?? null };
       continue;
     }
     misses = 0;
@@ -69,16 +77,22 @@ export async function waitFirst(view: TryonView, opts: { alive: () => boolean; o
   return v;
 }
 
-/** 等待中的阶段文案。sending：请求还没回来。 */
-export function stageLabel(stage: TryonStage | "sending", queuePosition?: number | null) {
-  if (stage === "sending") return "正在提交";
-  if (stage === "queued") return queuePosition ? `排队中 · 前面 ${queuePosition} 位` : "排队中";
-  if (stage === "refining") return "正在细化";
-  return "生成中";
+/** 当前语言的轮询失败提示，传给 waitFirst。 */
+export function waitErrors(t: Translator<"tryon">): WaitErrors {
+  return { gone: t("errors.notFound"), network: t("errors.network") };
 }
 
-export async function readError(res: Response | null, fallback: string) {
-  if (!res) return "网络异常，请稍后再试";
+/** 等待中的阶段文案。sending：请求还没回来。 */
+export function stageLabel(t: Translator<"tryon">, stage: TryonStage | "sending", queuePosition?: number | null) {
+  if (stage === "sending") return t("stage.sending");
+  if (stage === "queued") return queuePosition ? t("stage.queuedAhead", { n: queuePosition }) : t("stage.queued");
+  if (stage === "refining") return t("stage.refining");
+  return t("stage.generating");
+}
+
+/** 读接口返回的 error（服务端已按当前语言翻译）；没有时用 fallback。network：请求没发出去时的提示，缺省同 fallback。 */
+export async function readError(res: Response | null, fallback: string, network: string = fallback) {
+  if (!res) return network;
   const body = (await res.json().catch(() => null)) as { error?: string } | null;
   return body?.error ?? fallback;
 }
@@ -95,7 +109,19 @@ export function preload(src: string) {
   });
 }
 
+// 去掉目录里占位单品名的前缀（数据约定，不是界面文案）。
 export const cleanName = (n: string) => n.replace(/^占位：/, "");
+
+/**
+ * 同意文案（D47），如实写明处理方。处理方名称由服务端给出（lib/tryon/provider.ts 的中文常量“fal.ai 上的 AI 模型”）；
+ * 非中文界面遇到中文名称时换成字典里的译名，已是译文时原样使用。
+ */
+export function useConsentLabel(providerName: string | null | undefined): string {
+  const t = useT("tryon");
+  const locale = useLocale();
+  const provider = !providerName || (locale !== "zh" && /[\u3400-\u9fff]/.test(providerName)) ? t("consent.provider") : providerName;
+  return t("consent.agree", { provider });
+}
 
 export function HangerIcon({ size = 16 }: { size?: number }) {
   return (

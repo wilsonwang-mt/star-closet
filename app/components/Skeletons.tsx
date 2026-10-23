@@ -1,7 +1,11 @@
+"use client";
+
 // 路由切换时的加载骨架（app/**/loading.tsx 使用）。Next 会预取这层外壳，点击后立刻切到骨架，数据到了再换成真页面。
 // 结构与真页面同位：衣橱页是“底部文案 + 搭配网格”，搭配页是“返回胶囊 + 标题 + 两张卡”，换上真内容时不跳动。
 // 骨架只用 tokens 颜色（两种主题自动适配），脉动在减弱动态时关闭（globals.css .skeleton-row）。
 // 注意：这里不放共享元素过渡的 data-vt-hero，首页「走进衣橱」的放大推进只截取真页面的场景。
+// 客户端组件：读屏状态文字从根布局下发的当前语言字典里取（useT），loading.tsx 不必变成异步。
+import { useT } from "@/lib/i18n/client";
 
 function Line({ w, h = 10 }: { w: string | number; h?: number }) {
   return <span className="skeleton-line" style={{ width: w, height: h, borderRadius: h / 2 }} />;
@@ -16,9 +20,10 @@ function Status({ label }: { label: string }) {
 }
 
 export function ClosetSkeleton() {
+  const t = useT("system");
   return (
     <div className="page-skeleton" aria-busy="true">
-      <Status label="正在打开衣橱" />
+      <Status label={t("loading.closet")} />
       <div className="page-skeleton__scene" aria-hidden="true" />
       <section className="wide-col page-skeleton__first skeleton-row" aria-hidden="true">
         <span className="skeleton-block page-skeleton__pill" />
@@ -49,9 +54,10 @@ export function ClosetSkeleton() {
 }
 
 export function OutfitSkeleton() {
+  const t = useT("system");
   return (
     <div className="page-skeleton" aria-busy="true">
-      <Status label="正在打开搭配" />
+      <Status label={t("loading.outfit")} />
       <div className="page-skeleton__scene" aria-hidden="true" />
       <section className="hero skeleton-row" style={{ minHeight: "42dvh", gap: 10 }} aria-hidden="true">
         <span className="skeleton-block page-skeleton__pill" style={{ marginBottom: "auto" }} />
@@ -76,10 +82,11 @@ export function OutfitSkeleton() {
   );
 }
 
-export function PageSkeleton({ label = "正在打开" }: { label?: string }) {
+export function PageSkeleton({ label }: { label?: string }) {
+  const t = useT("system");
   return (
     <div className="page-skeleton" aria-busy="true">
-      <Status label={label} />
+      <Status label={label ?? t("loading.page")} />
       <div className="page-skeleton__scene" aria-hidden="true" />
       <section className="hero skeleton-row" style={{ minHeight: "34dvh", gap: 10 }} aria-hidden="true">
         <Line w={100} h={9} />

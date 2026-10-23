@@ -313,3 +313,87 @@ test("生成中的分身作业：轮询 tickJob 不会把它改成失败；超�
   assert.equal(st.job?.status, "failed");
   assert.match(st.job?.error?.message ?? "", /中断/);
 });
+
+// ---------- 多语言（D70） ----------
+
+const CJK = /[㐀-鿿]/;
+const analyzeEn = async () => ({
+  ...(await analyze()),
+  summary: "Straight shoulders, a high waist and long legs.",
+  hair: "Shoulder-length straight hair, softly layered at the ends",
+  hairColor: "Dark brown",
+  faceShape: "Oval",
+  skinTone: "Warm natural",
+  bodyType: "Balanced",
+  shoulders: "Straight shoulders",
+  waist: "High waist",
+  hips: "Unclear",
+  legs: "Long legs",
+});
+
+test("英文分析：提示词要求英文短语与概括；normalizeTraits 按词截断、看不清与中文不显示", () => {
+  const { twinAnalysisSystem, normalizeTraits } = m.twin;
+  const zh = twinAnalysisSystem();
+  const en = twinAnalysisSystem("en");
+  assert.match(zh, /用简短中文短语/);
+  assert.doesNotMatch(en, /中文短语|中文概括|填“看不清”/);
+  assert.match(en, /英文短语（English）/);
+  assert.match(en, /不超过 15 个词的英文概括/);
+  assert.match(en, /“unclear”/);
+
+  const base = {
+    summary: "Straight shoulders, a high waist and long legs.",
+    gender: "female" as const,
+    hair: "shoulder-length straight hair, softly layered at the ends",
+    hairColor: "Dark brown",
+    faceShape: "unclear",
+    skinTone: "暖调",
+    bodyType: "Balanced",
+    shoulders: "Straight shoulders",
+    waist: "High waist",
+    hips: "Not clearly visible",
+    legs: "Long legs",
+    glasses: false,
+    descriptorEn: "Dark brown hair.",
+  };
+  const n = normalizeTraits(base, "en");
+  assert.equal(n.summary, "Straight shoulders, a high waist and long legs");
+  assert.ok(n.traits!.hair.length <= 32 && n.traits!.hair.startsWith("Shoulder-length straight hair"), n.traits!.hair);
+  assert.ok(!n.traits!.hair.endsWith(" "));
+  assert.equal(n.traits!.faceShape, undefined);
+  assert.equal(n.traits!.hips, undefined);
+  assert.equal(n.traits!.skinTone, undefined, "英文界面不显示中文短语");
+  assert.equal(n.traits!.glasses, "No glasses");
+  // 中文默认不变
+  assert.equal(normalizeTraits({ ...base, glasses: true }).traits!.glasses, "戴眼镜");
+});
+
+test("generateTwin 英文：分析按英文写，记下语言；接口边界只在同语言界面显示概括与标签，照片角度换成英文", async () => {
+  const { localizeAvatarState } = await import("./l10n");
+  await userWithPhotos("u-en", ["face", "front"]);
+  const seen: unknown[] = [];
+  await m.twin.generateTwin("u-en", { gender: "female", locale: "en" }, {
+    analyze: async (input) => {
+      seen.push(input.locale);
+      return analyzeEn();
+    },
+  });
+  assert.deepEqual(seen, ["en"]);
+  const st = await m.service.getAvatarState("u-en");
+  assert.equal(st.twin?.lang, "en");
+  assert.equal(st.twin?.summary, "Straight shoulders, a high waist and long legs");
+  assert.ok(st.twin?.tags.includes("Dark brown"));
+  assert.ok(st.twin?.tags.includes("Long legs"));
+  assert.ok(st.twin && st.twin.tags.every((t) => !CJK.test(t)));
+
+  const en = localizeAvatarState(st, "en");
+  assert.equal(en.twin?.summary, st.twin?.summary);
+  assert.deepEqual(en.twin?.tags, st.twin?.tags);
+  assert.deepEqual(en.twin?.shots.map((s) => s.label), ["Front", "Side", "Back"]);
+  assert.ok(!CJK.test(en.job?.fidelityNote ?? ""), en.job?.fidelityNote ?? "");
+
+  const zh = localizeAvatarState(st, "zh");
+  assert.equal(zh.twin?.summary, null, "中文界面不显示英文概括");
+  assert.deepEqual(zh.twin?.tags, []);
+  assert.deepEqual(zh.twin?.shots.map((s) => s.label), ["正面", "侧面", "背面"]);
+});

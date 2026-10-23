@@ -8,14 +8,22 @@ import { CountTo } from "@/components/motion/RollingNumber";
 import { BAG_EVENT } from "@/lib/bag/client";
 import { MAX_QTY } from "@/lib/bag/core";
 import type { BagLine, BagView } from "@/lib/bag/service";
+import { useLocale, useT, useTerm } from "@/lib/i18n/client";
+import { LOCALE_META } from "@/lib/i18n/config";
 import { reducedFade, springs } from "@/lib/motion";
 import s from "./bag.module.css";
 
-const yuan = (n: number) => `¥${n.toLocaleString("zh-CN")}`;
 const keyOf = (l: Pick<BagLine, "itemId" | "size">) => `${l.itemId}:${l.size}`;
+/** 目录里“均码”是尺码值（存库、提交都用原值），只在显示时换成当前语言。 */
+const ONE_SIZE = "均码";
 
 export default function BagList({ initial }: { initial: BagView }) {
   const reduce = useReducedMotion() === true;
+  const t = useT("bag");
+  const term = useTerm();
+  const locale = useLocale();
+  const yuan = (n: number) => `¥${n.toLocaleString(LOCALE_META[locale].intl)}`;
+  const sizeLabel = (z: string) => (z === ONE_SIZE ? t("line.oneSize") : z);
   const [bag, setBag] = useState(initial);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +38,7 @@ export default function BagList({ initial }: { initial: BagView }) {
     }).catch(() => null);
     setBusy(null);
     if (!res?.ok) {
-      setError("没有保存成功，请再试一次");
+      setError(t("errors.saveFailed"));
       return;
     }
     const next = (await res.json()) as BagView;
@@ -42,11 +50,11 @@ export default function BagList({ initial }: { initial: BagView }) {
     return (
       <>
         <section className="sc-glass card stack sc-rise">
-          <p className="serif-note" style={{ margin: 0 }}>购物袋还是空的。逛衣橱时，单品、整套或勾选的几件都可以加进来。</p>
+          <p className="serif-note" style={{ margin: 0 }}>{t("empty")}</p>
         </section>
         <div className="cta-bar">
           <Link href="/" className="sc-cta">
-            去逛衣橱
+            {t("browse")}
           </Link>
         </div>
       </>
@@ -55,7 +63,7 @@ export default function BagList({ initial }: { initial: BagView }) {
 
   return (
     <div className="stack">
-      <section className="sc-glass card stack sc-rise" aria-label="购物袋中的单品">
+      <section className="sc-glass card stack sc-rise" aria-label={t("line.listAria")}>
         <ul className={s.lines}>
           <AnimatePresence initial={false}>
             {bag.lines.map((l) => (
@@ -74,33 +82,33 @@ export default function BagList({ initial }: { initial: BagView }) {
                     {l.name}
                   </Link>
                   <span className="sc-meta">
-                    {l.category} · {l.color}
+                    {term(l.category)} · {term(l.color)}
                   </span>
                   <div className={s.controls}>
                     {l.sizes.length > 1 ? (
                       <select
                         className={s.select}
-                        aria-label={`${l.name}的尺码`}
+                        aria-label={t("line.sizeAria", { name: l.name })}
                         value={l.size}
                         disabled={busy !== null}
                         onChange={(e) => void send("PATCH", l, { toSize: e.target.value })}
                       >
-                        {!l.size ? <option value="">选择尺码</option> : null}
+                        {!l.size ? <option value="">{t("line.chooseSize")}</option> : null}
                         {l.sizes.map((z) => (
                           <option key={z} value={z}>
-                            {z}
+                            {sizeLabel(z)}
                           </option>
                         ))}
                       </select>
                     ) : l.sizes.length === 1 ? (
-                      <span className={s.fixed}>{l.sizes[0]}</span>
+                      <span className={s.fixed}>{sizeLabel(l.sizes[0])}</span>
                     ) : (
-                      <span className={s.fixed}>均码</span>
+                      <span className={s.fixed}>{t("line.oneSize")}</span>
                     )}
-                    <div className={s.stepper} role="group" aria-label={`${l.name}的数量`}>
+                    <div className={s.stepper} role="group" aria-label={t("line.qtyAria", { name: l.name })}>
                       <button
                         type="button"
-                        aria-label="减少一件"
+                        aria-label={t("line.decrease")}
                         disabled={busy !== null || l.qty <= 1}
                         onClick={() => void send("PATCH", l, { qty: l.qty - 1 })}
                       >
@@ -109,7 +117,7 @@ export default function BagList({ initial }: { initial: BagView }) {
                       <span aria-live="polite">{l.qty}</span>
                       <button
                         type="button"
-                        aria-label="增加一件"
+                        aria-label={t("line.increase")}
                         disabled={busy !== null || l.qty >= MAX_QTY}
                         onClick={() => void send("PATCH", l, { qty: l.qty + 1 })}
                       >
@@ -120,9 +128,9 @@ export default function BagList({ initial }: { initial: BagView }) {
                 </div>
                 <div className={s.end}>
                   <span className="price">{yuan(l.price * l.qty)}</span>
-                  {l.qty > 1 ? <span className="sc-meta">单价 {yuan(l.price)}</span> : null}
+                  {l.qty > 1 ? <span className="sc-meta">{t("line.unitPrice", { price: yuan(l.price) })}</span> : null}
                   <button type="button" className="link-btn" disabled={busy !== null} onClick={() => void send("DELETE", l, {})}>
-                    移除
+                    {t("line.remove")}
                   </button>
                 </div>
               </motion.li>
@@ -135,10 +143,10 @@ export default function BagList({ initial }: { initial: BagView }) {
           </p>
         ) : null}
       </section>
-      <section className={`sc-glass card ${s.summary}`} aria-label="合计">
-        <span className="sc-meta">共 {bag.count} 件</span>
+      <section className={`sc-glass card ${s.summary}`} aria-label={t("summary.aria")}>
+        <span className="sc-meta">{t("summary.count", { n: bag.count })}</span>
         <span className={s.totalRow}>
-          <span className="sc-kicker">合计</span>
+          <span className="sc-kicker">{t("summary.total")}</span>
           <CountTo className="total sc-foil" value={bag.total} format={(n) => yuan(Math.round(n))} />
         </span>
       </section>

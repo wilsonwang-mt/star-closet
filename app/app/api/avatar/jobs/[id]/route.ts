@@ -1,5 +1,7 @@
-import { json, withUser } from "@/lib/avatar/http";
+import { json, jsonError, withUser } from "@/lib/avatar/http";
+import { localizeJobView } from "@/lib/avatar/l10n";
 import { cancelJob, tickJob } from "@/lib/avatar/service";
+import { getLocale } from "@/lib/i18n/server";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -8,7 +10,7 @@ export async function GET(_req: Request, { params }: Ctx) {
   const { id } = await params;
   return withUser(async (userId) => {
     const job = await tickJob(userId, id);
-    return job ? json(job) : json({ error: "任务不存在" }, 404);
+    return job ? json(localizeJobView(job, await getLocale())) : jsonError("任务不存在", 404);
   });
 }
 
@@ -17,6 +19,6 @@ export async function DELETE(_req: Request, { params }: Ctx) {
   const { id } = await params;
   return withUser(async (userId) => {
     const job = await cancelJob(userId, id);
-    return job ? json(job) : json({ error: "任务不存在" }, 404);
+    return job ? json(localizeJobView(job, await getLocale())) : jsonError("任务不存在", 404);
   });
 }

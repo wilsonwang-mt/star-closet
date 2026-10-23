@@ -2,14 +2,17 @@ import { after } from "next/server";
 import { db, schema } from "@/lib/db";
 import { and, eq } from "drizzle-orm";
 import { json, readBodyLimited, withUser } from "@/lib/avatar/http";
+import { localizeAvatarState } from "@/lib/avatar/l10n";
 import { AvatarError, getAvatarState } from "@/lib/avatar/service";
 import { generateTwin } from "@/lib/avatar/twin";
+import { getLocale } from "@/lib/i18n/server";
 import { withQuota } from "@/lib/usage";
 
 // 数字分身（D63）：需登录，且已单独同意由 fal.ai 上的 AI 图像模型生成形象。
 // POST { gender: "female" | "male" }：校验通过、作业写入（status=processing）后立即返回最新 AvatarState，
 // 生成在响应之后继续（after）；页面看到 processing 作业会每 3 秒查询一次直到结束。
 // fal 排队时单张 40–120 秒，同步等待容易超时，所以改为后台执行（总预算 240 秒）。
+// 概括与特征标签按发起时的界面语言写（D70）：语言在 after() 之前取好传进去，后台任务里读不到请求。
 export const maxDuration = 300;
 
 const hasProcessingJob = async (userId: string) =>
@@ -22,6 +25,7 @@ const hasProcessingJob = async (userId: string) =>
 
 export async function POST(req: Request) {
   return withUser(async (userId) => {
+    const locale = await getLocale();
     const raw = await readBodyLimited(req, 4096, "请求太大");
     let body: { gender?: unknown } = {};
     if (raw.byteLength) {
@@ -35,7 +39,7 @@ export async function POST(req: Request) {
     await withQuota(userId, "twin", async () => {
       let settled = false;
       let failure: unknown = null;
-      const run = generateTwin(userId, { gender: body?.gender }).then(
+      const run = generateTwin(userId, { gender: body?.gender, locale }).then(
         () => void (settled = true),
         (e) => {
           settled = true;
@@ -50,6 +54,6 @@ export async function POST(req: Request) {
       if (settled && failure) throw failure;
       if (!settled) after(() => run);
     });
-    return json(await getAvatarState(userId));
+    return json(localizeAvatarState(await getAvatarState(userId), locale));
   });
 }

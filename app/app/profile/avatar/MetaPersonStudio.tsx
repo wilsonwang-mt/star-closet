@@ -5,6 +5,7 @@ import type { BodyAnalysisView } from "@/lib/avatar/body";
 import type { FlowPhase } from "@/lib/avatar/metaperson-flow";
 import { MP_FACE_MAX_EDGE, type MpGender } from "@/lib/avatar/metaperson-protocol";
 import type { AvatarState, Slot } from "@/lib/avatar/service";
+import { useT } from "@/lib/i18n/client";
 import MetaPersonCreator, { type CreatorRequest, type EngineState } from "./MetaPersonCreator";
 import PhotoTile, { BodyFrontSilhouette, BodySideSilhouette, FaceSilhouette, type Requirement } from "./PhotoTile";
 import { photoToBase64 } from "./image-client";
@@ -31,16 +32,14 @@ async function fetchAnalysis(): Promise<BodyAnalysisView | null> {
   }
 }
 
-const SLOT_META: { slot: Slot; label: string; tip: string; required: Requirement; icon: ReactNode }[] = [
-  { slot: "face", label: "正脸自拍", tip: "正对镜头，五官清晰", required: "必传", icon: <FaceSilhouette /> },
-  { slot: "front", label: "全身正面", tip: "面向镜头，头到脚入镜", required: "必传", icon: <BodyFrontSilhouette /> },
-  { slot: "side", label: "全身侧面", tip: "转身 90°，头到脚入镜", required: "选传", icon: <BodySideSilhouette /> },
+// 标签与拍摄提示见字典 avatar.metaperson.slots.<slot>。
+const SLOT_META: { slot: Extract<Slot, "face" | "front" | "side">; required: Requirement; icon: ReactNode }[] = [
+  { slot: "face", required: "must", icon: <FaceSilhouette /> },
+  { slot: "front", required: "must", icon: <BodyFrontSilhouette /> },
+  { slot: "side", required: "may", icon: <BodySideSilhouette /> },
 ];
 
-const GENDERS: { value: MpGender; label: string }[] = [
-  { value: "female", label: "女" },
-  { value: "male", label: "男" },
-];
+const GENDERS: MpGender[] = ["female", "male"];
 
 export default function MetaPersonStudio({
   state,
@@ -60,6 +59,7 @@ export default function MetaPersonStudio({
   onImported: (next: AvatarState) => void;
   footer?: ReactNode;
 }) {
+  const t = useT("avatar");
   const [gender, setGender] = useState<MpGender | null>(state.bodyAnalysis?.gender ?? null);
   const [request, setRequest] = useState<CreatorRequest | null>(null);
   const [phase, setPhase] = useState<FlowPhase>("standby");
@@ -88,20 +88,16 @@ export default function MetaPersonStudio({
       setRequest({ id, payload: { gender, image, blends: analysis?.blends ?? null } });
     } catch {
       setRequest(null);
-      setGenError("无法读取正脸照片，请重新上传");
+      setGenError(t("metaperson.faceReadFailed"));
     }
   }
 
-  const missing = !face || !front ? "先上传正脸自拍和全身正面照" : !gender ? "选择形象性别" : null;
+  const missing = !face || !front ? t("metaperson.missingPhotos") : !gender ? t("gender.missing") : null;
 
   return (
     <section className="sc-glass card stack sc-rise">
-      <h2 className="section-title">生成你的 3D 形象</h2>
-      <p className="serif-note">
-        {bodyOn
-          ? "正脸自拍用来塑造你的形象，全身照用来参考你的体型；全身正面照同时用于 2D 试穿。"
-          : "正脸自拍用来塑造你的形象，全身正面照同时用于 2D 试穿。"}
-      </p>
+      <h2 className="section-title">{t("metaperson.title")}</h2>
+      <p className="serif-note">{bodyOn ? t("metaperson.noteBody") : t("metaperson.noteFace")}</p>
 
       <div className={s.grid}>
         {SLOT_META.map((m) => {
@@ -109,10 +105,10 @@ export default function MetaPersonStudio({
           return (
             <PhotoTile
               key={m.slot}
-              label={m.label}
-              tip={m.tip}
+              label={t(`metaperson.slots.${m.slot}.label`)}
+              tip={t(`metaperson.slots.${m.slot}.tip`)}
               icon={m.icon}
-              noun="照片"
+              noun="photo"
               photo={p}
               disabled={generating}
               busy={busy === m.slot || (!!p && busy === p.id)}
@@ -127,18 +123,18 @@ export default function MetaPersonStudio({
 
       <div className={s.choice}>
         <span className="sc-meta" id="mp-gender-label">
-          形象性别
+          {t("gender.label")}
         </span>
         <div className={s.segment} role="group" aria-labelledby="mp-gender-label">
           {GENDERS.map((g) => (
             <button
-              key={g.value}
+              key={g}
               type="button"
-              aria-pressed={gender === g.value}
+              aria-pressed={gender === g}
               disabled={generating}
-              onClick={() => setGender(g.value)}
+              onClick={() => setGender(g)}
             >
-              {g.label}
+              {t(`gender.${g}`)}
             </button>
           ))}
         </div>
@@ -152,7 +148,7 @@ export default function MetaPersonStudio({
             disabled={!ready || generating || engine === "error"}
             onClick={generate}
           >
-            {generating ? "正在生成…" : phase === "revealed" ? "用新照片重新生成" : "生成我的 3D 形象"}
+            {generating ? t("metaperson.generating") : phase === "revealed" ? t("metaperson.regenerateNew") : t("metaperson.start")}
           </button>
           {missing && !generating ? <span className="sc-meta">{missing}</span> : null}
         </div>

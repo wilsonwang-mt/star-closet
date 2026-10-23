@@ -110,6 +110,7 @@ type CatalogJson = {
     style_tags: string[];
     occasion_tags: string[];
     tags: string[];
+    sizes?: string[];
     gender: string;
   }[];
 };
@@ -130,6 +131,7 @@ test("目录英文：每个固定词都有译文，每间衣橱、每套搭配�
     [i.category, i.display_category, i.subcategory, i.color, i.color_family, i.material, i.season, i.fit, i.heel, i.image_rights, i.gender]
       .forEach(add);
     [...i.style_tags, ...i.occasion_tags, ...i.tags].forEach(add);
+    (i.sizes ?? []).filter((s) => CJK.test(s)).forEach(add); // 如“均码”
   }
   const table = catalogTerms("en");
   const missing = [...used].filter((t) => !table[t]);

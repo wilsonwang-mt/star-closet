@@ -234,3 +234,12 @@
   .enter svg, .arrow, .row { transition: opacity .2s ease; }
 }
 @keyframes home-fade { from { opacity: 0; } }
+
+/* ---------- 英文（D70）：为中文设的宽字距用在英文上会散，按钮也会变宽；英文时收窄 ---------- */
+:global(html[lang="en"]) .title { letter-spacing: .02em; }
+:global(html[lang="en"]) .closetName,
+:global(html[lang="en"]) .rowName { letter-spacing: .01em; }
+:global(html[lang="en"]) .kicker,
+:global(html[lang="en"]) .enter { letter-spacing: .06em; }
+:global(html[lang="en"]) .chip,
+:global(html[lang="en"]) .rowMeta { letter-spacing: .04em; }

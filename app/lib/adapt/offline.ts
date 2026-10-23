@@ -8,9 +8,13 @@
 // - 场合偏好：最多换掉 2 件与场合最不搭的单品，换成本衣橱/同风格里更合场合的同类。
 // - 预算：每次只替换能省最多的那一件，只在本衣橱/同风格里换，场合匹配度最多低一档；还超预算才去掉最贵的非必需件。
 // - 被去掉的单品由服务端按实际差异生成说明（见 finalize.ts），这里不写“去掉了…”。
+// - 多语言（D70）：也认常见英文说法（预算、场合、平底、舒适、不要皮革等，映射到同一组中文约束）；
+//   给用户看的理由与概括按 locale 生成（copy.ts，默认中文），挑选逻辑与语言无关。
 import type { Item, Outfit } from "../catalog";
 import { CATEGORY_ORDER, sumPrice } from "../catalog-core";
-import { fitsSize, interchangeable, parseSizes, relevantCategories, sizeText, type SizeWish } from "./rules";
+import { DEFAULT_LOCALE, type Locale } from "../i18n/config";
+import { adaptCopy, itemName, outfitName, type ViolationKind } from "./copy";
+import { fitsSize, interchangeable, parseSizes, relevantCategories, type SizeWish } from "./rules";
 import type { AdaptDraft } from "./types";
 
 type Constraints = {
@@ -28,13 +32,14 @@ type Constraints = {
 };
 
 const OCCASION_TAGS: [RegExp, string][] = [
-  [/户外|草地|露天|海边|度假/, "户外"],
-  [/婚礼|晚宴|正式|宴会/, "正式"],
-  [/通勤|上班|面试|办公/, "通勤"],
-  [/运动|健身|跑步|徒步/, "运动"],
-  [/冬|冷|降温/, "秋冬"],
-  [/夏|热|透气/, "春夏"],
-  [/休闲|周末|逛街/, "休闲"],
+  [/户外|草地|露天|海边|度假|\boutdoors?\b|\bgarden\b|\blawn\b|\bbeach\b|\bseaside\b|\bholiday\b|\bvacation\b/i, "户外"],
+  [/婚礼|晚宴|正式|宴会|\bwedding\b|\bgala\b|\bformal\b|\bbanquet\b|\bblack[- ]tie\b|\bdinner party\b/i, "正式"],
+  // 英文只认明确的说法：“would this work”“running late”里的 work、run 不算场合。
+  [/通勤|上班|面试|办公|\bcommut\w*|\boffice\b|\bworkday\b|\bworkwear\b|\b(?:for|at|to) work\b|\binterview\b/i, "通勤"],
+  [/运动|健身|跑步|徒步|\bsports?\b|\bsporty\b|\bgym\b|\bworkout\b|\bjog\w*|\bfor a run\b|\brunning (?:shoes|gear|outfit)\b|\bhik(?:e|ing)\b|\btraining\b/i, "运动"],
+  [/冬|冷|降温|\bwinter\b|\bcold\b|\bchilly\b|\bautumn\b/i, "秋冬"],
+  [/夏|热|透气|\bsummer\b|\bhot\b|\bbreathable\b|\bwarm weather\b/i, "春夏"],
+  [/休闲|周末|逛街|\bcasual\b|\bweekend\b|\bshopping\b|\bstroll\b/i, "休闲"],
 ];
 
 // 场合词在单品上对应的标签（tags 与 occasion_tags 都算）
@@ -48,6 +53,26 @@ const TAG_MATCH: Record<string, string[]> = {
 
 // 排除词的同义展开：说“不要皮革/皮的/真皮”时，牛皮、羊皮、麂皮、PU 等都算皮革。
 const LEATHER = ["皮革", "真皮", "牛皮", "羊皮", "麂皮", "漆皮", "皮衣", "PU", "人造革"];
+
+// 英文排除词 → 中文规范词（目录字段是中文）。没有对应的英文词不参与排除。
+const EXCLUDE_FROM_EN: Record<string, string> = {
+  leather: "皮革",
+  leathers: "皮革",
+  wool: "羊毛",
+  silk: "真丝",
+  denim: "牛仔",
+  fur: "皮草",
+  down: "羽绒",
+  polyester: "涤纶",
+  sequins: "亮片",
+  sequin: "亮片",
+  lace: "蕾丝",
+  suede: "麂皮",
+  black: "黑",
+  white: "白",
+  prints: "印花",
+  print: "印花",
+};
 
 function expandExclude(word: string): string[] {
   if (/皮|革/.test(word) && !/皮草/.test(word)) return LEATHER;
@@ -68,11 +93,15 @@ export function parseConstraints(text: string): Constraints {
   let budget: number | null = null;
   const m =
     text.match(/预算\s*(?:在|是|为)?\s*(\d{2,6})/) ??
-    text.match(/(\d{2,6})\s*(?:元|块|以内|以下|之内)/);
-  if (m) budget = Number(m[1]);
+    text.match(/(\d{2,6})\s*(?:元|块|以内|以下|之内)/) ??
+    // 英文：“under 800”“budget of ¥450”；只有介词没有币种时至少 3 位数（“within 10 minutes”不是预算）。
+    text.match(/\b(?:under|below|within|less than|no more than|max(?:imum)?|up to|budget(?: of| is)?:?)\s*(?:(?:[¥￥$]|rmb|cny)\s*(\d{2,6})|(\d{3,6}))\b/i) ??
+    text.match(/(?:[¥￥$]|\brmb\s*|\bcny\s*)(\d{2,6})\b/i) ??
+    text.match(/\b(\d{2,6})\s*(?:yuan|rmb|cny)\b/i);
+  if (m) budget = Number(m[1] ?? m[2]);
 
-  const flat = /平底|平跟|不穿高跟|不要高跟|好走|舒服的鞋/.test(text);
-  const comfy = /舒服|舒适|好走|轻松/.test(text);
+  const flat = /平底|平跟|不穿高跟|不要高跟|好走|舒服的鞋|\bflats?\b|\bno (?:high )?heels\b|\bwithout heels\b|\blow[- ]heel|\beasy to walk/i.test(text);
+  const comfy = /舒服|舒适|好走|轻松|\bcomf(?:y|ortable|ort)\b|\beasy to walk|\brelaxed\b/i.test(text);
   const wantTags = OCCASION_TAGS.filter(([re]) => re.test(text)).map(([, t]) => t);
   const formal = wantTags.includes("正式");
   const sport = wantTags.includes("运动");
@@ -80,6 +109,10 @@ export function parseConstraints(text: string): Constraints {
   const exclude = [...text.matchAll(/(?:不要|排除|不穿|别要|不想要)([一-龥A-Za-z]{1,4}?)(?:的|，|,|。|；|$|\s)/g)]
     .map((x) => x[1])
     .filter((w) => w !== "高跟");
+  for (const x of text.matchAll(/\b(?:no|not|without|avoid|skip|exclude|don'?t want|do not want)\s+(?:any\s+)?([a-z]+)/gi)) {
+    const zh = EXCLUDE_FROM_EN[x[1].toLowerCase()];
+    if (zh && !exclude.includes(zh)) exclude.push(zh);
+  }
   return { budget, flat, comfy, wantTags, scoreTags, formal, sport, exclude, sizes: parseSizes(text) };
 }
 
@@ -88,17 +121,18 @@ const has = (it: Item, words: string[]) => {
   return words.some((w) => hay.some((h) => h.includes(w)));
 };
 
-type Violation = { kind: "exclude" | "flat" | "size" | "occasion"; word?: string; why: string };
+/** kind 决定保留原款时怎么说明；why 决定替换理由怎么写（copy.ts）。 */
+type Violation = { kind: "exclude" | "flat" | "size" | "occasion"; word?: string; why: ViolationKind };
 
 function violation(it: Item, c: Constraints): Violation | null {
-  for (const w of c.exclude) if (has(it, expandExclude(w))) return { kind: "exclude", word: w, why: `含${w}` };
-  if (c.flat && it.category === "鞋" && !it.tags.includes("平底")) return { kind: "flat", why: "不是平底" };
-  if (c.comfy && it.category === "鞋" && it.heel === "高跟") return { kind: "flat", why: "是高跟" };
+  for (const w of c.exclude) if (has(it, expandExclude(w))) return { kind: "exclude", word: w, why: "exclude" };
+  if (c.flat && it.category === "鞋" && !it.tags.includes("平底")) return { kind: "flat", why: "flat" };
+  if (c.comfy && it.category === "鞋" && it.heel === "高跟") return { kind: "flat", why: "heel" };
   if (c.formal && (FORMAL_BLOCK_SUB.has(it.subcategory ?? "") || FORMAL_BLOCK_MAT.has(it.material ?? "")))
-    return { kind: "occasion", why: "不适合正式场合" };
+    return { kind: "occasion", why: "formal" };
   if (c.sport && (SPORT_BLOCK_HEEL.has(it.heel ?? "") || SPORT_BLOCK_MAT.has(it.material ?? "")))
-    return { kind: "occasion", why: "不适合运动" };
-  if (!fitsSize(it, c.sizes)) return { kind: "size", why: "没有你要的尺码" };
+    return { kind: "occasion", why: "sport" };
+  if (!fitsSize(it, c.sizes)) return { kind: "size", why: "size" };
   return null;
 }
 
@@ -116,7 +150,6 @@ function score(it: Item, c: Constraints) {
 }
 
 const overlap = (a: string[], b: string[]) => a.filter((x) => b.includes(x)).length;
-const clean = (name: string) => name.replace(/^占位：/, "");
 
 /**
  * 与被替换单品/原搭配的亲近程度：2 = 本衣橱或风格标签有交集；1 = 只是与原单品同色系；0 = 无关。
@@ -172,8 +205,10 @@ function rank(orig: Item, outfit: Outfit, c: Constraints) {
     Math.abs(a.price - orig.price) - Math.abs(b.price - orig.price);
 }
 
-/** pool 必须是 buildCandidatePool(outfit, …) 的结果。 */
-export function adaptOffline(outfit: Outfit, request: string, pool: Item[]): AdaptDraft {
+/** pool 必须是 buildCandidatePool(outfit, …) 的结果。locale 只决定理由与概括的语言。 */
+export function adaptOffline(outfit: Outfit, request: string, pool: Item[], locale: Locale = DEFAULT_LOCALE): AdaptDraft {
+  const t = adaptCopy(locale);
+  const nameOf = (i: Item) => itemName(i, locale);
   const c = parseConstraints(request);
   const cats = new Set<string>(relevantCategories(outfit, request));
   const all = pool.filter((i) => cats.has(i.category));
@@ -181,7 +216,7 @@ export function adaptOffline(outfit: Outfit, request: string, pool: Item[]): Ada
   const keptNotes: string[] = []; // 硬性要求没能满足、保留原款的说明（写进 summary）
   const unmet = new Set<string>(); // 没能完全满足的排除词
   let picks: Item[] = [...outfit.items];
-  for (const it of picks) reasons.set(it.id, "保留主理人原搭配");
+  for (const it of picks) reasons.set(it.id, t.keep);
   const usedIds = () => new Set(picks.map((p) => p.id));
   // 当前单品 → 它替换掉的原搭配单品（连续替换时仍指向最初那件）
   const originOf = new Map<string, Item>();
@@ -189,7 +224,7 @@ export function adaptOffline(outfit: Outfit, request: string, pool: Item[]): Ada
     const origin = originOf.get(from.id) ?? from;
     picks = picks.map((p) => (p.id === from.id ? to : p));
     originOf.set(to.id, origin);
-    reasons.set(to.id, `替换「${clean(origin.name)}」：${why}`);
+    reasons.set(to.id, t.replaced(nameOf(origin), why));
   };
 
   // 1) 硬性要求：原搭配里命中的单品必须换掉；找不到同类替代就保留原款并如实说明。
@@ -198,19 +233,11 @@ export function adaptOffline(outfit: Outfit, request: string, pool: Item[]): Ada
     if (!v) continue;
     const alt = candidatesFor(it, outfit, all, usedIds(), c, undefined, true).sort(rank(it, outfit, c))[0];
     if (alt) {
-      replace(it, alt, `原款${v.why}`);
+      replace(it, alt, t.violation(v.why, v.word));
       continue;
     }
-    if (v.kind === "exclude") {
-      unmet.add(v.word!);
-      keptNotes.push(`目录内没有非${v.word}的${it.displayCategory || it.category}，保留原款「${clean(it.name)}」`);
-    } else if (v.kind === "flat") {
-      keptNotes.push(`目录内没有合适的平底${it.displayCategory || it.category}，保留原款「${clean(it.name)}」`);
-    } else if (v.kind === "occasion") {
-      keptNotes.push(`这间衣橱里没有更适合这个场合的${it.displayCategory || it.category}，保留原款「${clean(it.name)}」`);
-    } else {
-      keptNotes.push(`没有找到有你尺码的同类${it.displayCategory || it.category}，保留原款「${clean(it.name)}」`);
-    }
+    if (v.kind === "exclude") unmet.add(v.word!);
+    keptNotes.push(t.kept(v.kind, it.displayCategory || it.category, nameOf(it), v.word));
   }
 
   // 2) 场合偏好：最多换 2 件与场合最不搭的单品（只换成更合场合的同类，不动已经合适的）。
@@ -235,8 +262,7 @@ export function adaptOffline(outfit: Outfit, request: string, pool: Item[]): Ada
       if (n >= 2) break;
       if (taken.has(s.to.id)) continue;
       taken.add(s.to.id);
-      const label = c.wantTags.length ? c.wantTags.join("、") : "舒适";
-      replace(s.from, s.to, `换成更适合${label}的${s.to.displayCategory || s.to.category}`);
+      replace(s.from, s.to, t.forOccasion(c.wantTags, s.to.displayCategory || s.to.category));
       n++;
     }
   }
@@ -261,7 +287,7 @@ export function adaptOffline(outfit: Outfit, request: string, pool: Item[]): Ada
         if (to && (!best || it.price - to.price > best.saving)) best = { from: it, to, saving: it.price - to.price };
       }
       if (!best) break;
-      replace(best.from, best.to, `为控制预算，换成更实惠的${best.to.displayCategory || best.to.category}`);
+      replace(best.from, best.to, t.forBudget(best.to.displayCategory || best.to.category));
     }
     // 4) 还超预算就去掉非必需件（说明由服务端按实际差异生成）
     //    先去掉最贵的那件非必需件，尽量少去掉
@@ -277,32 +303,27 @@ export function adaptOffline(outfit: Outfit, request: string, pool: Item[]): Ada
   const excludeHonored = c.exclude.filter((w) => !unmet.has(w));
   const occasion =
     c.formal && c.wantTags.includes("户外")
-      ? `场合：户外的正式场合${c.wantTags.length > 2 ? `，${c.wantTags.filter((t) => t !== "户外" && t !== "正式").join("、")}` : ""}`
+      ? t.partOutdoorFormal(c.wantTags.length > 2 ? c.wantTags.filter((x) => x !== "户外" && x !== "正式") : [])
       : c.wantTags.length
-        ? `场合偏向${c.wantTags.join("、")}`
+        ? t.partOccasion(c.wantTags)
         : null;
+  const sizes = t.sizeText(c.sizes);
   const parts = [
-    c.budget !== null ? `预算 ${c.budget} 元` : null,
-    c.flat ? "平底鞋" : c.comfy ? "舒适" : null,
+    c.budget !== null ? t.partBudget(c.budget) : null,
+    c.flat ? t.partFlat : c.comfy ? t.partComfy : null,
     occasion,
-    excludeHonored.length ? `排除${excludeHonored.join("、")}` : null,
-    sizeText(c.sizes) ? `尺码${sizeText(c.sizes)}` : null,
-  ].filter(Boolean);
+    excludeHonored.length ? t.partExclude(excludeHonored) : null,
+    sizes ? t.partSize(sizes) : null,
+  ].filter((x): x is string => !!x);
   const recognized = parts.length > 0 || c.exclude.length > 0;
-  const name = clean(outfit.name);
-  const kept = keptNotes.length ? keptNotes.join("；") + "。" : "";
-  const summary = !recognized
-    ? "没有识别到具体约束，保留了原搭配。可以试试说预算、场合或想换的单品。"
-    : parts.length
-      ? `按「${parts.join("，")}」改编了「${name}」。${kept}`
-      : `改编了「${name}」。${kept}`;
+  const summary = !recognized ? t.unrecognized : t.adapted(parts, outfitName(outfit, locale), t.joinKept(keptNotes));
 
   return {
     mode: "offline",
     picks: picks.map((p) => ({ itemId: p.id, reason: reasons.get(p.id) ?? "" })),
     summary,
     budget: c.budget,
-    notes: c.budget !== null && sumPrice(picks) > c.budget ? [`目录内找不到 ${c.budget} 元以内的完整搭配，这是最接近的一套`] : [],
+    notes: c.budget !== null && sumPrice(picks) > c.budget ? [t.overBudget(c.budget)] : [],
     recognized,
   };
 }

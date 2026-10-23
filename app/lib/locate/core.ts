@@ -6,8 +6,15 @@
 //   否定（别太正式）用来避开。
 // 解析按“最长匹配、命中后消费原词”：先认出「户外婚礼」，再从文本里删掉，避免「户外」二次命中。
 // 多轮：只是补充条件（只看女装、再便宜一点、换个风格）时沿用上一轮；提到新场合/风格/人就是换话题，从头解析。
+// 多语言（D70）：解析与查询里的值始终是中文；给用户看的理解行、兜底回复与追问按 locale 输出（chat 字典），默认中文。
+// 英文输入先由 lib/chat/english.ts 换成这里认得的中文词。
 import { parseConstraints } from "../adapt/offline";
 import { allowedGenders } from "../adapt/rules";
+import { term } from "../i18n/catalog";
+import type { Locale } from "../i18n/config";
+import { MESSAGES } from "../i18n/messages";
+import { createTranslator } from "../i18n/translator";
+import type { NsKey } from "../i18n/types";
 
 export type LocateCloset = {
   id: string;
@@ -282,6 +289,63 @@ export function parseQuery(
   return q;
 }
 
+// ---------- 理解行（给用户看的条件名） ----------
+
+/** 词表里的全部条件标签（测试用：每个都要在 chat 字典里有对应的键）。 */
+export function ruleLabels(): string[] {
+  return uniq([...OCCASION_WORDS.map((w) => w[2]), "周末日常", ...STYLE_WORDS.map((w) => w[2])]);
+}
+
+const chatT = (locale: Locale) => createTranslator(locale, MESSAGES[locale], "chat");
+
+/** 中文条件标签 → chat 字典的键（按中文字典反查），如 “户外婚礼” → labels.occasion.outdoorWedding。 */
+const LABEL_KEYS = new Map<string, NsKey<"chat">>(
+  (["occasion", "style"] as const).flatMap((group) =>
+    Object.entries(MESSAGES.zh.chat.labels[group]).map(([k, zh]) => [zh, `labels.${group}.${k}` as NsKey<"chat">] as const),
+  ),
+);
+
+const GENDER_KEYS: Record<QueryGender, NsKey<"chat">> = {
+  女装: "labels.gender.female",
+  男装: "labels.gender.male",
+  中性: "labels.gender.neutral",
+};
+
+/**
+ * 理解行的条件名。中文直接用 parseQuery 写好的 labels（与原来一字不差）；其他语言按查询里的结构化字段重建，
+ * 不改查询本身——查询会存进 sessionStorage、下一轮带回来沿用，里面的值必须保持中文。
+ */
+export function localizeLabels(
+  q: LocateQuery,
+  closets: Pick<LocateCloset, "id" | "displayName">[],
+  locale: Locale = "zh",
+): string[] {
+  if (locale === "zh") return q.labels;
+  const t = chatT(locale);
+  const label = (zh: string) => {
+    const key = LABEL_KEYS.get(zh);
+    return key ? t(key) : term(locale, zh);
+  };
+  const personName = q.person ? closets.find((c) => c.id === q.person)?.displayName : null;
+  const avoid = uniq(q.avoid.map((a) => term(locale, a).toLocaleLowerCase(locale)));
+  return uniq(
+    [
+      personName ? t("labels.person", { name: personName }) : null,
+      ...q.occasionLabels.map(label),
+      ...q.styleLabels.map(label),
+      q.gender ? t(GENDER_KEYS[q.gender]) : null,
+      q.budget !== null
+        ? t("labels.budget", { n: q.budget.toLocaleString(locale) })
+        : q.tier === "平价"
+          ? t("labels.cheap")
+          : q.tier === "进阶"
+            ? t("labels.quality")
+            : null,
+      avoid.length ? t("labels.avoid", { words: avoid.join(", ") }) : null,
+    ].filter((x): x is string => Boolean(x)),
+  );
+}
+
 export function isRecognized(q: LocateQuery) {
   return Boolean(
     q.person ||
@@ -355,7 +419,7 @@ export function genderAllows(q: LocateQuery, gender: string) {
   return !q.gender || allowedGenders(q.gender).includes(gender as never);
 }
 
-export function locate(catalog: LocateCatalog, q: LocateQuery): LocateResult {
+export function locate(catalog: LocateCatalog, q: LocateQuery, locale: Locale = "zh"): LocateResult {
   const recognized = isRecognized(q);
   const order = new Map(catalog.closets.map((c, i) => [c.id, i]));
   const scored = catalog.outfits
@@ -400,32 +464,43 @@ export function locate(catalog: LocateCatalog, q: LocateQuery): LocateResult {
     closets: hasSignal ? closets : [],
     ambiguousGender,
     pages: q.pages,
-    text: replyText(q, hasSignal, outfits, ambiguousGender),
-    chips: replyChips(q, hasSignal, ambiguousGender),
+    text: replyText(q, hasSignal, outfits, ambiguousGender, catalog.closets, locale),
+    chips: replyChips(q, hasSignal, ambiguousGender, locale),
   };
 }
 
 // ---------- 一句话与追问（规则层；AI 回来后会被替换） ----------
 
-function replyText(q: LocateQuery, hasSignal: boolean, outfits: ScoredOutfit[], ambiguous: boolean) {
+function replyText(
+  q: LocateQuery,
+  hasSignal: boolean,
+  outfits: ScoredOutfit[],
+  ambiguous: boolean,
+  closets: LocateCatalog["closets"],
+  locale: Locale,
+) {
+  const t = chatT(locale);
   if (!hasSignal) {
-    if (q.pages.length) return "在这里：";
-    return "说说去哪儿、什么场合、预算多少，我帮你找衣橱和搭配。";
+    if (q.pages.length) return t("reply.here");
+    return t("reply.ask");
   }
+  const labels = localizeLabels(q, closets, locale);
   const parts: string[] = [];
-  parts.push(q.labels.length ? `${q.labels.join("、")}——先看这几套。` : "先看这几套。");
-  if (q.season === "春夏") parts.push("这批衣橱以秋冬为主，先挑了四季都能穿的。");
-  if (ambiguous) parts.push("男装女装都有合适的。");
+  parts.push(labels.length ? t("reply.picksFor", { labels: labels.join(t("labels.sep")) }) : t("reply.picks"));
+  if (q.season === "春夏") parts.push(t("reply.summer"));
+  if (ambiguous) parts.push(t("reply.bothGenders"));
   const top = outfits[0]?.outfit;
-  if (q.budget !== null && top && top.total > q.budget) parts.push("原价超出预算，进到搭配页说一句就能按预算改。");
-  return parts.join("");
+  if (q.budget !== null && top && top.total > q.budget) parts.push(t("reply.overBudget"));
+  // 中文句子直接相接；英文句子之间留空格
+  return parts.join(locale === "zh" ? "" : " ");
 }
 
-function replyChips(q: LocateQuery, hasSignal: boolean, ambiguous: boolean) {
-  if (!hasSignal) return q.pages.length ? [] : ["户外婚礼，1500 以内", "男生第一次约会", "过年回家，新中式一点"];
+function replyChips(q: LocateQuery, hasSignal: boolean, ambiguous: boolean, locale: Locale) {
+  const t = chatT(locale);
+  if (!hasSignal) return q.pages.length ? [] : [t("chips.wedding"), t("chips.date"), t("chips.newYear")];
   const chips: string[] = [];
-  if (ambiguous) chips.push("只看女装", "只看男装");
-  if (chips.length < 3) chips.push(q.budget !== null || q.tier ? "再便宜一点" : "预算 1000 以内");
-  if (chips.length < 3) chips.push("换个风格");
+  if (ambiguous) chips.push(t("chips.womenOnly"), t("chips.menOnly"));
+  if (chips.length < 3) chips.push(q.budget !== null || q.tier ? t("chips.cheaper") : t("chips.under1000"));
+  if (chips.length < 3) chips.push(t("chips.otherStyle"));
   return chips.slice(0, 3);
 }

@@ -1,5 +1,9 @@
+"use client";
+
 import { PageSkeleton } from "@/components/Skeletons";
+import { useT } from "@/lib/i18n/client";
 
 export default function Loading() {
-  return <PageSkeleton label="正在打开我的档案" />;
+  const t = useT("profile");
+  return <PageSkeleton label={t("loading")} />;
 }

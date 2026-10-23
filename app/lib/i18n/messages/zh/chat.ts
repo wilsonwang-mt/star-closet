@@ -1,4 +1,127 @@
 // 中文（源）· 悬浮对话。键名用英文小驼峰，按界面区域分组；占位符写 {name}，复数写 {n, plural, other {# 件}}。
-const chat = {};
+// 界面（ChatDock / ChatCards / ChatHint）、规则层给用户看的输出（lib/locate/core.ts 的理解行、兜底回复、追问）、
+// 功能页卡片与接口错误都在这里。发给 Claude 的提示词不在字典里（见 lib/chat/ai.ts、context.ts）。
+const chat = {
+  fab: "打开搭配助手：说场合和预算，帮你找衣橱",
+  title: "想穿去哪儿？",
+  newChat: "开始新对话",
+  newChatTitle: "新对话",
+  close: "关闭搭配助手",
+  welcome: "告诉我场合、风格和预算，我帮你找到合适的衣橱和整套搭配；也可以带你去试衣间、建立你的数字分身。",
+  // 欢迎页示例：只放规则层也能答好的句子（D48），英文版也要能被规则层认出来（见 lib/chat/english.ts）
+  examples: {
+    wedding: "下周户外婚礼，1500 以内",
+    date: "男生第一次约会，别太正式",
+    newYear: "过年回家，新中式一点",
+  },
+  heard: "听到的条件：",
+  thinking: "正在想",
+  inputLabel: "说一句你要去哪儿、什么风格、预算多少",
+  placeholder: "场合、风格、预算，说一句",
+  listening: "正在听…",
+  voice: "语音输入",
+  voiceStop: "停止语音输入",
+  send: "发送",
+  announceCards: "{text}。下面有 {n} 张卡片。",
+  offline: "暂时没连上，稍后再试一次。",
+  hint: {
+    short: "说场合和预算",
+    long: "告诉我场合和预算",
+  },
+  cards: {
+    enterCloset: "走进衣橱",
+    outfitAria: "{closet} · {name}，{price}",
+    outfits: "推荐搭配",
+  },
+  // 功能页卡片（标题与说明）；引题是英文，写在 lib/chat/cards.ts
+  pages: {
+    closets: { title: "全部衣橱", desc: "左右滑动，挑一间走进去" },
+    fittingRoom: { title: "个人试衣间", desc: "加入试衣间的搭配都在这里" },
+    avatar: { title: "我的数字分身", desc: "上传 3–5 张照片，生成你本人的形象照，之后每件都能一键试穿" },
+    tryon: { title: "2D 试穿", desc: "在试衣间里把整套衣服穿到你的正面照上" },
+    bag: { title: "购物袋", desc: "放进购物袋的单品、尺码与合计都在这里" },
+    profile: { title: "个人档案", desc: "尺码、预算和喜欢的风格，只有你自己可见" },
+    login: { title: "登录", desc: "登录后可以保存搭配、生成形象" },
+  },
+  // 规则层与接口的兜底回复（没有 AI、AI 出错或只给了卡片时）
+  reply: {
+    here: "在这里：",
+    ask: "说说去哪儿、什么场合、预算多少，我帮你找衣橱和搭配。",
+    picks: "先看这几套。",
+    picksFor: "{labels}——先看这几套。",
+    summer: "这批衣橱以秋冬为主，先挑了四季都能穿的。",
+    bothGenders: "男装女装都有合适的。",
+    overBudget: "原价超出预算，进到搭配页说一句就能按预算改。",
+    lookAtThese: "先看看这几样：",
+    missed: "刚才没接上，再说一次试试？",
+    unsure: "这个我暂时答不上来。说说场合、风格或预算，我帮你找搭配。",
+  },
+  // 规则层给的可点追问；点了会作为用户的话发回来，英文版同样要能被规则层认出来
+  chips: {
+    wedding: "户外婚礼，1500 以内",
+    date: "男生第一次约会",
+    newYear: "过年回家，新中式一点",
+    womenOnly: "只看女装",
+    menOnly: "只看男装",
+    cheaper: "再便宜一点",
+    under1000: "预算 1000 以内",
+    otherStyle: "换个风格",
+  },
+  // 理解行里的条件名。occasion / style 的中文值必须与 lib/locate/core.ts 词表里的标签完全一致（按中文反查键）
+  labels: {
+    sep: "、",
+    person: "像 {name}",
+    budget: "{n} 以内",
+    cheap: "平价",
+    quality: "质感优先",
+    avoid: "不要太{words}",
+    gender: {
+      female: "女装",
+      male: "男装",
+      neutral: "中性",
+    },
+    occasion: {
+      outdoorWedding: "户外婚礼",
+      wedding: "婚礼",
+      dinner: "晚宴",
+      formal: "正式场合",
+      interview: "面试",
+      commute: "通勤",
+      businessTrip: "出差",
+      date: "约会",
+      family: "过年见家人",
+      holiday: "节日",
+      annualParty: "年会",
+      concert: "演唱会",
+      party: "聚会",
+      exhibition: "看展",
+      photo: "拍照",
+      afternoonTea: "下午茶",
+      camping: "露营",
+      outdoor: "户外",
+      sport: "运动",
+      travel: "旅行",
+      nightOut: "出街",
+      weekend: "周末日常",
+    },
+    style: {
+      quietLuxury: "静奢极简",
+      french: "法式慵懒",
+      gorpcore: "户外机能",
+      cityBoy: "日系山系",
+      newChinese: "新中式",
+      korean: "韩系甜酷",
+      elegant: "优雅",
+      warm: "暖色系",
+      smartCasual: "体面",
+      workwear: "美式工装",
+      vintage: "复古",
+    },
+  },
+  errors: {
+    emptyInput: "请说一句你的需求",
+    catalog: "目录暂时读不到，稍后再试",
+  },
+};
 
 export default chat;

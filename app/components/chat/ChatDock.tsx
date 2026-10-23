@@ -6,12 +6,15 @@
 //   没有 AI 或出错时才显示规则层的兜底回复（见 app/api/chat/route.ts，D68）。请求带上当前页面，“这套”“这件”有着落。
 // - 手机上遇到吸底操作条（.cta-bar）时入口停靠进操作条右侧；[data-dock-avoid] 元素让入口抬到它上方。
 // - 其他地方用 window 事件 `sc-chat:open` 打开（首页标题旁的引导胶囊）。
+// - 文案走 chat 字典（D70）；服务端按同一语言回复。切换语言后，已存的旧消息保持原来的语言。
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { REDUCED_QUERY, useMedia } from "@/components/closet/useMedia";
 import type { ChatCard, ChatEvent, ChatTurn } from "@/lib/chat/protocol";
 import { CHAT_MAX_INPUT } from "@/lib/chat/protocol";
+import { LOCALE_META } from "@/lib/i18n/config";
+import { useLocale, useT } from "@/lib/i18n/client";
 import type { LocateQuery } from "@/lib/locate/core";
 import { reducedFade, springs } from "@/lib/motion";
 import ChatCards from "./ChatCards";
@@ -20,8 +23,8 @@ import styles from "./ChatDock.module.css";
 export const CHAT_OPEN_EVENT = "sc-chat:open";
 const STORE_KEY = "sc-chat-v1";
 const SHEET_QUERY = "(max-width: 639px)";
-// 示例只放规则层也能答好的句子：没有 key 时点它们也名副其实（D48）
-const EXAMPLES = ["下周户外婚礼，1500 以内", "男生第一次约会，别太正式", "过年回家，新中式一点"];
+// 示例只放规则层也能答好的句子：没有 key 时点它们也名副其实（D48）。英文示例同样能被规则层认出（lib/chat/english.ts）
+const EXAMPLE_KEYS = ["examples.wedding", "examples.date", "examples.newYear"] as const;
 
 type Msg = {
   id: string;
@@ -161,6 +164,8 @@ function StarIcon() {
 }
 
 export default function ChatDock() {
+  const t = useT("chat");
+  const locale = useLocale();
   const reduced = useMedia(REDUCED_QUERY) === true;
   const sheet = useMedia(SHEET_QUERY) === true;
   const titleId = useId();
@@ -312,18 +317,18 @@ export default function ChatDock() {
         }
         if (ctrl.signal.aborted) return;
         commit({ status: "done" });
-        setAnnounce(`${cur.text}${cur.cards.length ? `。下面有 ${cur.cards.length} 张卡片。` : ""}`);
+        setAnnounce(cur.cards.length ? t("announceCards", { text: cur.text, n: cur.cards.length }) : cur.text);
       } catch (e) {
         if (ctrl.signal.aborted) return;
         const msg = (e as Error).message;
         patch(bot.id, (m) =>
           m.cards.length || m.text
             ? { ...m, status: "done" }
-            : { ...m, text: msg || "暂时没连上，稍后再试一次。", status: "done" },
+            : { ...m, text: msg || t("offline"), status: "done" },
         );
       }
     },
-    [patch],
+    [patch, t],
   );
 
   // 外部打开（首页引导胶囊等）：可带一句话直接发送
@@ -353,7 +358,7 @@ export default function ChatDock() {
     const Ctor = speechCtor();
     if (!Ctor) return;
     const rec = new Ctor();
-    rec.lang = "zh-CN";
+    rec.lang = LOCALE_META[locale].intl;
     rec.interimResults = true;
     let heard = "";
     rec.onresult = (e) => {
@@ -436,7 +441,7 @@ export default function ChatDock() {
             transition={reduced ? reducedFade : docked ? { y: { duration: 0 }, default: springs.rise } : springs.rise}
             whileTap={reduced ? undefined : { scale: 0.92 }}
             onClick={() => setOpen(true)}
-            aria-label="打开搭配助手：说场合和预算，帮你找衣橱"
+            aria-label={t("fab")}
             aria-haspopup="dialog"
           >
             <StarIcon />
@@ -474,18 +479,18 @@ export default function ChatDock() {
               <div>
                 <span className="sc-kicker">Ask SEEN.</span>
                 <h2 id={titleId} className={styles.title}>
-                  想穿去哪儿？
+                  {t("title")}
                 </h2>
               </div>
               <div className={styles.headActions}>
                 {msgs.length ? (
-                  <button type="button" className={styles.iconBtn} onClick={reset} aria-label="开始新对话" title="新对话">
+                  <button type="button" className={styles.iconBtn} onClick={reset} aria-label={t("newChat")} title={t("newChatTitle")}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                       <path d="M13 8a5 5 0 1 1-1.6-3.7M13 2.5V5h-2.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </button>
                 ) : null}
-                <button type="button" className={styles.iconBtn} onClick={() => close()} aria-label="关闭搭配助手">
+                <button type="button" className={styles.iconBtn} onClick={() => close()} aria-label={t("close")}>
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
                     <path d="M2 2l10 10M12 2 2 12" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
                   </svg>
@@ -496,11 +501,11 @@ export default function ChatDock() {
             <div className={styles.list} ref={listRef}>
               {msgs.length === 0 ? (
                 <div className={styles.welcome}>
-                  <p className={styles.welcomeText}>告诉我场合、风格和预算，我帮你找到合适的衣橱和整套搭配；也可以带你去试衣间、建立你的数字分身。</p>
+                  <p className={styles.welcomeText}>{t("welcome")}</p>
                   <div className={styles.chips}>
-                    {EXAMPLES.map((ex) => (
-                      <button key={ex} type="button" className={styles.chip} onClick={() => void send(ex)}>
-                        {ex}
+                    {EXAMPLE_KEYS.map((k) => (
+                      <button key={k} type="button" className={styles.chip} onClick={() => void send(t(k))}>
+                        {t(k)}
                       </button>
                     ))}
                   </div>
@@ -518,14 +523,14 @@ export default function ChatDock() {
                         <svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true">
                           <path d={STAR_PATH} fill="currentColor" />
                         </svg>
-                        <span className="sr-only">听到的条件：</span>
+                        <span className="sr-only">{t("heard")}</span>
                         {m.labels.join(" · ")}
                       </p>
                     ) : null}
                     {m.text ? (
                       <p className={`${styles.botText} ${m.status === "live" && m.aiStarted ? styles.streaming : ""}`}>{m.text}</p>
                     ) : m.status !== "done" ? (
-                      <p className={styles.thinking} aria-label="正在想">
+                      <p className={styles.thinking} aria-label={t("thinking")}>
                         <span />
                         <span />
                         <span />
@@ -554,7 +559,7 @@ export default function ChatDock() {
               }}
             >
               <label className="sr-only" htmlFor={`${titleId}-input`}>
-                说一句你要去哪儿、什么风格、预算多少
+                {t("inputLabel")}
               </label>
               <input
                 id={`${titleId}-input`}
@@ -564,7 +569,7 @@ export default function ChatDock() {
                 enterKeyHint="send"
                 autoComplete="off"
                 maxLength={CHAT_MAX_INPUT}
-                placeholder={listening ? "正在听…" : "场合、风格、预算，说一句"}
+                placeholder={listening ? t("listening") : t("placeholder")}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
               />
@@ -573,7 +578,7 @@ export default function ChatDock() {
                   type="button"
                   className={`${styles.iconBtn} ${listening ? styles.listening : ""}`}
                   onClick={toggleVoice}
-                  aria-label={listening ? "停止语音输入" : "语音输入"}
+                  aria-label={listening ? t("voiceStop") : t("voice")}
                   aria-pressed={listening}
                 >
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -582,7 +587,7 @@ export default function ChatDock() {
                   </svg>
                 </button>
               ) : null}
-              <button type="submit" className={styles.send} aria-label="发送" disabled={!input.trim()}>
+              <button type="submit" className={styles.send} aria-label={t("send")} disabled={!input.trim()}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M8 13V3M3.5 7.5 8 3l4.5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>

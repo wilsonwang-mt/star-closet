@@ -2,9 +2,11 @@
 /* eslint-disable @next/next/no-img-element -- 卡片缩略图来自本站 public/，尺寸固定，不经过 next/image */
 
 // 对话里的 Gen UI 卡片：衣橱卡、搭配卡（横向一排）、功能页卡。只按服务端校验过的数据渲染，点击即跳转。
+// 卡片上的名称、类型等由服务端按请求语言给出（lib/chat/cards.ts），这里只翻译卡片自己的文字与价格格式（D70）。
 import Link from "next/link";
 import { motion } from "motion/react";
-import type { ChatCard, ClosetCard, OutfitCard, PageCard } from "@/lib/chat/protocol";
+import { formatYuan, type ChatCard, type ClosetCard, type OutfitCard, type PageCard } from "@/lib/chat/protocol";
+import { useLocale, useT } from "@/lib/i18n/client";
 import { reducedFade, springs } from "@/lib/motion";
 import styles from "./ChatDock.module.css";
 
@@ -19,6 +21,7 @@ function Arrow() {
 }
 
 function ClosetView({ c, onNavigate }: { c: ClosetCard; onNavigate: () => void }) {
+  const t = useT("chat");
   return (
     <Link href={`/closet/${c.id}`} prefetch={false} className={`sc-glass sc-glass--row ${styles.closet}`} onClick={onNavigate}>
       <span className={styles.closetCover}>
@@ -36,7 +39,7 @@ function ClosetView({ c, onNavigate }: { c: ClosetCard; onNavigate: () => void }
         <span className={styles.closetName}>{c.closetName}</span>
         <span className={styles.closetTag}>{c.tagline}</span>
         <span className={styles.closetGo}>
-          走进衣橱 <Arrow />
+          {t("cards.enterCloset")} <Arrow />
         </span>
       </span>
     </Link>
@@ -44,8 +47,16 @@ function ClosetView({ c, onNavigate }: { c: ClosetCard; onNavigate: () => void }
 }
 
 function OutfitView({ o, onNavigate }: { o: OutfitCard; onNavigate: () => void }) {
+  const t = useT("chat");
+  const price = formatYuan(o.total, useLocale());
   return (
-    <Link href={`/outfit/${o.id}`} prefetch={false} className={styles.outfit} onClick={onNavigate} aria-label={`${o.closetName} · ${o.name}，¥${o.total}`}>
+    <Link
+      href={`/outfit/${o.id}`}
+      prefetch={false}
+      className={styles.outfit}
+      onClick={onNavigate}
+      aria-label={t("cards.outfitAria", { closet: o.closetName, name: o.name, price })}
+    >
       <span className={styles.outfitCover}>
         {o.cover ? <img src={o.cover} alt="" loading="lazy" /> : null}
         <span className={`${styles.outfitNo} sc-foil`}>N°{two(o.no)}</span>
@@ -53,7 +64,7 @@ function OutfitView({ o, onNavigate }: { o: OutfitCard; onNavigate: () => void }
       <span className={styles.outfitName}>{o.name}</span>
       <span className={styles.outfitMeta}>
         <span>{o.closetName}</span>
-        <b>¥{o.total}</b>
+        <b>{price}</b>
       </span>
     </Link>
   );
@@ -63,7 +74,8 @@ function PageView({ p, onNavigate }: { p: PageCard; onNavigate: () => void }) {
   return (
     <Link href={p.href} prefetch={false} className={`sc-glass sc-glass--row ${styles.page}`} onClick={onNavigate}>
       <span className={styles.pageText}>
-        <span className={styles.cardKicker}>{p.kicker}</span>
+        {/* 英文站引题与标题常常相同（Bag / Bag），相同时只留标题 */}
+        {p.kicker.toLowerCase() !== p.title.toLowerCase() ? <span className={styles.cardKicker}>{p.kicker}</span> : null}
         <span className={styles.pageTitle}>{p.title}</span>
         <span className={styles.pageDesc}>{p.desc}</span>
       </span>
@@ -83,6 +95,7 @@ export default function ChatCards({
   reduced: boolean;
   onNavigate: () => void;
 }) {
+  const t = useT("chat");
   if (!cards.length) return null;
   const closets = cards.filter((c): c is ClosetCard => c.kind === "closet");
   const outfits = cards.filter((c): c is OutfitCard => c.kind === "outfit");
@@ -102,7 +115,7 @@ export default function ChatCards({
         </motion.div>
       ))}
       {outfits.length ? (
-        <motion.div className={styles.strip} role="list" aria-label="推荐搭配" {...rise(i++)}>
+        <motion.div className={styles.strip} role="list" aria-label={t("cards.outfits")} {...rise(i++)}>
           {outfits.map((o) => (
             <div role="listitem" key={o.id}>
               <OutfitView o={o} onNavigate={onNavigate} />
