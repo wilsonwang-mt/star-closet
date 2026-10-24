@@ -74,13 +74,11 @@ export default function LookActions({
   items,
   pick,
   outfitId,
-  outfitName,
   compactBag = false,
 }: {
   items: PickItem[];
   pick: Pick;
   outfitId: string | null;
-  outfitName: string | null;
   /** 卡片里空间窄：购物袋按钮只放图标与件数。 */
   compactBag?: boolean;
 }) {
@@ -100,7 +98,6 @@ export default function LookActions({
     const r = await addToFittingRoom(
       {
         kind: partial ? (target.length === 1 ? "single" : "pick") : "outfit",
-        outfitName,
         sourceOutfitId: outfitId,
         items: target,
       },

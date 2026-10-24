@@ -9,7 +9,7 @@ const fittingRoom = {
   empty: "还是空的，去衣橱里挑一套吧。",
   browse: "去逛衣橱",
   lifeScene: "穿着这一身，出现在周五的咖啡馆",
-  /** 保存搭配时自动生成的标题（lib/bag/core.ts lookPayload、Adapter），显示时按当前语言重拼。 */
+  /** 试衣间里一套的自动标题：存库时由服务端按中文生成，显示时按当前语言重算（lib/looks-l10n.ts）。改这里的中文会让旧记录认不出来、原样显示。 */
   lookTitle: {
     outfit: "整套搭配",
     myVersion: "{name} · 我的版本",
