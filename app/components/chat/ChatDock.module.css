@@ -192,6 +192,16 @@
   .hintLong { display: inline; }
 }
 
+/* ---------- 英文（D70）：为中文设的宽字距用在英文上会散，收窄；搭配名比中文长，卡片只有 128px 宽 ---------- */
+:global(html[lang="en"]) .title { letter-spacing: .02em; }
+:global(html[lang="en"]) .closetName,
+:global(html[lang="en"]) .pageTitle { letter-spacing: .02em; }
+/* 搭配名折成两行（最多两行）而不是省略；卡片撑满整排高度、名称一行占满剩余高度，同一排卡片的衣橱与价格行仍然对齐 */
+:global(html[lang="en"]) .strip > * { display: grid; grid-template-columns: minmax(0, 1fr); }
+:global(html[lang="en"]) .outfit { grid-template-rows: auto 1fr auto; }
+:global(html[lang="en"]) .outfitName { white-space: normal; text-wrap: balance;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+
 @media (prefers-reduced-motion: reduce) {
   .fabDot, .listening, .thinking span, .streaming::after { animation: none; }
   .thinking span { opacity: .7; }
