@@ -204,6 +204,7 @@ section, figure { scroll-margin-top: var(--nav-offset); }
     box-shadow: inset 0 0 0 .5px rgba(201, 169, 110, .8);
   }
   .site-menu { left: auto; right: max(16px, calc(50% - 360px)); width: 300px; margin: 0; transform-origin: calc(100% - 26px) -30px; }
+  .sc-nav__link { padding: 0 10px; }
   .site-menu__primary { display: none; }
   .site-menu__account { margin: 0; padding: 8px 4px 8px 12px; border-top: 0; }
   .site-menu__scrim { background: transparent; }
@@ -531,11 +532,25 @@ html[data-vt]::view-transition-new(root) { animation: vt-fade-in .42s ease-out .
 
 /* 英文（D70）：标题与说明的衬线字体换成 Bodoni Moda（思源宋体的西文字形偏窄，中文排版的宽字距用在英文上会散），
  * 字距收窄。中文页面不受影响；各组件里为中文设的宽字距，在组件 module.css 用 :global(html[lang="en"]) 单独收。 */
-html[lang="en"] { --sc-font-serif: "Bodoni Moda", "Noto Serif SC", "Songti SC", serif; }
+html[lang="en"] {
+  --sc-font-serif: "Bodoni Moda", "Noto Serif SC", "Songti SC", serif;
+  /* D71：英文正文与界面字改用 Instrument Sans 400（思源黑体 Light 的西文字形在 12–13px 偏细偏挤），字号整体上调一档 */
+  --sc-font-sans: "Instrument Sans", "SC Sans", -apple-system, "Helvetica Neue", sans-serif;
+  --sc-fs-caption: 12px;
+  --sc-fs-body: 15px;
+  --sc-fs-title: 20px;
+}
+html[lang="en"] body { font-weight: 400; line-height: 1.55; }
 html[lang="en"] .sc-display { letter-spacing: .01em; }
 html[lang="en"] .site-menu__label { letter-spacing: .03em; }
-html[lang="en"] .sc-meta, html[lang="en"] .sc-badge { letter-spacing: .04em; }
-html[lang="en"] .sc-cta { letter-spacing: .08em; }
-html[lang="en"] .sc-cta.compact, html[lang="en"] .site-menu__signout, html[lang="en"] .back-link { letter-spacing: .06em; }
+html[lang="en"] .sc-meta, html[lang="en"] .sc-badge { letter-spacing: .01em; }
+html[lang="en"] .sc-cta { letter-spacing: .02em; font-weight: 500; }
+html[lang="en"] .sc-cta.compact, html[lang="en"] .site-menu__signout, html[lang="en"] .back-link { letter-spacing: .01em; }
 html[lang="en"] .section-title { letter-spacing: .01em; }
-html[lang="en"] .link-btn { letter-spacing: .03em; }
+html[lang="en"] .link-btn { letter-spacing: .01em; }
+html[lang="en"] .sc-kicker { letter-spacing: .06em; font-size: 12px; }
+html[lang="en"] .sc-nav__link { font-size: 14px; letter-spacing: .01em; }
+/* 导航多了「搭配」链接与搜索按钮（D71）：640–899px 收窄链接内边距，宽屏恢复 */
+@media (min-width: 900px) {
+  .sc-nav__link { padding: 0 14px; }
+}

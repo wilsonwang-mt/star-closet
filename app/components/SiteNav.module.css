@@ -12,3 +12,11 @@
   .badge { animation: badge-fade .2s ease-out both; }
   @keyframes badge-fade { from { opacity: 0; } to { opacity: 1; } }
 }
+
+/* 主链接与工具图标之间的细分隔线、搜索按钮（D71）：都只在宽屏出现 */
+.rule { display: none; flex: none; width: .5px; height: 18px; margin: 0 6px; background: var(--sc-rule); }
+.ask { display: none; }
+@media (min-width: 900px) {
+  .rule, .ask { display: grid; }
+  .rule { display: block; }
+}

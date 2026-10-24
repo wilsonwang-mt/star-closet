@@ -9,6 +9,8 @@ const nav: Shape<typeof zh> = {
   menu: "Menu",
   closets: "Closets",
   closetsKicker: "The Closets",
+  looks: "Looks",
+  looksKicker: "Shop the look",
   fittingRoom: "Fitting Room",
   fittingRoomKicker: "Try it on",
   profile: "Profile",
@@ -21,6 +23,7 @@ const nav: Shape<typeof zh> = {
   openMenu: "Open menu",
   openMenuAccount: "Open menu and account",
   closeMenu: "Close menu",
+  ask: "Search or ask our stylist",
   theme: {
     dark: "Night",
     light: "Day",

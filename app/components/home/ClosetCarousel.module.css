@@ -37,9 +37,9 @@
   mask-image: linear-gradient(90deg, transparent, #000 8px, #000 calc(100% - 12px), transparent);
 }
 .filters::-webkit-scrollbar { display: none; }
-/* 手机：筛选移出首屏，放在索引区头部；桌面：留在标题右侧 */
+/* 手机：筛选移出首屏，放在切换按钮下方；桌面：留在标题右侧 */
 .filtersTop { display: none; }
-.filtersIndex { margin: 0 -8px 14px; }
+.filtersIndex { width: min(100% - 16px, 560px); margin: 20px auto 0; justify-content: safe center; }
 @media (min-width: 900px) {
   .filtersTop { display: flex; }
   .filtersIndex { display: none; }
@@ -189,27 +189,6 @@
   radial-gradient(90% 60% at 50% 38%, color-mix(in srgb, var(--sc-bg) 38%, transparent), color-mix(in srgb, var(--sc-bg) 78%, transparent)),
   linear-gradient(180deg, color-mix(in srgb, var(--sc-bg) 40%, transparent), color-mix(in srgb, var(--sc-bg) 92%, transparent) 88%); }
 
-/* ---------- 全部衣橱索引（竖向滚动内容） ---------- */
-/* 与导航胶囊同一宽栏（globals.css --sc-col-wide）：宽屏时与中央预览卡左右对齐 */
-.index { width: min(100% - 32px, var(--sc-col-wide)); margin-top: 64px; }
-.indexHead { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; padding: 0 4px; }
-.rows { display: grid; gap: 8px; }
-.row {
-  width: 100%; display: grid; grid-template-columns: 36px 44px minmax(0, 1fr) auto; align-items: center; gap: 12px;
-  padding: 10px 16px 10px 12px; border: 0; text-align: left; cursor: pointer; color: inherit;
-  transition: transform var(--spring-dur) var(--spring);
-}
-.row:active { transform: scale(.985); }
-.row:focus-visible { outline: 1px solid var(--sc-champ); outline-offset: 2px; }
-.row[aria-current="true"] { box-shadow: inset 0 0 0 1px rgba(201, 169, 110, .8), inset 0 1px 0 var(--sc-glass-edge), var(--sc-glass-shadow); }
-.rowNo { font-family: var(--sc-font-didone); font-style: italic; font-size: 18px; color: var(--sc-ink-3); }
-.row[aria-current="true"] .rowNo { color: var(--sc-champ-text); }
-.rowAvatar { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; background: var(--sc-bg-raised); }
-.rowAvatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.rowText { min-width: 0; }
-.rowName { display: block; font-family: var(--sc-font-serif); font-size: 15px; letter-spacing: .1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rowTag { display: block; font-size: 11px; letter-spacing: .08em; color: var(--sc-ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rowMeta { font-size: 11px; letter-spacing: .1em; color: var(--sc-ink-3); white-space: nowrap; }
 
 
 /* ---------- 从衣橱页返回：卡片收回到位后，标题、信息、切换按钮依次浮起 ---------- */
@@ -221,25 +200,19 @@
 .arriveBack .controls { animation-delay: calc(var(--vt-dur, .9s) * .62 + 140ms); }
 @keyframes home-arrive { from { opacity: 0; transform: translateY(14px); } }
 
-/* ---------- 桌面悬停：索引行轻轻抬起 ---------- */
-@media (hover: hover) and (pointer: fine) {
-  .row:hover { transform: translateY(-2px); }
-  .row:active { transform: translateY(-1px) scale(.985); }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .arriveBack .head, .arriveBack .info, .arriveBack .controls { animation: home-fade .3s ease-out .1s both; }
-  .row:hover, .row:active { transform: none; }
   .isActive .media img { animation: none !important; }
-  .enter svg, .arrow, .row { transition: opacity .2s ease; }
+  .enter svg, .arrow { transition: opacity .2s ease; }
 }
 @keyframes home-fade { from { opacity: 0; } }
 
-/* ---------- 英文（D70）：为中文设的宽字距用在英文上会散，按钮也会变宽；英文时收窄 ---------- */
-:global(html[lang="en"]) .title { letter-spacing: .02em; }
-:global(html[lang="en"]) .closetName,
-:global(html[lang="en"]) .rowName { letter-spacing: .01em; }
-:global(html[lang="en"]) .kicker,
-:global(html[lang="en"]) .enter { letter-spacing: .06em; }
-:global(html[lang="en"]) .chip,
-:global(html[lang="en"]) .rowMeta { letter-spacing: .04em; }
+/* ---------- 英文（D70、D71）：标题用 Bodoni 放大一档、字距收紧；界面小字用 Instrument Sans 正常字距 ---------- */
+:global(html[lang="en"]) .title { font-size: 24px; line-height: 1.15; letter-spacing: -.005em; }
+@media (min-width: 900px) {
+  :global(html[lang="en"]) .title { font-size: 28px; }
+}
+:global(html[lang="en"]) .closetName { letter-spacing: 0; }
+:global(html[lang="en"]) .kicker { letter-spacing: .06em; }
+:global(html[lang="en"]) .enter { letter-spacing: .02em; }
+:global(html[lang="en"]) .chip { font-size: 13px; letter-spacing: 0; }

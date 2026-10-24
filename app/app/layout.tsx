@@ -11,7 +11,8 @@ import { MESSAGES } from "@/lib/i18n/messages";
 import { getLocale, tFor } from "@/lib/i18n/server";
 import { getChatCatalog } from "@/lib/chat/catalog";
 import "./fonts.css";
-import "./fonts-serif.css"; // 标题字体自托管（Vercel 构建机上 next/font/google 解析失败，2026-10-17）
+import "./fonts-serif.css";
+import "./fonts-latin.css"; // 英文界面字体（D71），只在英文页面被样式引用时下载 // 标题字体自托管（Vercel 构建机上 next/font/google 解析失败，2026-10-17）
 import "./tokens.css";
 import "./globals.css";
 
@@ -45,6 +46,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const pref: ThemePref = saved === "light" || saved === "system" ? saved : "dark";
   // 多语言（D70）：cookie sc-locale → 浏览器语言 → 中文。只把当前语言的字典与目录词表交给客户端。
   const locale = await getLocale();
+  if (locale === "en") preload("/fonts/instrument-sans-latin.v1.woff2", { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
   return (
     <html
       lang={LOCALE_META[locale].htmlLang}

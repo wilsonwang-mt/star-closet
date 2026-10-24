@@ -401,7 +401,7 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
   const progress = useTransform(pos, (p) => (n ? (clamp(p, 0, n - 1) + 1) / n : 0));
   const geo = useMemo(() => ({ unit, wideMv }), [unit, wideMv]);
 
-  // 筛选衣橱：桌面放在标题右侧；手机（<900px）移出首屏，放到下方「全部衣橱」索引区头部，
+  // 筛选衣橱：桌面放在标题右侧；手机（<900px）移出首屏，放到轮播切换按钮下方，
   // 首屏留给刊头、标题与轮播，定位交给右下角的悬浮对话（D66，标题旁有引导胶囊）。两处同一份状态，另一处用 CSS display:none 隐藏（不进焦点与读屏）。
   const renderFilters = (placement: "top" | "index") => (
     <div className={`${styles.filters} ${placement === "top" ? styles.filtersTop : styles.filtersIndex}`} role="toolbar" aria-label={t("filters.aria")} onKeyDown={onToolbarKey}>
@@ -621,40 +621,8 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
           </div>
         ) : null}
 
-        {n > 0 ? (
-          <section className={styles.index} aria-label={t("index.aria")}>
-            <div className={styles.indexHead}>
-              <span className="sc-kicker">Index</span>
-              <span className="sc-meta">{t("index.count", { n })}</span>
-            </div>
-            {renderFilters("index")}
-            <div className={styles.rows}>
-              {list.map((c, i) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  className={`sc-glass sc-glass--row ${styles.row}`}
-                  aria-current={i === active ? "true" : undefined}
-                  onClick={() => {
-                    snapTo(i, 0, "step");
-                    stageRef.current?.focus({ preventScroll: true });
-                    window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
-                  }}
-                >
-                  <span className={styles.rowNo}>{two(i + 1)}</span>
-                  <span className={styles.rowAvatar}>{c.avatar ? <img src={c.avatar} alt="" loading="lazy" /> : null}</span>
-                  <span className={styles.rowText}>
-                    <span className={styles.rowName}>{c.closetName}</span>
-                    <span className={styles.rowTag}>
-                      {c.displayName} · {c.tagline}
-                    </span>
-                  </span>
-                  <span className={styles.rowMeta}>{t("index.looks", { n: c.outfitCount })}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-        ) : null}
+        {/* 手机：衣橱筛选放在切换按钮下方（首屏之外，D51）；桌面在标题右侧。原来的衣橱索引列表与轮播重复，已由下方「按场合，整套穿走」取代（D71） */}
+        {renderFilters("index")}
       </section>
     </>
   );

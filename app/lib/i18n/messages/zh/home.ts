@@ -21,10 +21,19 @@ const home = {
     prev: "上一间",
     next: "下一间",
   },
-  index: {
-    aria: "全部衣橱",
-    count: "{n} 间衣橱",
-    looks: "{n} 套",
+  /** 首页第二部分「按场合，整套穿走」（D71） */
+  edit: {
+    title: "按场合，整套穿走",
+    lead: "主理人搭好的整套，先穿在你身上看，再决定带走哪几件。",
+    ask: "不确定？问问造型师",
+    tabsAria: "按场合挑选整套搭配",
+    viewLookAria: "查看整套：{name}",
+    pieces: "这套的 {n} 件",
+    piecesAria: "{name} 的单品",
+    total: "整套",
+    viewLook: "查看整套",
+    more: "更多「{occasion}」搭配",
+    cardPieces: "{n} 件",
   },
 };
 
