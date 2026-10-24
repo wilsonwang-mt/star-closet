@@ -36,6 +36,9 @@ function getRecognition(): SpeechRecognitionLike | null {
   return Ctor ? new Ctor() : null;
 }
 
+// 改编结果里的一件；manual 表示用户手动替换的（理由显示当前语言的“你手动替换”，保存时只发这个标记，见 save）
+type ResultItem = ListedItem & { manual?: boolean };
+
 function total(items: { price: number }[]) {
   return items.reduce((s, i) => s + i.price, 0);
 }
@@ -62,7 +65,7 @@ export default function Adapter({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AdaptResult | null>(null);
-  const [items, setItems] = useState<ListedItem[] | null>(null);
+  const [items, setItems] = useState<ResultItem[] | null>(null);
   const [listening, setListening] = useState(false);
   const [saved, setSaved] = useState<string | null>(null);
   // 改编前的那一套：等待时光束扫过它；结果出现时先以它开场，再换掉被换的单品，总价从它的总价滚到新值
@@ -73,7 +76,7 @@ export default function Adapter({
   const [needInput, setNeedInput] = useState(false);
   // 原搭配的整套 / 多选加入试衣间与购物袋（D67）
   const pick = usePick();
-  const source = { outfitId: outfit.id, outfitName: outfit.name };
+  const source = { outfitId: outfit.id };
 
   function tryAdapt(text: string) {
     if (!text.trim()) {
@@ -156,22 +159,23 @@ export default function Adapter({
   function swap(fromId: string, toId: string) {
     const to = catalog.find((c) => c.id === toId);
     if (!to || !items) return;
-    setItems(items.map((i) => (i.id === fromId ? { ...to, reason: t("manualReason") } : i)));
+    setItems(items.map((i) => (i.id === fromId ? { ...to, reason: t("manualReason"), manual: true } : i)));
     setSaved(null);
   }
 
-  async function save(mode: "original" | "ai" | "offline", list: ListedItem[]) {
+  // 不带标题、手动替换不带理由文字：服务端存中文（原搭配名 / “X · 我的版本”、“你手动替换”），
+  // 试衣间按当前语言显示（lib/looks-l10n.ts），所以切换语言后跟着变。改编要求与 AI 写的说明、理由原样保存。
+  async function save(mode: "original" | "ai" | "offline", list: ResultItem[]) {
     setError(null);
     const res = await fetch("/api/looks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        title: mode === "original" ? outfit.name.replace(/^占位：/, "") : t("myVersion", { name: outfit.name.replace(/^占位：/, "") }),
         sourceOutfitId: outfit.id,
         request: mode === "original" ? null : request,
         summary: mode === "original" ? null : (result?.summary ?? null),
         mode,
-        items: list.map((i) => ({ itemId: i.id, reason: i.reason ?? null })),
+        items: list.map((i) => (i.manual ? { itemId: i.id, reason: null, manual: true } : { itemId: i.id, reason: i.reason ?? null })),
       }),
     });
     if (res.status === 401) {
@@ -207,7 +211,7 @@ export default function Adapter({
         </div>
         <ItemList items={outfit.items} pick={pick} source={source} />
         <div style={{ marginTop: 14 }}>
-          <LookActions items={outfit.items} pick={pick} outfitId={outfit.id} outfitName={outfit.name} />
+          <LookActions items={outfit.items} pick={pick} outfitId={outfit.id} />
         </div>
       </section>
 

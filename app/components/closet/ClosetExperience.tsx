@@ -249,7 +249,7 @@ function LookTile({ look: o, index: i }: { look: LookView; index: number }) {
                 <ItemThumb name={it.name} image={it.image} color={it.color} href={`/item/${it.id}`} />
                 <PickCheck pick={pick} item={it} />
               </span>
-              <QuickTryButton item={it} source={{ outfitId: o.id, outfitName: o.name }} className={styles.pieceTry} />
+              <QuickTryButton item={it} source={{ outfitId: o.id }} className={styles.pieceTry} />
             </li>
           ))}
         </ul>
@@ -262,7 +262,7 @@ function LookTile({ look: o, index: i }: { look: LookView; index: number }) {
             </svg>
           </Link>
         </div>
-        <LookActions items={o.items} pick={pick} outfitId={o.id} outfitName={o.name} compactBag />
+        <LookActions items={o.items} pick={pick} outfitId={o.id} compactBag />
       </div>
     </div>
   );

@@ -38,7 +38,6 @@ const outfit: Shape<typeof zh> = {
     note: "{mode, select, ai {Chosen by AI, drawing on this closet first and on other closets where needed. } other {Chosen by rules, without AI, drawing on this closet first and on other closets where needed. }}Swapped pieces are outlined in gold; the total is the sum of each piece's listed price.",
   },
   manualReason: "Swapped by you",
-  myVersion: "{name} · My version",
   cta: {
     same: "Same as the original",
     added: "Added to Fitting Room",
