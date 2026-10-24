@@ -546,6 +546,8 @@ html[lang="en"] .site-menu__label { letter-spacing: .03em; }
 html[lang="en"] .sc-meta, html[lang="en"] .sc-badge { letter-spacing: .01em; }
 html[lang="en"] .sc-cta { letter-spacing: .02em; font-weight: 500; }
 html[lang="en"] .sc-cta.compact, html[lang="en"] .site-menu__signout, html[lang="en"] .back-link { letter-spacing: .01em; }
+/* 英文徽标（如 “AI re-style”）会在连字符或空格处折成两行；徽标不拆行，旁边的标题去折行 */
+html[lang="en"] .sc-badge { white-space: nowrap; }
 html[lang="en"] .section-title { letter-spacing: .01em; }
 html[lang="en"] .link-btn { letter-spacing: .01em; }
 html[lang="en"] .sc-kicker { letter-spacing: .06em; font-size: 12px; }

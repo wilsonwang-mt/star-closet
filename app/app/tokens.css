@@ -185,7 +185,7 @@ body { background: var(--sc-bg); color: var(--sc-ink); font-family: var(--sc-fon
 .sc-nav__link:hover, .sc-nav__link[aria-current="page"] { color: var(--sc-ink); background: rgba(255, 255, 255, .10); }
 :root[data-theme="light"] .sc-nav__link:hover, :root[data-theme="light"] .sc-nav__link[aria-current="page"] { background: rgba(31, 28, 24, .06); }
 
-.sc-badge { display: inline-block; white-space: nowrap; font-size: 10px; letter-spacing: .12em; padding: 3px 9px; border-radius: var(--sc-radius-pill);
+.sc-badge { display: inline-block; font-size: 10px; letter-spacing: .12em; padding: 3px 9px; border-radius: var(--sc-radius-pill);
   border: 1px solid rgba(201, 169, 110, .8); color: var(--sc-champ-text); }
 
 .sc-rise { animation: sc-rise var(--sc-dur-rise) var(--sc-ease-rise) both; }

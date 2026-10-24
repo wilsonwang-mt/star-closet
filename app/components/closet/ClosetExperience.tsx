@@ -9,11 +9,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, useScroll, useTransform, type MotionValue } from "motion/react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import ItemThumb from "@/components/ItemThumb";
 import LinkPending from "@/components/LinkPending";
 import { QuickTryButton, QuickTryonProvider } from "@/components/tryon/QuickTryOn";
-import { useT, useTerm } from "@/lib/i18n/client";
+import { useLocale, useT, useTerm } from "@/lib/i18n/client";
 import type { TryonContext } from "@/lib/tryon/service";
 import LookActions, { PickCheck, usePick } from "./LookActions";
 import type { ClosetView } from "./data";
@@ -216,7 +216,9 @@ function LookTile({ look: o, index: i }: { look: LookView; index: number }) {
   const pick = usePick();
   const t = useT("closet");
   const term = useTerm();
+  const en = useLocale() === "en";
   const name = o.name.replace(/^占位：/, "");
+  const tags = [...o.occasionTags.slice(0, 3), o.budgetTier].filter(Boolean);
   return (
     <div className={`sc-glass ${styles.look}`}>
       <Link href={`/outfit/${o.id}`} className={styles.lookLink}>
@@ -233,7 +235,7 @@ function LookTile({ look: o, index: i }: { look: LookView; index: number }) {
           <span className={`sc-number sc-foil ${styles.no}`}>N°{two(i + 1)}</span>
         </div>
         <div className={`spread ${styles.lookHead}`}>
-          <div style={{ minWidth: 0 }}>
+          <div className={styles.lookTitle} style={{ minWidth: 0 }}>
             <span className="sc-kicker">The Look</span>
             <h3 className={`section-title ${styles.lookName}`}>{name}</h3>
           </div>
@@ -253,8 +255,18 @@ function LookTile({ look: o, index: i }: { look: LookView; index: number }) {
             </li>
           ))}
         </ul>
-        <div className="spread">
-          <span className="sc-meta">{[...o.occasionTags.slice(0, 3), o.budgetTier].filter(Boolean).map(term).join(" · ")}</span>
+        <div className={`spread ${styles.metaRow}`}>
+          {/* 英文每个词包一层不拆行的 span（如 “Mid-range”）；中文仍是一整段文字，渲染与原来逐像素一致 */}
+          <span className="sc-meta">
+            {en
+              ? tags.map((tag, k) => (
+                  <Fragment key={k}>
+                    {k ? " · " : ""}
+                    <span className={styles.metaTerm}>{term(tag)}</span>
+                  </Fragment>
+                ))
+              : tags.map(term).join(" · ")}
+          </span>
           <Link href={`/outfit/${o.id}`} className={styles.go}>
             {t("look.go")}
             <svg width="12" height="9" viewBox="0 0 14 10" fill="none" aria-hidden="true">
