@@ -128,7 +128,7 @@ export default async function ItemPage({ params }: Props) {
                   <dt>{t("facts.closet")}</dt>
                   <dd>
                     <Link href={`/closet/${curator.id}`} className={s.closetLink}>
-                      {clean(curator.closetName)} · {curator.displayName}
+                      {clean(curator.closetName)} · {locale === "en" ? <span className={s.curatorName}>{curator.displayName}</span> : curator.displayName}
                     </Link>
                   </dd>
                 </div>

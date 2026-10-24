@@ -222,3 +222,24 @@
 :global(html[lang="en"]) .tag,
 :global(html[lang="en"]) .palette,
 :global(html[lang="en"]) .go { letter-spacing: .04em; }
+
+/* 英文搭配卡：搭配名比中文长，与价格同排时三分之一被截断。价格移到 “The Look” 那一行，名称独占整行；
+ * 场合与预算单独一行、每个词不拆开（不再在 “Mid-range” 的连字符处断开），“查看与改编”移到下一行靠右。
+ * 每张卡多出的高度相同，并排的卡片仍然等高。卡片窄到放不下最长的名称（目前约 244px）或场合预算行（约 252px）时，
+ * 所有卡片都预留两行，个别折行的卡片不会比旁边的高。 */
+:global(html[lang="en"]) .lookHead { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; column-gap: 12px;
+  container-type: inline-size; }
+:global(html[lang="en"]) .lookTitle { display: contents; }
+:global(html[lang="en"]) .lookName { grid-row: 2; grid-column: 1 / -1; white-space: normal; text-wrap: balance;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+:global(html[lang="en"]) .total { grid-row: 1; grid-column: 2; }
+:global(html[lang="en"]) .metaRow { flex-wrap: wrap; row-gap: 6px; container-type: inline-size; }
+:global(html[lang="en"]) .metaRow > :global(.sc-meta) { flex: 1 1 100%; letter-spacing: .02em; }
+:global(html[lang="en"]) .metaRow > .go { margin-left: auto; }
+:global(html[lang="en"]) .metaTerm { white-space: nowrap; }
+@container (width < 245px) {
+  :global(html[lang="en"]) .lookName { min-height: 2lh; }
+}
+@container (width < 254px) {
+  :global(html[lang="en"]) .metaRow > :global(.sc-meta) { min-height: 2lh; }
+}

@@ -243,3 +243,8 @@
 :global(html[lang="en"]) .enter { letter-spacing: .06em; }
 :global(html[lang="en"]) .chip,
 :global(html[lang="en"]) .rowMeta { letter-spacing: .04em; }
+/* 英文衣橱名较长，手机上单行放不下一半：折成两行（最多两行）而不是省略；
+ * 各行按最高的一行等高（1fr），有的折行、有的不折时列表仍然整齐。都放得下时（宽屏）行高不变。 */
+:global(html[lang="en"]) .rows { grid-auto-rows: 1fr; }
+:global(html[lang="en"]) .rowName { white-space: normal; line-height: 1.3; text-wrap: balance;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
