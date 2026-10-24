@@ -159,7 +159,7 @@ function Feature({ look }: { look: EditLook }) {
                   {it.name}
                 </Link>
                 <span className={s.piecePrice}>{yuan(it.price)}</span>
-                <QuickTryButton item={it} source={{ outfitId: look.id, outfitName: look.name }} className={s.pieceTry} />
+                <QuickTryButton item={it} source={{ outfitId: look.id }} className={s.pieceTry} />
               </span>
             </li>
           ))}
@@ -169,7 +169,7 @@ function Feature({ look }: { look: EditLook }) {
           <span className={s.totalLabel}>{t("edit.total")}</span>
           <span className={`sc-foil ${s.total}`}>{yuan(look.total)}</span>
         </div>
-        <LookActions items={look.items} pick={pick} outfitId={look.id} outfitName={look.name} />
+        <LookActions items={look.items} pick={pick} outfitId={look.id} />
         <Link href={`/outfit/${look.id}`} className={s.view}>
           {t("edit.viewLook")}
           <svg width="12" height="9" viewBox="0 0 14 10" fill="none" aria-hidden="true">
