@@ -42,7 +42,7 @@ export default function ItemList({
   /** 多选加入试衣间 / 购物袋（D67）：传入时单品缩略图上出现勾选圆钮。 */
   pick?: Pick;
   /** 一键试穿面板里“加入试衣间”记录的来源搭配。 */
-  source?: { outfitId?: string | null; outfitName?: string | null };
+  source?: { outfitId?: string | null };
   catalog?: Item[];
   /** 这套搭配所属衣橱：替换下拉里本衣橱的单品排在前面，其他衣橱的单独分组 */
   ownCuratorId?: string;
@@ -143,7 +143,7 @@ function Row({
   onSwap?: (fromId: string, toId: string) => void;
   ownCuratorId?: string;
   pick?: Pick;
-  source?: { outfitId?: string | null; outfitName?: string | null };
+  source?: { outfitId?: string | null };
 }) {
   const t = useT("outfit");
   const term = useTerm();

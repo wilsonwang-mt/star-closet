@@ -37,7 +37,7 @@ export const canQuickTry = (item: QuickItem) =>
 
 type Ctl = {
   ctx: TryonContext;
-  open: (item: QuickItem, source?: { outfitId?: string | null; outfitName?: string | null }) => void;
+  open: (item: QuickItem, source?: { outfitId?: string | null }) => void;
 };
 
 const QuickCtx = createContext<Ctl | null>(null);
@@ -46,7 +46,7 @@ export function QuickTryonProvider({ ctx, children }: { ctx: TryonContext | null
   const router = useRouter();
   const pathname = usePathname();
   const [item, setItem] = useState<QuickItem | null>(null);
-  const [source, setSource] = useState<{ outfitId?: string | null; outfitName?: string | null }>({});
+  const [source, setSource] = useState<{ outfitId?: string | null }>({});
   const [consented, setConsented] = useState(!!ctx?.consented);
   const [hasBase, setHasBase] = useState(!!ctx?.frontPhotoUrl);
   const [agree, setAgree] = useState(false);
@@ -130,7 +130,7 @@ export function QuickTryButton({
 }: {
   item: QuickItem;
   size?: "sm" | "lg";
-  source?: { outfitId?: string | null; outfitName?: string | null };
+  source?: { outfitId?: string | null };
   className?: string;
 }) {
   const ctl = useContext(QuickCtx);
@@ -171,7 +171,7 @@ function Panel({
 }: {
   ctx: TryonContext;
   item: QuickItem;
-  source: { outfitId?: string | null; outfitName?: string | null };
+  source: { outfitId?: string | null };
   q: ReturnType<typeof useQuickTryon>;
   hasBase: boolean;
   consented: boolean;
@@ -219,9 +219,8 @@ function Panel({
     const r = await addToFittingRoom(
       {
         kind: "single",
-        outfitName: source.outfitName ?? null,
         sourceOutfitId: source.outfitId ?? null,
-        items: [{ id: item.id, name: item.name }],
+        items: [{ id: item.id }],
       },
       bagErrors,
     );

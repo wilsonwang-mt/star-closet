@@ -55,22 +55,18 @@ export function bagTotals(lines: { price: number; qty: number }[]) {
   return lines.reduce((acc, l) => ({ count: acc.count + l.qty, total: acc.total + l.price * l.qty }), { count: 0, total: 0 });
 }
 
-/** 加入试衣间的请求体：单件（一件的 look）、多选（选中的几件）或整套。与 POST /api/looks 的格式一致。 */
+/**
+ * 加入试衣间的请求体：单件（一件的 look）、多选（选中的几件）或整套。与 POST /api/looks 的格式一致。
+ * 不带标题：标题由服务端按模式、来源搭配与单品用中文目录生成，显示时再按界面语言重算（lib/looks-l10n.ts），
+ * 所以不随保存时的界面语言变化。
+ */
 export function lookPayload(input: {
   kind: "single" | "pick" | "outfit";
-  outfitName: string | null;
   sourceOutfitId: string | null;
-  items: { id: string; name: string }[];
+  items: { id: string }[];
 }) {
-  const clean = (n: string) => n.replace(/^占位：/, "");
   const ids = [...new Set(input.items.map((i) => i.id))];
-  const outfitName = input.outfitName ? clean(input.outfitName) : null;
-  let title: string;
-  if (input.kind === "single" || ids.length === 1) title = clean(input.items[0]?.name ?? "单品");
-  else if (input.kind === "outfit") title = outfitName ?? "整套搭配";
-  else title = outfitName ? `${outfitName} · 挑选 ${ids.length} 件` : `挑选的 ${ids.length} 件`;
   return {
-    title: title.slice(0, 60),
     sourceOutfitId: input.sourceOutfitId,
     request: null,
     summary: null,
