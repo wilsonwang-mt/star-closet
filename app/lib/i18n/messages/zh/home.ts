@@ -21,6 +21,21 @@ const home = {
     prev: "上一间",
     next: "下一间",
   },
+  /** 首页轮播下方进入全部衣橱目录的链接（D71） */
+  allClosets: "查看全部 {n} 间衣橱",
+  /** 全部衣橱目录页 /closets（D71） */
+  directory: {
+    title: "全部衣橱",
+    lead: "按性别、衣橱类型和风格找到合你口味的主理人，走进去看整套搭配。",
+    byGenderType: "按性别与衣橱类型筛选",
+    byStyle: "按风格筛选",
+    style: "风格",
+    count: "{n} 间衣橱",
+    countFiltered: "{shown} / {total} 间衣橱",
+    reset: "清除筛选",
+    looks: "{n} 套搭配",
+    enterAria: "走进 {name}",
+  },
   /** 首页第二部分「按场合，整套穿走」（D71） */
   edit: {
     title: "按场合，整套穿走",

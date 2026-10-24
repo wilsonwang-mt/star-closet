@@ -20,7 +20,8 @@ import nav from "./SiteNav.module.css";
 // 动画全部是 CSS transition（只动 transform / opacity），曲线是预先算好的弹簧 linear()，见 globals.css。
 
 const LINKS = [
-  { href: "/", label: "closets", kicker: "closetsKicker" },
+  // 衣橱 → 全部衣橱目录（D71）；首页由品牌标识进入
+  { href: "/closets", label: "closets", kicker: "closetsKicker" },
   // 首页「按场合整套穿走」（D71）：锚点链接，不参与“当前栏目”高亮
   { href: "/#looks", label: "looks", kicker: "looksKicker" },
   { href: "/fitting-room", label: "fittingRoom", kicker: "fittingRoomKicker" },
@@ -32,7 +33,7 @@ const SCROLL_THRESHOLD = 8;
 function currentness(pathname: string, href: string): "page" | "true" | undefined {
   if (pathname === href) return "page";
   // 衣橱页与搭配页都属于“衣橱”这一栏
-  if (href === "/" && (pathname.startsWith("/closet") || pathname.startsWith("/outfit"))) return "true";
+  if (href === "/closets" && (pathname.startsWith("/closet/") || pathname.startsWith("/outfit"))) return "true";
   if (href !== "/" && pathname.startsWith(`${href}/`)) return "true";
   return undefined;
 }

@@ -222,3 +222,14 @@
 :global(html[lang="en"]) .tag,
 :global(html[lang="en"]) .palette,
 :global(html[lang="en"]) .go { letter-spacing: .04em; }
+
+/* 英文（D71，线上验证问题 2、3）：搭配名允许折成两行而不是截断；场合与预算一行不在连字符处断开，放不下时省略 */
+:global(html[lang="en"]) .lookName {
+  white-space: normal; text-wrap: balance;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+:global(html[lang="en"]) .body :global(.spread) > :global(.sc-meta) {
+  min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; hyphens: manual;
+}
+/* 卡片内容区的列宽固定为卡片宽度，不被不换行的说明行撑开（否则单品与按钮会溢出卡片） */
+.body { grid-template-columns: minmax(0, 1fr); }

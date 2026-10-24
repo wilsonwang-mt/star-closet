@@ -192,3 +192,18 @@
 :global(html[lang="en"]) .blockTitle {
   letter-spacing: 0.02em;
 }
+/* 英文（D71）：规格表左栏标签换成 Instrument Sans 后用正常字距 */
+:global(html[lang="en"]) .fact dt {
+  letter-spacing: 0;
+}
+/* 线上验证问题 5、6（D71）：衣橱链接不在中文人名中间断开；“出现在哪些搭配里”卡片等高，衣橱名一行、搭配名最多两行 */
+.closetLink { word-break: keep-all; }
+.looks { align-items: stretch; }
+.look { height: 100%; }
+:global(html[lang="en"]) .lookName {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.25;
+}
+:global(html[lang="en"]) .lookText > :first-child {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lookText { min-width: 0; }

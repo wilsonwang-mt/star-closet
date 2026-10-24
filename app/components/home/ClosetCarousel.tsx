@@ -21,6 +21,7 @@ import {
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ClosetView } from "@/components/closet/data";
 import ChatHint from "@/components/chat/ChatHint";
+import LinkPending from "@/components/LinkPending";
 import SceneVideo from "@/components/closet/SceneVideo";
 import {
   captureHandoff,
@@ -621,7 +622,15 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
           </div>
         ) : null}
 
-        {/* 手机：衣橱筛选放在切换按钮下方（首屏之外，D51）；桌面在标题右侧。原来的衣橱索引列表与轮播重复，已由下方「按场合，整套穿走」取代（D71） */}
+        {/* 全部衣橱目录（D71）：网格 + 性别、类型、风格筛选 */}
+        <Link href="/closets" className={styles.all}>
+          {t("allClosets", { n: closets.length })}
+          <svg width="12" height="9" viewBox="0 0 14 10" fill="none" aria-hidden="true">
+            <path d="M1 5h11M8.5 1.5 12 5 8.5 8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <LinkPending />
+        </Link>
+        {/* 手机：衣橱筛选放在切换按钮下方（首屏之外，D51）；桌面在标题右侧。原来的衣橱索引列表与轮播重复，已由下方「按场合，整套穿走」与 /closets 目录取代（D71） */}
         {renderFilters("index")}
       </section>
     </>

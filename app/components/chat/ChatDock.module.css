@@ -197,3 +197,10 @@
   .thinking span { opacity: .7; }
   .outfitCover img, .closetGo svg, .pageGo svg { transition: none; }
 }
+
+/* 英文（D71，线上验证问题 7、8）：标题用正常字距；搭配卡名称最多两行而不是截断 */
+:global(html[lang="en"]) .title { letter-spacing: .01em; font-size: 20px; }
+:global(html[lang="en"]) .outfitName {
+  white-space: normal; letter-spacing: 0; line-height: 1.25;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
