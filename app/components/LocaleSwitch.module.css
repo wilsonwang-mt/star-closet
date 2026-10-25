@@ -43,7 +43,7 @@
 }
 .item:hover, .item[aria-checked="true"] { background: var(--nav-hover); }
 .item:focus-visible { outline: 1px solid var(--sc-champ); outline-offset: 2px; }
-.label { font-family: var(--sc-font-display); font-weight: 500; font-size: 15px; letter-spacing: var(--sc-track-title); }
+.label { font-family: var(--sc-font-title); font-weight: 500; font-size: 15px; letter-spacing: var(--sc-track-title); }
 .label:lang(en) { letter-spacing: 0; }
 .short { display: grid; place-items: center; min-width: 22px; font-family: var(--sc-font-label); font-weight: 500;
   font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--sc-ink-3); }

@@ -5,7 +5,7 @@
 .bag { min-height: 52px; gap: 8px; padding: 0 16px; white-space: nowrap; }
 .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; min-height: 28px; }
 /* 按卡片自身宽度换行：衣橱页三列时卡片较窄，主按钮与购物袋上下排，文字不再被挤成多行 */
-@container (max-width: 360px) {
+@container (max-width: 440px) {
   .row { grid-template-columns: minmax(0, 1fr); }
   .room { letter-spacing: .08em; }
 }
@@ -19,4 +19,4 @@
 .checkOn { background: var(--sc-champ); border-color: var(--sc-champ); color: #1a150d; }
 
 /* 英文（D70）：“Add look to Fitting Room”比中文长一倍，主按钮不换行，收窄字距免得在窄卡片里撑出边界 */
-:global(html[lang="en"]) .room { letter-spacing: .02em; }
+:global(html[lang="en"]) button.room { font-size: 12px; letter-spacing: .06em; }

@@ -24,11 +24,15 @@
 
 /* ---------- 标题与筛选 ---------- */
 .head {
-  width: min(100% - 32px, max(var(--card-w), 560px));
+  width: min(100% - 44px, max(var(--card-w), 560px));
   display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 6px 16px;
-  margin-bottom: 14px;
+  margin-bottom: 20px;
 }
-.title { margin: 2px 0 0; font-family: var(--sc-font-display); font-weight: 500; font-size: 19px; letter-spacing: var(--sc-track-display); line-height: 1.3; }
+/* 首屏标题（D73）：中文思源黑体 Light 放大，英文半窄体全大写 */
+.title { margin: 2px 0 0; font-family: var(--sc-font-display); font-weight: 300; font-size: 26px; letter-spacing: var(--sc-track-display); line-height: 1.2; text-transform: uppercase; }
+@media (min-width: 900px) {
+  .title { font-size: 34px; }
+}
 .filters {
   display: flex; align-items: center; gap: 2px; max-width: 100%;
   overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
@@ -46,7 +50,7 @@
 }
 .chip {
   position: relative; flex: none; min-height: 32px; padding: 0 10px; border: 0; background: none; cursor: pointer;
-  font-size: 12px; letter-spacing: .1em; color: var(--sc-ink-3); white-space: nowrap;
+  font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--sc-ink-3); white-space: nowrap;
   transition: color .2s ease;
   -webkit-tap-highlight-color: transparent;
 }
@@ -119,10 +123,10 @@
 
 /* ---------- 信息（正面、稳定） ---------- */
 .info {
-  width: min(100% - 32px, max(var(--card-w), 560px));
+  width: min(100% - 44px, max(var(--card-w), 560px));
   display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "who cta" "tag tag";
   align-items: center; gap: 0 16px;
-  margin-top: 16px;
+  margin-top: 22px;
 }
 .who { grid-area: who; display: grid; min-width: 0; }
 .tag { grid-area: tag; display: grid; min-width: 0; }
@@ -161,11 +165,11 @@
 /* 进入全部衣橱目录（D71） */
 .all {
   position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 40px; margin-top: 10px; padding: 0 6px;
-  font-size: 12px; letter-spacing: .1em; color: var(--sc-ink-2); text-decoration: none; transition: color .2s ease;
+  font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--sc-ink-2); text-decoration: none; transition: color .2s ease;
 }
 .all:hover { color: var(--sc-ink); }
 .all:focus-visible { outline: 1px solid var(--sc-champ); outline-offset: 2px; border-radius: 8px; }
-:global(html[lang="en"]) .all { font-size: 14px; letter-spacing: .01em; }
+:global(html[lang="en"]) .all { font-size: 12px; font-weight: 500; letter-spacing: .1em; }
 .arrow {
   width: 44px; height: 44px; border: 0; border-radius: 50%; display: grid; place-items: center; cursor: pointer; padding: 0;
   color: var(--sc-ink); background: var(--sc-glass-bg);
@@ -215,11 +219,12 @@
 }
 @keyframes home-fade { from { opacity: 0; } }
 
-/* ---------- 英文（D70–D72）：标题放大一档、字距收紧（令牌）；界面小字正常字距 ---------- */
-:global(html[lang="en"]) .title { font-size: 22px; line-height: 1.15; }
+/* ---------- 英文（D70–D73）：标题半窄体全大写放大；筛选、按钮全大写小字 ---------- */
+:global(html[lang="en"]) .title { font-weight: 500; font-size: 34px; line-height: 1; }
+:global(html[lang="en"]) .closetName { font-size: 26px; line-height: 1.05; }
 @media (min-width: 900px) {
-  :global(html[lang="en"]) .title { font-size: 26px; }
+  :global(html[lang="en"]) .title { font-size: 48px; }
+  :global(html[lang="en"]) .closetName { font-size: 30px; }
 }
-:global(html[lang="en"]) .closetName { font-size: 19px; line-height: 1.2; }
-:global(html[lang="en"]) .enter { letter-spacing: .02em; }
-:global(html[lang="en"]) .chip { font-size: 13px; letter-spacing: 0; }
+:global(html[lang="en"]) .enter { letter-spacing: .1em; }
+:global(html[lang="en"]) .chip { font-size: 11px; font-weight: 500; letter-spacing: .1em; }
