@@ -606,6 +606,10 @@ export async function deleteAll(userId: string): Promise<AvatarState & { remoteP
   // 试穿结果图由本人照片生成，一键删除时一并删除记录、结果图与试穿同意（D47）。
   await deleteAllTryons(userId);
   await (await import("@/lib/scene/service")).deleteAllSceneRenders(userId); // 商品详情页上身效果（T3）
+  // 场景与姿势、封面同款（D75）。表未迁移（0008）时不中断删除流程：文件随下面的用户前缀一并清理。
+  await (await import("@/lib/scene/shots")).deleteAllSceneShots(userId).catch((e: unknown) => {
+    console.error("[avatar] 删除场景图记录失败", e instanceof Error ? e.message : "unknown error");
+  });
   await getStorage().removeUserPrefix(userId);
   const summary: RemoteSummary = { sent: 0, failed: 0, pending: 0 };
   for (const j of jobs) {

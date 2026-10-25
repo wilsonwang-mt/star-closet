@@ -171,6 +171,21 @@ export const phrases: Record<string, string> = {
   美术馆: "Art gallery",
   海边度假: "Seaside getaway",
   周末市集: "Weekend market",
+  // 场景与姿势试穿（D75）：姿势名与服务端提示
+  站立: "Standing",
+  行走: "Walking",
+  坐着: "Seated",
+  侧身: "Side view",
+  回眸: "Over the shoulder",
+  半身细节: "Close-up",
+  场景与姿势暂未开放: "Scenes and poses aren't available yet.",
+  "请先勾选同意，再生成": "Please tick the consent box first.",
+  "上一张还在生成，等它好了再来": "Your last photo is still being made. Try again once it's ready.",
+  "生成中断，请重新生成": "That one was interrupted. Please try again.",
+  "这一张没有生成出来，换个场景或姿势再试": "That one didn't come out. Try another scene or pose.",
+  "先整套试穿一次，就能把模特换成你": "Try on the whole look once, then you can swap yourself in for the model.",
+  这套搭配没有可用的封面: "This look doesn't have a cover photo to use.",
+  "今天的生成名额已经用完了，明天再来试试": "Today's photo generation is fully booked. Please come back tomorrow.",
 };
 
 /** 带变量的原文：按顺序尝试，$1、$2 引用捕获组。全部以 ^…$ 锚定，先匹配者优先。 */
@@ -178,7 +193,7 @@ export const patterns: ReadonlyArray<readonly [RegExp, string]> = [
   // 每日上限（lib/usage.ts QuotaError）：标签是中文，必须逐种写，不能用捕获组带过去。
   [/^今天的改编次数已用完（每天 (\d+) 次），明天再来试试$/, "You've reached today's limit of $1 look edits. Try again tomorrow."],
   [/^今天的试穿次数已用完（每天 (\d+) 次），明天再来试试$/, "You've reached today's limit of $1 try-ons. Try again tomorrow."],
-  [/^今天的上身效果次数已用完（每天 (\d+) 次），明天再来试试$/, "You've reached today's limit of $1 scene previews. Try again tomorrow."],
+  [/^今天的场景图次数已用完（每天 (\d+) 次），明天再来试试$/, "You've reached today's limit of $1 scene photos. Try again tomorrow."],
   [/^今天的数字分身生成次数已用完（每天 (\d+) 次），明天再来试试$/, "You've reached today's limit of $1 twin generations. Try again tomorrow."],
   [/^今天的体型分析次数已用完（每天 (\d+) 次），明天再来试试$/, "You've reached today's limit of $1 body-shape analyses. Try again tomorrow."],
   // 第三方服务带状态码的失败（providers.ts、metaperson.ts）

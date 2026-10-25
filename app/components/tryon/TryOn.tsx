@@ -10,7 +10,9 @@ import { useT, useTerm } from "@/lib/i18n/client";
 import { reducedFade, springs } from "@/lib/motion";
 import { notWornLabels, planTryon } from "@/lib/tryon/plan";
 import type { TryonContext, TryonView } from "@/lib/tryon/service";
+import SceneShots, { type ShotSelection } from "./SceneShots";
 import { cleanName, CloseIcon, compress, HangerIcon, preload, readError, stageLabel, useConsentLabel, waitErrors, waitFirst } from "./shared";
+import shotStyles from "./SceneShots.module.css";
 import s from "./TryOn.module.css";
 
 // “穿在我身上”（整套）：把这一整套依次换到用户自己的形象上（默认可灵 Kolors on fal.ai；底图优先数字分身正面照，D63）。
@@ -18,6 +20,8 @@ import s from "./TryOn.module.css";
 // 没有配置试穿服务时不渲染入口（服务端传入 ctx.enabled = false），不访问网络。
 // 流程：准备（正面照 + 首次同意）→ 生成（光束扫过，显示第几件与排队 / 生成阶段）→ 结果（淡入 + 轻微推近，与原搭配并排，可放大）。
 // 生成走队列（D62）：提交后立即返回，这里轮询 /api/tryon/<id>，服务端每次轮询推进一步。
+// 结果下方是「换个场景与姿势」（D75 方案 A，SceneShots）：选中的场景图替换大图，标准图仍排第一。
+// 整套试穿成功后广播 seen:tryon，搭配页封面的「模特 / 我」（CoverSwap）据此刷新。
 
 export type TryOnItem = {
   id: string;
@@ -39,11 +43,14 @@ export default function TryOn({
   source,
   items,
   primary = false,
+  onOpenChange,
 }: {
   ctx: TryonContext;
   source: Source;
   items: TryOnItem[];
   primary?: boolean;
+  /** 面板打开 / 关闭时通知（封面「模特 / 我」据此在面板关闭前保持入口不卸载）。 */
+  onOpenChange?: (open: boolean) => void;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -52,6 +59,7 @@ export default function TryOn({
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  useEffect(() => onOpenChange?.(open), [open, onOpenChange]);
 
   if (!ctx.enabled || steps.length === 0) return null;
 
@@ -113,6 +121,9 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
   const [seconds, setSeconds] = useState(0);
   const [zoom, setZoom] = useState(false);
   const [live, setLive] = useState<TryonView | null>(null);
+  const [shot, setShot] = useState<ShotSelection>(null);
+  const [shotBusy, setShotBusy] = useState(false);
+  const shownUrl = shot?.imageUrl ?? view?.resultUrl ?? null;
   const panelRef = useRef<HTMLDivElement | null>(null);
   const autoStarted = useRef(false);
   const alive = useRef(true);
@@ -184,8 +195,10 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
     await preload(data.resultUrl);
     const wait = MIN_WAIT_MS - (Date.now() - started);
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+    setShot(null);
     setView(data);
     setPhase("done");
+    if ("outfitId" in source) window.dispatchEvent(new CustomEvent("seen:tryon", { detail: { outfitId: source.outfitId } }));
   }
 
   // 已有正面照且已同意：打开即开始，不再多点一步。
@@ -224,8 +237,10 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
       return;
     }
     setView(null);
+    setShot(null);
     setZoom(false);
     setPhase("prep");
+    if ("outfitId" in source) window.dispatchEvent(new CustomEvent("seen:tryon", { detail: { outfitId: source.outfitId } }));
   }
 
   const appear = reduce
@@ -411,7 +426,8 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
                   >
                     <figure className={s.stage}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={view.resultUrl} alt={tx("outfit.resultAlt")} />
+                      <img src={shownUrl ?? view.resultUrl} alt={tx("outfit.resultAlt")} />
+                      {shot ? <span className={shotStyles.badge}>{tx("shots.badge")}</span> : null}
                     </figure>
                   </motion.button>
                 </div>
@@ -421,12 +437,13 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
               </p>
               {/* 鞋、包、配饰不会上身：如实列出，避免与“这一套”的拼图对照时观感矛盾 */}
               {notWorn.length ? <p className={`sc-meta ${s.applied} ${s.notWorn}`}>{tx("outfit.notWorn", { list: list(notWorn) })}</p> : null}
+              <SceneShots tryonId={view.id} standardUrl={view.resultUrl} selectedId={shot?.id ?? null} onSelect={setShot} onBusy={setShotBusy} />
               {error ? <p className="error">{error}</p> : null}
               <div className={s.actions}>
                 <button type="button" className="sc-cta" onClick={onClose}>
                   {tx("actions.done")}
                 </button>
-                <button type="button" className="sc-cta sc-cta--ghost compact" onClick={() => void remove()}>
+                <button type="button" className="sc-cta sc-cta--ghost compact" disabled={shotBusy} onClick={() => void remove()}>
                   {tx("actions.deleteImage")}
                 </button>
               </div>
@@ -436,7 +453,7 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
       </motion.div>
 
       <AnimatePresence>
-        {zoom && view?.resultUrl ? (
+        {zoom && shownUrl ? (
           <motion.div
             key="zoom"
             className={s.lightbox}
@@ -449,7 +466,7 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
             aria-label={tx("zoom.dialog")}
           >
             <motion.img
-              src={view.resultUrl}
+              src={shownUrl}
               alt={tx("outfit.resultAlt")}
               initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.92 }}
               animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1 }}

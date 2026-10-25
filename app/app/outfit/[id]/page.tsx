@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Adapter from "@/components/Adapter";
 import LinkPending from "@/components/LinkPending";
 import Scene from "@/components/Scene";
+import CoverSwap from "@/components/tryon/CoverSwap";
 import { QuickTryonProvider } from "@/components/tryon/QuickTryOn";
 import { getAllItems, getOutfit, getOutfitsByCurator } from "@/lib/catalog";
 import { hasAiKey } from "@/lib/adapt/ai";
@@ -56,6 +57,8 @@ export default async function OutfitPage({ params }: { params: Promise<{ id: str
         <p className="note-text" style={{ marginTop: 10 }}>
           {outfit.styleNote}
         </p>
+        {/* 封面「模特 / 我」（D75 方案 B）：把封面里的模特换成本人，同一场景、同一姿势 */}
+        {outfit.cover ? <CoverSwap outfitId={outfit.id} tryon={tryon} items={outfit.items} /> : null}
       </section>
       <Adapter outfit={outfit} catalog={catalog} aiEnabled={hasAiKey()} tryon={tryon} signedIn={Boolean(user)} />
     </QuickTryonProvider>

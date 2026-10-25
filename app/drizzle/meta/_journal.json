@@ -57,6 +57,13 @@
       "when": 1792179618427,
       "tag": "0007_bag_item",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792946299560,
+      "tag": "0008_scene_shot",
+      "breakpoints": true
     }
   ]
 }

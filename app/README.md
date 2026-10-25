@@ -169,6 +169,15 @@ API：`GET /api/avatar/metaperson/token`、`POST /api/avatar/metaperson/import`�
 - 测试：`lib/tryon/tryon.test.ts`，fetch 模拟 fal 队列（提交 → 状态 → 结果）：品类映射与逐件叠加规则；两段式依次报排队 → 出图并细化中 → 换成清晰的一张，两张都存、都删；缓存命中不发请求、另一套复制结果；预热只跑 performance、不进穿搭进度、认领时补提交 quality 且不重复；细化中继续穿时底图用快速的一张；细化失败保留快速、快速失败等细化、两段都失败才失败；改造前遗留的处理中记录判为失败；`baseTryonId` 属于他人 / 失败 / 处理中 / 不存在 / 文件已删一律 404 且不调用 FASHN；鞋包配饰 422、不在这套里 404；整套逐步推进、中间步骤把结果地址交给下一步；过期正面照不再使用；试穿面板上传的正面照写入 30 天 `expires_at` 并清掉没用上的预热结果；无 key 与未同意（含预热）不发请求；清空存储后记录清理；3D 形象一键删除同时删除试穿记录与同意。
 - 前端轮询（`components/tryon/shared.tsx`）：间隔按两次请求的开始时间计（`pollDelay()`，最少 150 ms），链路慢时不会在每次响应之后再整段等待；测试 `lib/tryon/poll.test.ts`（模拟 fetch）。
 
+## 场景与姿势试穿（D75）
+
+- 方案 A「换个场景与姿势」（`components/tryon/SceneShots.tsx`）：整套试穿结果、一键试穿结果（细化完成后）、试衣间选中的结果下方。选场景（6 个，`lib/scene/scenes.ts`）× 姿势（6 个，`lib/scene/poses.ts`，不做大动作），一次一张；选中的场景图替换大图，标注“AI 场景示意 · 合身以标准图为准”，标准图永远排第一。同一张试穿图上同一组合只保留最新一张（新图成功后才删旧图）。
+- 方案 B「模特 / 我」（`components/tryon/CoverSwap.tsx`）：搭配页标题下。切到「我」时整页场景换成本人在封面同一场景、同一姿势里的那张。前提是这一套已有整套标准图（这一套能上身的单品都已穿上，`completeLookTryon`）；没有时就地给出整套试穿，试穿成功（`seen:tryon` 事件）后自动可用。衣服以标准图为准，鞋包帽子配饰跟随封面。
+- 接口 `app/api/scene/shots`：`GET ?tryonId=` / `GET ?outfitId=`；`POST { kind: "pose", tryonId, sceneId, pose }` 或 `{ kind: "cover", outfitId }`，同步约 20–40 秒，`maxDuration 150`。服务端只用本人已成功的试穿结果作输入（不信任前端传图）。
+- 出图 `lib/scene/image.ts`：`fal-ai/nano-banana-2.1/edit`、1K、3:4、`thinking_level: minimal`、`X-Fal-Store-IO: 0`；5xx、429 或没返回图片时用 Pro 重试一次。选型实测见[场景姿态试穿探索 §七](../docs/design/场景姿态试穿探索-20261025.md)。
+- 限额：每张扣一次 `scene` 额度；每人同时只生成一张（`scene_shot` 部分唯一索引，429）；全站每日估算花费总闸 `lib/spend.ts`（`spend_day`，默认 30 美元，满了 503 且退回用户额度）。
+- 删除：删除试穿图时一并删除用它生成的场景图；一键删除形象时全部删除。表 `scene_shot`（迁移 0008）。
+
 ## 商品详情页与上身效果（T3）
 
 **2026-10-17 更新（D63，`feat/twin-tryon`）：**
@@ -184,8 +193,8 @@ API：`GET /api/avatar/metaperson/token`、`POST /api/avatar/metaperson/import`�
   1. 本人：已登录、有正面全身照（`avatar_photo.slot = front`，与 2D 试穿共用）、已同意（`tryon_consent`，与 2D 试穿同一项）、配置了 `FAL_KEY` → 点“生成我的上身效果”，约 30 秒出 2 张场景图，标题“你的上身效果”。缺照片或同意时，在画廊下方就地上传照片（复用 `POST /api/tryon/photo`）并勾选同意。
   2. 演示模特：读取 `public/demo/manifest.json`（T2 产出，路径只接受 `/demo/` 下的本站文件），标题“模特上身”，并写明“演示模特 · 由 AI 生成的虚构人物”。
   3. 都没有：已登录显示生成入口，未登录为“登录后生成我的上身效果”（`/login?next=/item/[id]`）。
-- 生成（`lib/scene/service.ts`，`POST /api/scene { itemId, consent? }`，`maxDuration 120`）：`fal-ai/nano-banana-pro/edit`，输入本人正面照 + 单品图 + 场景描述（`lib/scene/scenes.ts`，按单品场合与风格标签从 T2 那组 6 个场景里选 2 个），要求单品颜色款式材质与商品图一致、人物长相不变；两张并行生成。请求头 `X-Fal-Store-IO: 0`。同一用户同一件单品只保留最新一组（重新生成前删旧记录与文件）。
-- Live：场景图存好后立即向 fal queue 提交 `fal-ai/kling-video/v2.5-turbo/pro/image-to-video`（5 秒、细微动作、无声），状态地址存 `scene_render.video_status_url`；`GET /api/scene?itemId=` 每次推进一次轮询，完成后取回 mp4 存私有存储。浏览器每 5 秒查询一次，视频就绪前卡片用纯前端效果（推镜 + 光影扫过、无 LIVE 标），就绪后显示 LIVE 标并播放真视频。视频经 `GET /api/scene/video/[id]` 读取（支持 Range，iOS Safari 需要；他人 404）。Kling 原始输出约 1080p、14–17MB，未在服务端转码。
+- 生成（`lib/scene/service.ts`，`POST /api/scene { itemId, consent? }`，`maxDuration 120`）：D75 起走 `lib/scene/image.ts`（Nano Banana 2.1 · 1K，报错或无图时退 Pro 一次；计入全站每日总闸），输入本人正面照 + 单品图 + 场景描述（`lib/scene/scenes.ts`，按单品场合与风格标签从 T2 那组 6 个场景里选 2 个），要求单品颜色款式材质与商品图一致、人物长相不变；两张并行生成。请求头 `X-Fal-Store-IO: 0`。同一用户同一件单品只保留最新一组（重新生成前删旧记录与文件）。
+- Live：D75 起默认关闭（只做静态图），`SCENE_LIVE=1` 时场景图存好后立即向 fal queue 提交 `fal-ai/kling-video/v2.5-turbo/pro/image-to-video`（5 秒、细微动作、无声），状态地址存 `scene_render.video_status_url`；`GET /api/scene?itemId=` 每次推进一次轮询，完成后取回 mp4 存私有存储。浏览器每 5 秒查询一次，视频就绪前卡片用纯前端效果（推镜 + 光影扫过、无 LIVE 标），就绪后显示 LIVE 标并播放真视频。视频经 `GET /api/scene/video/[id]` 读取（支持 Range，iOS Safari 需要；他人 404）。Kling 原始输出约 1080p、14–17MB，未在服务端转码。
 - `<LivePhoto>`（`components/live/`）：桌面悬停约 150ms、手机长按约 300ms（`navigator.vibrate` 可用时轻震一次）开始，松开或移出回到静态图；按下时弹簧放大到约 1.04、预先模糊的一层同图淡入再淡出、视频从第一帧淡入、LIVE 圆环描一圈。视频 `preload="none"`，首次激活才设置地址；减弱动态时只显示静态图。只动 transform / opacity（模糊层的 blur 为静态值，只改 opacity；LIVE 圆环为 14px SVG 的描边动画）。
 - 存储：`<userId>/avatars/scene-<id>.jpg|mp4`（沿用现有 key 规则）。3D 形象“一键删除”在 `lib/avatar/service.ts` 的 `deleteAll` 里多一行调用 `deleteAllSceneRenders()`，删除记录与文件。
 - 表：`scene_render`（id、user_id → user 级联删除、item_id、scene_id、status、image_key、video_key、video_status_url、error、created_at；索引 user_id + item_id），迁移 `drizzle/0004_scene_render.sql`；`supabase/rls.sql` 为它开启 RLS 并收回 Data API 权限。Supabase 上需执行 `npm run db:setup`（迁移 0004）后再执行一次 `supabase/rls.sql`。
@@ -264,14 +273,16 @@ npm run dev                  # http://localhost:3000
 - `ANTHROPIC_API_KEY`（改编、体型分析；建议设花费上限的正式 key）
 - `FAL_KEY`、`TRYON_PROVIDER`、`AVATAR3D_PROVIDER`、`AVATAR3D_MAX_POLL_SECONDS`、`TWIN_QUEUE_POLL_MS`、`TWIN_FACE_DETAIL`
 - `AVATARSDK_CLIENT_ID`、`AVATARSDK_CLIENT_SECRET`、`AVATARSDK_EXPORT_HOSTS`（MetaPerson，已停用）
-- 每日上限覆盖（正整数，不填用默认）：`QUOTA_ADAPT`（100）、`QUOTA_TRYON`（60，试衣间与一键试穿共用）、`QUOTA_SCENE`（30）、`QUOTA_TWIN`（10）、`QUOTA_BODY_ANALYSIS`（20）
+- 每日上限覆盖（正整数，不填用默认）：`QUOTA_ADAPT`（100）、`QUOTA_TRYON`（60，试衣间与一键试穿共用）、`QUOTA_SCENE`（20，上身效果每次与场景图每张各 1 次）、`QUOTA_TWIN`（10）、`QUOTA_BODY_ANALYSIS`（20）
+
+- 场景出图（D75、D76）：`SPEND_DAILY_USD`（全站每日估算花费总闸，默认 30）、`SCENE_IMAGE_MODEL`（主模型 fal endpoint，默认 `fal-ai/nano-banana-2.1/edit`）、`SCENE_LIVE=1`（开启上身效果的 Live 视频，默认关闭）
 
 不要在 Vercel 上设置：`PGLITE_DIR`、`UPLOADS_DIR`（本地专用）；`DATABASE_MIGRATE_URL` 只在本机跑迁移时用。
 
 ### 部署前在 Supabase 上执行（本机，不在 Vercel 构建时跑）
 
-1. 本机 `.env.local` 设置 `DATABASE_URL` 与 `DATABASE_MIGRATE_URL`（5432 会话模式），运行 `npm run db:setup`：执行到 0006（`usage_counter`）并写入目录。
-2. SQL Editor 整份执行 `supabase/rls.sql`（为 `usage_counter` 等新表开启 RLS、收回 anon / authenticated 权限）；未建桶时再执行 `supabase/storage.sql`。
+1. 本机 `.env.local` 设置 `DATABASE_URL` 与 `DATABASE_MIGRATE_URL`（5432 会话模式），运行 `npm run db:setup`：执行全部迁移（目前到 0008：`scene_shot`、`spend_day`）并写入目录。
+2. SQL Editor 整份执行 `supabase/rls.sql`（为 `usage_counter`、`scene_shot`、`spend_day` 等新表开启 RLS、收回 anon / authenticated 权限）；未建桶时再执行 `supabase/storage.sql`。
 3. 用 Supabase 安全顾问（Security Advisor）复查：应只剩“已开 RLS 但无策略”的 INFO。
 4. 删除或改密测试账号（见 AGENTS.md D64 节）。
 

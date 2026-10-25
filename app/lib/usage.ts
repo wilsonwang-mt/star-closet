@@ -5,12 +5,12 @@ import { db, schema } from "./db";
 // 默认值可用环境变量覆盖（正整数；填错或不填用默认值）：
 //   QUOTA_ADAPT=100       一句话改编（调用 Claude）
 //   QUOTA_TRYON=60        试衣间逐件试穿、预热、整套试穿、详情页一键试穿（共用一个额度）
-//   QUOTA_SCENE=30        商品详情页上身效果（场景图 + Live 视频）
+//   QUOTA_SCENE=20        场景出图（D75）：商品详情页上身效果每次 1 次；场景与姿势、封面换成我每张 1 次
 //   QUOTA_TWIN=10         数字分身生成
 //   QUOTA_BODY_ANALYSIS=20 体型分析（调用 Claude）
 export type UsageKind = "adapt" | "tryon" | "scene" | "twin" | "body_analysis";
 
-const DEFAULTS: Record<UsageKind, number> = { adapt: 100, tryon: 60, scene: 30, twin: 10, body_analysis: 20 };
+const DEFAULTS: Record<UsageKind, number> = { adapt: 100, tryon: 60, scene: 20, twin: 10, body_analysis: 20 };
 const ENV: Record<UsageKind, string> = {
   adapt: "QUOTA_ADAPT",
   tryon: "QUOTA_TRYON",
@@ -21,7 +21,7 @@ const ENV: Record<UsageKind, string> = {
 const LABEL: Record<UsageKind, string> = {
   adapt: "改编",
   tryon: "试穿",
-  scene: "上身效果",
+  scene: "场景图",
   twin: "数字分身生成",
   body_analysis: "体型分析",
 };
@@ -63,6 +63,18 @@ export async function consumeQuota(userId: string, kind: UsageKind, now = new Da
   return rows[0].count;
 }
 
+/** 今天还剩几次（只读，给界面显示；实际扣减仍以 consumeQuota 的原子判断为准）。 */
+export async function quotaRemaining(userId: string, kind: UsageKind, now = new Date()): Promise<{ remaining: number; limit: number }> {
+  const limit = quotaLimit(kind);
+  const c = schema.usageCounter;
+  const rows = await db
+    .select({ count: c.count })
+    .from(c)
+    .where(and(eq(c.userId, userId), eq(c.day, usageDay(now)), eq(c.kind, kind)))
+    .limit(1);
+  return { remaining: Math.max(0, limit - (rows[0]?.count ?? 0)), limit };
+}
+
 /** 退回一次计数（调用在花钱之前就因校验失败被拒绝时用）。 */
 export async function refundQuota(userId: string, kind: UsageKind, now = new Date()): Promise<void> {
   const c = schema.usageCounter;
@@ -73,8 +85,9 @@ export async function refundQuota(userId: string, kind: UsageKind, now = new Dat
 }
 
 /**
- * 先扣额度再执行；执行中抛出 4xx 业务错误（未同意、缺照片、格式不对等，尚未调用付费服务）时退回这次计数。
- * 5xx 与第三方失败不退回：宁可少给一次，也不让失败重试绕过上限。
+ * 先扣额度再执行；执行中抛出 4xx 业务错误（未同意、缺照片、格式不对等，尚未调用付费服务）时退回这次计数，
+ * 带 noCharge 标记的错误（全站每日总额已满，lib/spend.ts）同样退回。
+ * 其余 5xx 与第三方失败不退回：宁可少给一次，也不让失败重试绕过上限。
  */
 export async function withQuota<T>(userId: string, kind: UsageKind, fn: () => Promise<T>): Promise<T> {
   const now = new Date();
@@ -82,8 +95,8 @@ export async function withQuota<T>(userId: string, kind: UsageKind, fn: () => Pr
   try {
     return await fn();
   } catch (e) {
-    const status = (e as { status?: unknown })?.status;
-    if (typeof status === "number" && status >= 400 && status < 500) await refundQuota(userId, kind, now).catch(() => {});
+    const { status, noCharge } = (e ?? {}) as { status?: unknown; noCharge?: unknown };
+    if (noCharge === true || (typeof status === "number" && status >= 400 && status < 500)) await refundQuota(userId, kind, now).catch(() => {});
     throw e;
   }
 }
