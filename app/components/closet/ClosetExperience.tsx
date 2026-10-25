@@ -162,7 +162,7 @@ export default function ClosetExperience({
             {closet.tagline}
           </motion.p>
           {closet.intro && closet.intro !== closet.tagline ? (
-            <motion.p className={`serif-note ${styles.intro}`} {...rise(5)}>
+            <motion.p className={`note-text ${styles.intro}`} {...rise(5)}>
               {closet.intro}
             </motion.p>
           ) : null}

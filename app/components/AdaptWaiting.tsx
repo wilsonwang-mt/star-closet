@@ -39,7 +39,7 @@ const AdaptWaiting = forwardRef<HTMLElement, { aiEnabled: boolean; items: Curren
         </div>
         <span className="sc-meta">{aiEnabled ? t("waiting.thinking", { s: seconds }) : `${seconds}s`}</span>
       </div>
-      <p className="serif-note wait-step" key={step}>
+      <p className="note-text wait-step" key={step}>
         {t(STEPS[step])}…
       </p>
       <div className="rows adapt-scan" aria-hidden="true">

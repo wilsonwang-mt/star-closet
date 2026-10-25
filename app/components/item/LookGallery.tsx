@@ -259,7 +259,7 @@ export default function LookGallery({
           <h2 className={s.quickTitle}>{quickRunning ? t("quick.titleRunning", { kind }) : result ? t("quick.titleResult") : t("quick.title")}</h2>
           {quickRunning ? (
             <>
-              <p className={`serif-note wait-step ${s.stage}`} key={quickStage.key} role="status" aria-live="polite">
+              <p className={`note-text wait-step ${s.stage}`} key={quickStage.key} role="status" aria-live="polite">
                 {stageText(quickStage)}…
               </p>
               <p className="sc-meta">{t("quick.running", { name: itemName, kind, s: quickElapsed })}</p>
@@ -362,7 +362,7 @@ export default function LookGallery({
           {running ? (
             <>
               {/* key 随阶段变化：每换一段文案就用 .wait-step 淡入浮起一次 */}
-              <p className={`serif-note wait-step ${s.stage}`} key={sceneStage(elapsed)} role="status" aria-live="polite">
+              <p className={`note-text wait-step ${s.stage}`} key={sceneStage(elapsed)} role="status" aria-live="polite">
                 {t(STAGES[sceneStage(elapsed)].key)}…
               </p>
               <p className="sc-meta">{t("gallery.running", { name: itemName, s: elapsed })}</p>

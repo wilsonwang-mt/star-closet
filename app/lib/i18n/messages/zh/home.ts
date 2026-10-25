@@ -21,10 +21,34 @@ const home = {
     prev: "上一间",
     next: "下一间",
   },
-  index: {
-    aria: "全部衣橱",
+  /** 首页轮播下方进入全部衣橱目录的链接（D71） */
+  allClosets: "查看全部 {n} 间衣橱",
+  /** 全部衣橱目录页 /closets（D71） */
+  directory: {
+    title: "全部衣橱",
+    lead: "按性别、衣橱类型和风格找到合你口味的主理人，走进去看整套搭配。",
+    byGenderType: "按性别与衣橱类型筛选",
+    byStyle: "按风格筛选",
+    style: "风格",
     count: "{n} 间衣橱",
-    looks: "{n} 套",
+    countFiltered: "{shown} / {total} 间衣橱",
+    reset: "清除筛选",
+    looks: "{n} 套搭配",
+    enterAria: "走进 {name}",
+  },
+  /** 首页第二部分「按场合，整套穿走」（D71） */
+  edit: {
+    title: "按场合，整套穿走",
+    lead: "主理人搭好的整套，先穿在你身上看，再决定带走哪几件。",
+    ask: "不确定？问问造型师",
+    tabsAria: "按场合挑选整套搭配",
+    viewLookAria: "查看整套：{name}",
+    pieces: "这套的 {n} 件",
+    piecesAria: "{name} 的单品",
+    total: "整套",
+    viewLook: "查看整套",
+    more: "更多「{occasion}」搭配",
+    cardPieces: "{n} 件",
   },
 };
 

@@ -1,9 +1,6 @@
 /* 应用样式：建立在 tokens.css（视觉规范 v5）之上，只做布局与少量组合。 */
 
 :root {
-  --sc-font-didone: var(--font-didone), "Didot", serif;
-  --sc-font-serif: var(--font-serif), "Songti SC", serif;
-  --sc-font-sans: "SC Sans", -apple-system, "PingFang SC", sans-serif; /* 自托管思源黑体 Light，见 app/fonts.css */
   --danger: #e0806c;
 }
 :root[data-theme="light"] { --danger: #a5402d; }
@@ -11,6 +8,8 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
+/* 只用字体文件里真实存在的字重与字形，不合成粗体、斜体（D72） */
+html { font-synthesis: none; }
 body { min-height: 100dvh; font-size: var(--sc-fs-body); line-height: 1.6; font-weight: 300; -webkit-font-smoothing: antialiased; }
 a { color: inherit; }
 button, input, textarea, select { font: inherit; color: inherit; }
@@ -169,8 +168,8 @@ section, figure { scroll-margin-top: var(--nav-offset); }
     background-color .2s ease;
 }
 .site-menu__item:hover, .site-menu__item[aria-current] { background: var(--nav-hover); }
-.site-menu__label { font-family: var(--sc-font-serif); font-weight: 400; font-size: 17px; letter-spacing: .14em; }
-.site-menu__kicker { font-family: var(--sc-font-didone); font-style: italic; font-size: 12px; letter-spacing: .1em; color: var(--sc-ink-3); }
+.site-menu__label { font-family: var(--sc-font-display); font-weight: 500; font-size: 17px; letter-spacing: var(--sc-track-title); text-transform: uppercase; }
+.site-menu__kicker { font-family: var(--sc-font-label); font-weight: 500; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--sc-ink-3); }
 .site-menu__item[aria-current] .site-menu__kicker { color: var(--sc-champ-text); }
 .site-menu__account {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -200,10 +199,11 @@ section, figure { scroll-margin-top: var(--nav-offset); }
   .site-nav__menu-btn.has-account .site-nav__burger { display: none; }
   .site-nav__menu-btn.has-account .site-nav__initial {
     display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
-    font-family: var(--sc-font-didone); font-size: 14px; line-height: 1; color: var(--sc-ink);
+    font-family: var(--sc-font-label); font-weight: 500; font-size: 13px; line-height: 1; color: var(--sc-ink);
     box-shadow: inset 0 0 0 .5px rgba(201, 169, 110, .8);
   }
   .site-menu { left: auto; right: max(16px, calc(50% - 360px)); width: 300px; margin: 0; transform-origin: calc(100% - 26px) -30px; }
+  .sc-nav__link { padding: 0 10px; }
   .site-menu__primary { display: none; }
   .site-menu__account { margin: 0; padding: 8px 4px 8px 12px; border-top: 0; }
   .site-menu__scrim { background: transparent; }
@@ -244,8 +244,9 @@ body { overflow-x: hidden; }
 /* 场景缓推、胶片颗粒层略宽于视口时，手机上仍可被横向拖动约 4px（工作站 375 宽实测）；clip 不建立滚动容器，不影响 sticky */
 html { overflow-x: clip; }
 
-@media (max-width: 420px) {
-  .container { padding-left: 16px; padding-right: 16px; }
+/* 手机左右留白 22px（D73：页面可以滚动，不必挤成中国电商式的紧凑） */
+@media (max-width: 639px) {
+  .container { padding-left: 22px; padding-right: 22px; }
 }
 
 /* ---------- 文字 ---------- */
@@ -254,12 +255,12 @@ html { overflow-x: clip; }
 :root[data-theme="light"] .hero { text-shadow: 0 1px 12px rgba(250, 244, 232, .8); }
 @media (prefers-color-scheme: light) { :root:not([data-theme]) .hero { text-shadow: 0 1px 12px rgba(250, 244, 232, .8); } }
 .life-video { width: 100%; aspect-ratio: 772 / 960; max-height: 70dvh; object-fit: cover; object-position: 50% 30%; display: block; }
-.serif-note { font-family: var(--sc-font-serif); font-size: 13px; line-height: 1.85; color: var(--sc-ink-2); margin: 0; }
+.note-text { font-size: 14px; line-height: 1.8; color: var(--sc-ink-2); margin: 0; }
 .muted { color: var(--sc-ink-2); }
 .small { font-size: 12px; }
-.price { font-family: var(--sc-font-didone); font-size: 15px; font-variant-numeric: lining-nums; white-space: nowrap; }
-.total { font-family: var(--sc-font-didone); font-size: 32px; line-height: 1; }
-.section-title { font-family: var(--sc-font-serif); font-weight: 400; font-size: var(--sc-fs-title); letter-spacing: .12em; margin: 0; }
+.price { font-family: var(--sc-font-label); font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.total { font-family: var(--sc-font-label); font-weight: 500; font-size: 30px; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.section-title { font-family: var(--sc-font-display); font-weight: 500; font-size: var(--sc-fs-title); letter-spacing: var(--sc-track-title); text-transform: uppercase; margin: 0; }
 .error { color: var(--danger); font-size: 13px; margin: 0; }
 
 /* ---------- 布局 ---------- */
@@ -335,7 +336,7 @@ textarea, input[type="text"], input[type="email"], input[type="password"], input
   box-shadow: inset 0 0 0 .5px var(--sc-rule);
 }
 textarea:focus, input:focus, select:focus { outline: 1px solid var(--sc-champ); }
-textarea { min-height: 76px; resize: vertical; font-family: var(--sc-font-serif); font-size: 16px; }
+textarea { min-height: 76px; resize: vertical; font-size: 16px; }
 label { font-size: 12px; letter-spacing: .08em; color: var(--sc-ink-2); display: grid; gap: 6px; }
 select.swap { margin-top: 6px; max-width: 240px; padding: 5px 10px; font-size: 12px; border-radius: 10px; }
 @media (max-width: 767px) { select.swap { font-size: 16px; } }
@@ -529,15 +530,36 @@ html[data-vt]::view-transition-new(root) { animation: vt-fade-in .42s ease-out .
   html[data-vt]::view-transition-new(root) { animation: vt-fade-in .2s ease-out both; }
 }
 
-/* 英文（D70）：标题与说明的衬线字体换成 Bodoni Moda（思源宋体的西文字形偏窄，中文排版的宽字距用在英文上会散），
- * 字距收窄。中文页面不受影响；各组件里为中文设的宽字距，在组件 module.css 用 :global(html[lang="en"]) 单独收。 */
-html[lang="en"] { --sc-font-serif: "Bodoni Moda", "Noto Serif SC", "Songti SC", serif; }
-html[lang="en"] .sc-display { letter-spacing: .01em; }
-html[lang="en"] .site-menu__label { letter-spacing: .03em; }
-html[lang="en"] .sc-meta, html[lang="en"] .sc-badge { letter-spacing: .04em; }
+/* 英文（D70–D73）：正文、界面、标签用 Instrument Sans，大标题与名称用它的半窄体（500），字号上调一档；
+ * 中文排版的宽字距用在英文上会散，大标题收紧到约 0。导航、按钮、区块标题全大写，配 .08–.1em 字距（参考 SSENSE、COS）。
+ * 各组件里为中文设的宽字距，在组件 module.css 用 :global(html[lang="en"]) 单独收。 */
+html[lang="en"] {
+  --sc-font-sans: "Instrument Sans", "SC Sans", -apple-system, "Helvetica Neue", sans-serif;
+  --sc-font-display: "Instrument Sans Condensed", "SC Sans", -apple-system, "Helvetica Neue", sans-serif;
+  --sc-font-title: "Instrument Sans", "SC Sans", -apple-system, "Helvetica Neue", sans-serif;
+  --sc-font-label: "Instrument Sans", "SC Sans", -apple-system, "Helvetica Neue", sans-serif;
+  --sc-track-display: -.005em;
+  --sc-track-title: 0;
+  --sc-fs-caption: 12px;
+  --sc-fs-body: 15px;
+  --sc-fs-title: 20px;
+}
+html[lang="en"] body { font-weight: 400; line-height: 1.55; }
+html[lang="en"] .sc-meta, html[lang="en"] .sc-badge { letter-spacing: .01em; }
+html[lang="en"] .sc-cta { font-size: 12px; letter-spacing: .1em; font-weight: 500; }
+html[lang="en"] .site-menu__signout, html[lang="en"] .back-link { letter-spacing: .01em; }
+html[lang="en"] .sc-display { font-weight: 500; font-size: 40px; line-height: .95; }
+html[lang="en"] .section-title { font-size: 24px; line-height: 1; }
+@media (min-width: 900px) {
+  html[lang="en"] .sc-display { font-size: 64px; }
+  html[lang="en"] .section-title { font-size: 30px; }
+}
 /* 英文徽标（如 “AI re-style”）会在连字符或空格处折成两行；徽标不拆行，旁边的标题去折行 */
 html[lang="en"] .sc-badge { white-space: nowrap; }
-html[lang="en"] .sc-cta { letter-spacing: .08em; }
-html[lang="en"] .sc-cta.compact, html[lang="en"] .site-menu__signout, html[lang="en"] .back-link { letter-spacing: .06em; }
-html[lang="en"] .section-title { letter-spacing: .01em; }
-html[lang="en"] .link-btn { letter-spacing: .03em; }
+html[lang="en"] .note-text { font-size: 15px; line-height: 1.6; }
+html[lang="en"] .link-btn { letter-spacing: .01em; }
+html[lang="en"] .sc-nav__link { font-size: 11px; font-weight: 500; letter-spacing: .1em; }
+/* 导航多了「搭配」链接与搜索按钮（D71）：640–899px 收窄链接内边距，宽屏恢复 */
+@media (min-width: 900px) {
+  .sc-nav__link { padding: 0 14px; }
+}

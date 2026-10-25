@@ -1,0 +1,9 @@
+/* 西文与数字字体（D71–D73）：Instrument Sans（SIL OFL 1.1，许可见 public/fonts/OFL-InstrumentSans.txt），自托管拉丁子集，字重 400–700 可变。
+ * 常规宽度：英文页面的正文、界面、小标题与标签；中文页面标签里的西文、价格和编号。
+ * 半窄体（宽度轴 82，D73）：两种语言的大标题与名称，配全大写，参考 SSENSE 的编辑式大字。 */
+@font-face { font-family: "Instrument Sans"; font-style: normal; font-weight: 400 700; font-display: swap; src: url(/fonts/instrument-sans-latin.v1.woff2) format("woff2"); unicode-range: U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2010-2027, U+2030, U+2039-203A, U+20AC, U+2122, U+2190-2193, U+2212; }
+@font-face { font-family: "Instrument Sans Condensed"; font-style: normal; font-weight: 400 700; font-display: swap; src: url(/fonts/instrument-sans-condensed-latin.v1.woff2) format("woff2"); unicode-range: U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2010-2027, U+2030, U+2039-203A, U+20AC, U+2122, U+2190-2193, U+2212; }
+/* 中文页面用的同一批文件，只是去掉破折号、省略号与弯引号（U+2014、U+2026、U+2018–2019、U+201C–201D）：
+ * 中文排版里这几个标点要用全角字形，交给后面的思源黑体（tokens.css 的 --sc-font-display / --sc-font-title / --sc-font-label）。 */
+@font-face { font-family: "SC Latin"; font-style: normal; font-weight: 400 700; font-display: swap; src: url(/fonts/instrument-sans-latin.v1.woff2) format("woff2"); unicode-range: U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2010-2013, U+2015-2017, U+201A-201B, U+201E-2025, U+2027, U+2030, U+2039-203A, U+20AC, U+2122, U+2190-2193, U+2212; }
+@font-face { font-family: "SC Latin Condensed"; font-style: normal; font-weight: 400 700; font-display: swap; src: url(/fonts/instrument-sans-condensed-latin.v1.woff2) format("woff2"); unicode-range: U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2010-2013, U+2015-2017, U+201A-201B, U+201E-2025, U+2027, U+2030, U+2039-203A, U+20AC, U+2122, U+2190-2193, U+2212; }

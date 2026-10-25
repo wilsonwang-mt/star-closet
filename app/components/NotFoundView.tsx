@@ -14,7 +14,7 @@ export default async function NotFoundView({ title, note }: { title: string; not
         <h1 className="sc-display" style={{ margin: 0, fontSize: "clamp(24px, 6vw, 32px)" }}>
           {title}
         </h1>
-        <p className="serif-note" style={{ margin: 0 }}>
+        <p className="note-text" style={{ margin: 0 }}>
           {note}
         </p>
         <div className="stack" style={{ gap: 8, marginTop: 6 }}>

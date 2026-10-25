@@ -3,10 +3,10 @@
 @keyframes pending { from { opacity: 1; } to { opacity: .35; } }
 
 .code {
-  font-family: var(--sc-font-didone); font-size: 13px; line-height: 1; letter-spacing: .06em;
+  font-family: var(--sc-font-label); font-weight: 500; font-size: 12px; line-height: 1; letter-spacing: .06em;
   animation: code-in var(--spring-bouncy-dur) var(--spring-bouncy) backwards;
 }
-.code:lang(zh) { font-family: var(--sc-font-serif); font-size: 14px; letter-spacing: 0; }
+.code:lang(zh) { font-size: 13px; letter-spacing: 0; }
 @keyframes code-in { from { opacity: 0; transform: translateY(6px) scale(.7); } }
 
 .menu {
@@ -43,10 +43,10 @@
 }
 .item:hover, .item[aria-checked="true"] { background: var(--nav-hover); }
 .item:focus-visible { outline: 1px solid var(--sc-champ); outline-offset: 2px; }
-.label { font-family: var(--sc-font-serif); font-size: 16px; letter-spacing: .08em; }
-.label:lang(en) { font-family: var(--sc-font-didone); letter-spacing: .04em; }
-.short { display: grid; place-items: center; min-width: 22px; font-family: var(--sc-font-didone); font-style: italic;
-  font-size: 12px; letter-spacing: .08em; color: var(--sc-ink-3); }
+.label { font-family: var(--sc-font-title); font-weight: 500; font-size: 15px; letter-spacing: var(--sc-track-title); }
+.label:lang(en) { letter-spacing: 0; }
+.short { display: grid; place-items: center; min-width: 22px; font-family: var(--sc-font-label); font-weight: 500;
+  font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--sc-ink-3); }
 .item[aria-checked="true"] .short { color: var(--sc-champ-text); }
 
 @media (prefers-reduced-motion: reduce) {

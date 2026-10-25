@@ -53,7 +53,7 @@ export default async function OutfitPage({ params }: { params: Promise<{ id: str
           </div>
           {idx >= 0 ? <span className="sc-number sc-foil">N°{String(idx + 1).padStart(2, "0")}</span> : null}
         </div>
-        <p className="serif-note" style={{ marginTop: 10 }}>
+        <p className="note-text" style={{ marginTop: 10 }}>
           {outfit.styleNote}
         </p>
       </section>

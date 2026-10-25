@@ -6,6 +6,8 @@ const nav = {
   menu: "菜单",
   closets: "衣橱",
   closetsKicker: "The Closets",
+  looks: "搭配",
+  looksKicker: "Shop the Look",
   fittingRoom: "试衣间",
   fittingRoomKicker: "Fitting Room",
   profile: "我的档案",
@@ -18,6 +20,7 @@ const nav = {
   openMenu: "打开菜单",
   openMenuAccount: "打开菜单与账号",
   closeMenu: "关闭菜单",
+  ask: "搜索或问造型师",
   theme: {
     dark: "夜间",
     light: "日间",

@@ -21,7 +21,7 @@ export default async function AvatarPage() {
       <section className="hero sc-rise" style={{ minHeight: "28dvh" }}>
         <span className="sc-kicker">{state.mode === "twin" ? t("page.kickerTwin") : t("page.kicker3d")}</span>
         <h1 className="sc-display" style={{ margin: "6px 0 8px" }}>{state.mode === "twin" ? t("page.titleTwin") : t("page.title3d")}</h1>
-        <p className="serif-note">
+        <p className="note-text">
           {state.mode === "twin"
             ? t("page.introTwin")
             : state.mode === "metaperson"

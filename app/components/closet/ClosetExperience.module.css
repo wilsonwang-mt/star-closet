@@ -80,15 +80,16 @@
     radial-gradient(130% 80% at 16% 100%, rgba(250, 244, 232, .92) 0%, rgba(250, 244, 232, .8) 34%, rgba(250, 244, 232, .4) 56%, transparent 76%),
     linear-gradient(0deg, rgba(250, 244, 232, .82) 0%, rgba(250, 244, 232, .5) 38%, transparent 64%);
 }
-.title { margin: 0; font-size: 34px; }
+/* 衣橱名（D73）：中文思源黑体 Light 放大；英文半窄体全大写（见下方英文段） */
+h1.title { margin: 0; font-size: 40px; }
 .byline { display: flex; align-items: center; gap: 10px; }
 .avatar {
   width: 32px; height: 32px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; flex: none;
   background: var(--sc-bg-raised); box-shadow: 0 0 0 .5px rgba(201, 169, 110, .9);
-  font-family: var(--sc-font-didone); font-size: 14px; color: var(--sc-champ-text);
+  font-family: var(--sc-font-label); font-weight: 500; font-size: 13px; color: var(--sc-champ-text);
 }
 .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.tagline { margin: 2px 0 0; font-family: var(--sc-font-serif); font-size: 16px; line-height: 1.7; letter-spacing: .06em; color: var(--sc-ink); }
+.tagline { margin: 2px 0 0; font-size: 16px; line-height: 1.7; letter-spacing: .04em; color: var(--sc-ink); }
 .intro { max-width: 34em; }
 .tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
 .tag {
@@ -106,17 +107,17 @@
 @keyframes cue { 0% { transform: scaleY(0); opacity: 1; } 60% { transform: scaleY(1); opacity: 1; } 100% { transform: scaleY(1); opacity: 0; } }
 
 @media (min-width: 900px) {
-  .title { font-size: 44px; letter-spacing: .14em; }
+  h1.title { font-size: 64px; }
   .tagline { font-size: 18px; }
 }
 
 /* ---------- 搭配 ---------- */
-.looks { padding-top: 56px; }
-.looksHead { margin-bottom: 18px; }
-.grid { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); }
-@media (min-width: 640px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; } }
-/* 宽屏：搭配网格放到宽栏（与导航、首页预览同宽），三列，一屏能看到两行 */
-@media (min-width: 1100px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; } }
+.looks { padding-top: 104px; }
+.looksHead { margin-bottom: 32px; }
+.grid { display: grid; gap: 40px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 640px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px 28px; } }
+/* 宽屏：搭配网格放到宽栏（与导航、首页预览同宽），两列大图（D73） */
+@media (min-width: 1100px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 72px 40px; } }
 .lookWrap { scroll-margin-top: var(--nav-offset); }
 .look {
   display: block; overflow: hidden; color: inherit;
@@ -126,7 +127,7 @@
 .lookLink { position: relative; display: block; color: inherit; text-decoration: none; transition: transform var(--spring-dur) var(--spring); }
 .lookLink:active { transform: scale(.985); }
 .lookLink:focus-visible { outline: 1px solid var(--sc-champ); outline-offset: -3px; }
-.lookHead { padding: 16px 18px 0; }
+.lookHead { padding: 22px 24px 0; }
 .pieces { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 12px 8px; }
 .piece { display: grid; justify-items: center; align-content: start; gap: 8px; min-width: 0; }
 .pieceThumb { position: relative; display: block; width: 100%; max-width: 76px; transition: transform .35s cubic-bezier(.34, 1.56, .64, 1); }
@@ -154,9 +155,10 @@
   background: rgba(0, 0, 0, .5); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
   box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .18);
 }
-.body { display: grid; gap: 12px; padding: 16px 18px 18px; }
-.lookName { margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.total { font-family: var(--sc-font-didone); font-size: 20px; font-variant-numeric: lining-nums; white-space: nowrap; }
+.body { display: grid; gap: 16px; padding: 20px 24px 24px; }
+/* 搭配名同时带全局 .section-title（全大写）；名称保持原大小写 */
+h3.lookName { margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: none; }
+.total { font-family: var(--sc-font-label); font-weight: 500; font-size: 18px; letter-spacing: -.01em; font-variant-numeric: tabular-nums; white-space: nowrap; }
 /* 缩略图按卡片宽度等分缩小（最大 56px），不横向溢出、不被卡片边缘切掉 */
 .thumbs { margin: 0 -2px; overflow: visible; }
 .thumbs :global(.thumb) { flex: 1 1 0; min-width: 0; max-width: 56px; width: auto; height: auto; aspect-ratio: 1; }
@@ -242,4 +244,14 @@
 }
 @container (width < 254px) {
   :global(html[lang="en"]) .metaRow > :global(.sc-meta) { min-height: 2lh; }
+}
+/* 卡片内容区的列宽固定为卡片宽度，不被不换行的内容撑开（D71，英文换字体后的保险） */
+.body { grid-template-columns: minmax(0, 1fr); }
+/* 英文换成 Instrument Sans 后，PR #28 按旧字体算的容器宽度阈值不再触发：名称一律预留两行，同排卡片等高（D71） */
+:global(html[lang="en"]) .lookName { min-height: 2lh; }
+/* 英文（D73）：衣橱名半窄体全大写，搭配名半窄体放大 */
+:global(html[lang="en"]) h1.title { font-size: 52px; line-height: .92; }
+:global(html[lang="en"]) h3.lookName { font-size: 26px; line-height: 1.05; }
+@media (min-width: 900px) {
+  :global(html[lang="en"]) h1.title { font-size: 96px; }
 }

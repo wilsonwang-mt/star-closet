@@ -59,7 +59,7 @@
 
 .head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 20px 16px 12px 20px;
   border-bottom: .5px solid var(--sc-rule); }
-.title { margin: 2px 0 0; font-family: var(--sc-font-serif); font-weight: 400; font-size: 18px; letter-spacing: .12em; line-height: 1.3; }
+.title { margin: 2px 0 0; font-family: var(--sc-font-display); font-weight: 500; font-size: 17px; letter-spacing: var(--sc-track-display); line-height: 1.3; }
 .headActions { display: flex; gap: 4px; }
 .iconBtn {
   width: 40px; height: 40px; flex: none; border: 0; border-radius: 50%; padding: 0; cursor: pointer;
@@ -74,7 +74,7 @@
 .list { overflow-y: auto; overscroll-behavior: contain; padding: 16px 16px 8px; display: grid; align-content: start; gap: 16px;
   scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
 .welcome { display: grid; gap: 14px; padding: 4px 4px 0; }
-.welcomeText { margin: 0; font-family: var(--sc-font-serif); font-size: 14px; line-height: 1.85; color: var(--sc-ink-2); }
+.welcomeText { margin: 0; font-size: 14px; line-height: 1.8; color: var(--sc-ink-2); }
 
 .userRow { display: flex; justify-content: flex-end; }
 .user {
@@ -87,7 +87,7 @@
 .understood { margin: 0 0 -4px; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; letter-spacing: .08em; line-height: 1.5;
   color: var(--sc-champ-text); }
 .understood svg { flex: none; opacity: .85; }
-.botText { margin: 0; font-family: var(--sc-font-serif); font-size: 14px; line-height: 1.85; letter-spacing: .02em; overflow-wrap: anywhere; }
+.botText { margin: 0; font-size: 14px; line-height: 1.8; letter-spacing: .02em; overflow-wrap: anywhere; }
 .streaming::after { content: ""; display: inline-block; width: 1px; height: 1em; margin-left: 2px; vertical-align: -2px; background: var(--sc-champ);
   animation: chat-pulse 1s steps(2, start) infinite; }
 
@@ -108,7 +108,7 @@
 
 /* ---------- 卡片 ---------- */
 .cards { display: grid; gap: 8px; min-width: 0; }
-.cardKicker { font-family: var(--sc-font-didone); font-style: italic; font-size: 11px; letter-spacing: .12em; color: var(--sc-ink-2);
+.cardKicker { font-family: var(--sc-font-label); font-weight: 500; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--sc-ink-2);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .closet { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; align-items: center; padding: 8px 14px 8px 8px;
@@ -119,8 +119,8 @@
   box-shadow: 0 0 0 .5px rgba(201, 169, 110, .9), 0 0 0 2px color-mix(in srgb, var(--sc-bg) 80%, transparent); background: var(--sc-bg-raised); }
 .closetAvatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .closetText { display: grid; gap: 2px; min-width: 0; }
-.closetName { font-family: var(--sc-font-serif); font-size: 16px; letter-spacing: .1em; line-height: 1.35; }
-.closetTag { font-family: var(--sc-font-serif); font-size: 12px; line-height: 1.6; color: var(--sc-ink-2);
+.closetName { font-family: var(--sc-font-title); font-weight: 500; font-size: 15px; letter-spacing: var(--sc-track-title); line-height: 1.35; }
+.closetTag { font-size: 12px; line-height: 1.6; color: var(--sc-ink-2);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .closetGo { margin-top: 4px; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; letter-spacing: .18em; color: var(--sc-champ-text); }
 .closet:hover .closetGo svg, .page:hover .pageGo svg { transform: translateX(3px); }
@@ -144,16 +144,16 @@
 .outfitCover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s cubic-bezier(.2, .7, .2, 1); }
 .outfit:hover .outfitCover img { transform: scale(1.03); }
 .outfitCover::after { content: ""; position: absolute; inset: 50% 0 0; background: linear-gradient(transparent, rgba(8, 8, 10, .55)); pointer-events: none; }
-.outfitNo { position: absolute; z-index: 1; left: 10px; bottom: 8px; font-family: var(--sc-font-didone); font-style: italic; font-size: 20px; line-height: 1; }
-.outfitName { font-family: var(--sc-font-serif); font-size: 14px; letter-spacing: .06em; line-height: 1.4;
+.outfitNo { position: absolute; z-index: 1; left: 10px; bottom: 8px; font-family: var(--sc-font-label); font-weight: 500; font-size: 18px; line-height: 1; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.outfitName { font-family: var(--sc-font-title); font-weight: 500; font-size: 13px; letter-spacing: var(--sc-track-title); line-height: 1.4;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; }
 .outfitMeta { display: flex; justify-content: space-between; gap: 6px; font-size: 11px; letter-spacing: .06em; color: var(--sc-ink-2); padding: 0 2px; margin-top: -4px; }
 .outfitMeta span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.outfitMeta b { font-weight: 400; font-family: var(--sc-font-didone); font-size: 13px; color: var(--sc-ink); font-variant-numeric: lining-nums tabular-nums; }
+.outfitMeta b { font-weight: 400; font-family: var(--sc-font-label); font-size: 13px; color: var(--sc-ink); font-variant-numeric: tabular-nums; }
 
 .page { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 16px; color: inherit; text-decoration: none; }
 .pageText { display: grid; gap: 2px; min-width: 0; }
-.pageTitle { font-family: var(--sc-font-serif); font-size: 15px; letter-spacing: .1em; }
+.pageTitle { font-family: var(--sc-font-title); font-weight: 500; font-size: 14px; letter-spacing: var(--sc-track-title); }
 .pageDesc { font-size: 12px; line-height: 1.6; color: var(--sc-ink-2); }
 .pageGo { color: var(--sc-champ-text); }
 
@@ -192,10 +192,7 @@
   .hintLong { display: inline; }
 }
 
-/* ---------- 英文（D70）：为中文设的宽字距用在英文上会散，收窄；搭配名比中文长，卡片只有 128px 宽 ---------- */
-:global(html[lang="en"]) .title { letter-spacing: .02em; }
-:global(html[lang="en"]) .closetName,
-:global(html[lang="en"]) .pageTitle { letter-spacing: .02em; }
+/* ---------- 英文（D70）：搭配名比中文长，卡片只有 128px 宽 ---------- */
 /* 搭配名折成两行（最多两行）而不是省略；卡片撑满整排高度、名称一行占满剩余高度，同一排卡片的衣橱与价格行仍然对齐 */
 :global(html[lang="en"]) .strip > * { display: grid; grid-template-columns: minmax(0, 1fr); }
 :global(html[lang="en"]) .outfit { grid-template-rows: auto 1fr auto; }
@@ -207,3 +204,7 @@
   .thinking span { opacity: .7; }
   .outfitCover img, .closetGo svg, .pageGo svg { transition: none; }
 }
+
+/* 英文（D71、D72）：标题放大一档（字距由令牌收紧）；搭配名两行时行距收紧 */
+:global(html[lang="en"]) .title { font-size: 19px; }
+:global(html[lang="en"]) .outfitName { font-size: 14px; line-height: 1.25; }

@@ -357,7 +357,7 @@ function TryOnSheet({ ctx, source, items, onClose }: { ctx: TryonContext; source
                   </div>
                 </figure>
                 <div className="stack" style={{ gap: 10 }}>
-                  <p className="serif-note wait-step">{tx("outfit.puttingOn", { list: labels.join(tx("listSep")) })}</p>
+                  <p className="note-text wait-step">{tx("outfit.puttingOn", { list: labels.join(tx("listSep")) })}</p>
                   <span className="sc-meta" aria-live="polite">
                     {live?.progress
                       ? tx("outfit.progress", {

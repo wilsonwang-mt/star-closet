@@ -8,7 +8,7 @@
 
 核心路径：首页选一间衣橱 → 走进 `/closet/[id]` → 点一套搭配进入 `/outfit/[id]` → 一键试穿（D67）→ 一句话改编 → 单件 / 多选 / 整套加入试衣间 → 加入购物袋（`/bag`，结算与付款不在本版范围）。目录 v0.2 共 10 间衣橱、60 套搭配、209 件单品（主理人与品牌均为虚构示例，图片与视频为 AI 生成示意，价格为参考价），来源 `data/catalog.json`，数据层 `lib/catalog.ts`。
 
-- 首页“走进谁的衣橱”（`components/home/ClosetCarousel.tsx`）：10 间衣橱排成浅弧形立体轮播，每张卡的远近、转向、缩放、模糊与变暗随离中心的距离连续变化。拖拽跟手（竖向手势交给页面滚动），松手按速度弹簧吸附，可随时打断；键盘左右键 / Home / End、底部按钮、触控板横滑、点侧卡都能切换。只播放中央那一间的视频（窄屏竖版视频，宽屏 `cover_wide` 静态图慢推），侧卡显示海报。头像、衣橱名、tagline 与“走进衣橱”在透视层之外，始终正面。下方有全部衣橱索引，可按性别（女装 / 男装 / 中性）与入驻方类型筛选：桌面筛选在标题右侧，手机（<900px）为了把首屏留给轮播放在索引区头部（D51）。当前选中的一间记在 `?c=` 与 sessionStorage，返回时回到原处。tagline、头像、封面、视频为空时有兜底（`components/closet/data.ts`）。
+- 首页“走进谁的衣橱”（`components/home/ClosetCarousel.tsx`）：10 间衣橱排成浅弧形立体轮播，每张卡的远近、转向、缩放、模糊与变暗随离中心的距离连续变化。拖拽跟手（竖向手势交给页面滚动），松手按速度弹簧吸附，可随时打断；键盘左右键 / Home / End、底部按钮、触控板横滑、点侧卡都能切换。只播放中央那一间的视频（窄屏竖版视频，宽屏 `cover_wide` 静态图慢推），侧卡显示海报。头像、衣橱名、tagline 与“走进衣橱”在透视层之外，始终正面。可按性别（女装 / 男装 / 中性）与入驻方类型筛选轮播：桌面筛选在标题右侧，手机（<900px）为了把首屏留给轮播放在切换按钮下方（D51）；切换按钮下方还有“查看全部衣橱”入口（→ `/closets`）。当前选中的一间记在 `?c=` 与 sessionStorage，返回时回到原处。tagline、头像、封面、视频为空时有兜底（`components/closet/data.ts`）。
 - 衣橱页 `/closet/[id]`（`components/closet/ClosetExperience.tsx`）：全屏场景（视频 + 海报兜底）随滚动缓推、压暗，衣橱信息与搭配卡依次浮起（CSS scroll-driven animations，不支持时用 Motion `useScroll`）。搭配页的“返回衣橱”回到对应衣橱并定位到该搭配。
 - 走进衣橱过渡（`components/closet/transition.ts`）：View Transitions 包住路由跳转，中央预览弹簧放大成衣橱页全屏场景（约 925ms），返回时反向收回；跳转前把正在播放的视频定格成一帧交给下一页并从同一时刻续播。不支持 View Transitions 的浏览器（如 Firefox）用 Motion 覆盖层模拟，这条路径只有代码、未实测。新页面就绪超过 700ms 时跳过 View Transition，改走覆盖层。
 - 一句话改编：文字或语音（浏览器 Web Speech API）说出预算、场合或想换的单品，在目录内改编成一整套。
@@ -27,7 +27,10 @@
 
 - 动效（视觉规范 §7.1）：弹簧参数统一在 `lib/motion.ts`（含给 CSS 用的 `linear()` 采样），动效库为 `motion` 14.3.0；只动 transform / opacity / filter，可打断。开启“减弱动态效果”时全部降级为淡入淡出、不播放视频。减弱动态只按 CSS 规则审过，60fps 未在真机测量。
 - 404：全局、衣橱、搭配各有中文 404 页。已知问题：衣橱页与搭配页有 `loading.tsx`，页面是流式输出的，`/closet/不存在` 与 `/outfit/不存在` 显示正确的 404 文案，但 HTTP 状态是 200（带 `noindex`）；未匹配任何路由的地址仍返回 404。
-- 字体：正文为自托管的思源黑体 Light 300 子集（`public/fonts/`、`app/fonts.css`，许可 `public/fonts/OFL.txt`，D50）。新增大量文案或目录后运行 `npm run fonts:build -- <NotoSansSC[wght].ttf 路径>`（需 `python3 -m pip install fonttools brotli`）重新生成；Bodoni Moda 与思源宋体仍由 next/font 从 Google 获取，构建需要网络。
+- 首页第二部分「按场合，整套穿走」（D71，`components/home/ShopTheLook.tsx`，取代原衣橱索引列表）：周末、通勤、约会、聚会、旅行、婚礼宾客六个场合标签；每个场合一套主推（大图、主理人、搭配说明、逐件单品与价格、一键试穿、整套总价、整套加入试衣间 / 购物袋、多选），其余几套做成卡片。一键试穿与加入试衣间复用衣橱页的 `QuickTryButton`、`LookActions`。挑选逻辑在 `lib/home/edit.ts`：每场合最多 4 套，主理人之间轮流，各场合主推不重复。区块 id 为 `looks`，导航“搭配”指向 `/#looks`。
+- 全部衣橱目录 `/closets`（D71，`components/home/ClosetDirectory.tsx`）：网格展示全部衣橱，按性别、衣橱类型（五类发现入口）与风格筛选，组合后没有结果的选项置灰；条件写进网址（`?gender=男装&type=风格主题&style=极简`），刷新、分享、返回都能还原。导航“衣橱”指向这里，衣橱页与搭配页也高亮“衣橱”。
+- 导航（D71）：衣橱 · 搭配 · 试衣间 · 我的档案 / 登录；分隔线后是搜索 / 问造型师（打开悬浮对话，≥900px 显示）、购物袋、语言、主题。
+- 字体（D72 全站无衬线，D73 编辑大字）：西文与数字一律 Instrument Sans，汉字一律思源黑体，不用衬线与斜体；大标题全大写、用 Instrument Sans 半窄体（`public/fonts/instrument-sans-condensed-latin.v1.woff2`，宽度轴固定 82），中文大标题用思源黑体 Light，导航、按钮、区块标题全大写，16px 以下的小名称用常规宽度（`--sc-font-title`）；`html { font-synthesis: none }` 不合成粗体斜体。汉字为自托管的思源黑体子集：Light 300 正文（D50）、Medium 500 标题，同属 CSS 族名 "SC Sans"（`public/fonts/sc-sans-{light,medium}-*.v2.woff2`、`app/fonts.css`，许可 `public/fonts/OFL.txt`）；新增大量文案或目录后运行 `npm run fonts:build -- <NotoSansSC[wght].ttf 路径>`（需 `python3 -m pip install fonttools brotli`）重新生成两个字重。西文是 Instrument Sans（SIL OFL 1.1，自托管拉丁子集 `public/fonts/instrument-sans-latin.v1.woff2`，许可 `public/fonts/OFL-InstrumentSans.txt`，`app/fonts-latin.css`）：英文页面的正文、界面、标题，以及两种语言里的标签、价格与编号；中文页面用它的别名 “SC Latin”（去掉弯引号、破折号、省略号，这几个标点走中文全角字形）。字体令牌在 `tokens.css`（`--sc-font-sans` / `--sc-font-display` / `--sc-font-label`、`--sc-track-display` / `--sc-track-title`），英文取值与字号在 `globals.css` 末尾。根布局预加载思源黑体 Light core 与 Instrument Sans，中文页面另预加载 Medium core。
 - 视觉：按 [视觉规范 v5](../docs/design/visual-v04/视觉规范.md)。`app/tokens.css` 复制自 `docs/design/visual-v04/tokens.css`，改动先改源文件再同步；场景图在 `public/scenes/`。深色默认，可切换浅色或跟随系统（cookie `sc-theme`）。
 
 尚未接入：单品可旋转 GLB、打赏、站内支付。场景视频（`public/scenes/*-web.mp4`）只加载并播放当前显示的那一段，减弱动态时只显示首帧。试衣间里的咖啡馆生活场景只是标注了“AI 生成场景示意 · 合身未验证”的示意图。
@@ -50,7 +53,7 @@
 - **服务端提示**：lib 里仍写中文；接口在返回前按请求语言翻译（`lib/i18n/phrases/en.ts`，以中文原文为键，带变量的用正则）。Route Handler 用 `jsonError()`（`lib/i18n/api.ts`）或各模块的 `localize*View()`。
 - **AI 文字**：悬浮对话、一句话改编、体型分析、数字分身概括按请求语言写；对话的目录快照与提示缓存按语言分开。图像生成提示词不随语言变。
 - **试衣间标题与理由**（`lib/looks-l10n.ts`）：加入试衣间时客户端不传标题，服务端按模式、来源搭配与实际保存的单品，用目录中文原文生成标题存库（原搭配名、“X · 我的版本”、“X · 挑选 N 件”、“挑选的 N 件”、“整套搭配”或单品名）；手动替换的单品只带 `manual: true`，理由存中文“你手动替换”。试衣间页与 `GET /api/looks` 用 `localizeLook()` 按当前语言重算：存库标题等于“任一语言的名称 × 任一语言的模板”算出的候选就换成当前语言，所以修复前按界面语言存下的英文标题、英文理由与“英文搭配名 · 挑选 N 件”这类混合标题也认得；都对不上的是用户自己写的，原样显示。改编要求原样保存与显示。不改表结构。
-- **英文排版**：英文页面标题衬线改用 Bodoni Moda，为中文设计的宽字距在 `globals.css` 末尾与各组件 module.css 里用 `html[lang="en"]` 收窄。英文名称比中文长，按中文设计的单行省略在英文下改为最多两行，并保持并排卡片等高：首页索引衣橱名（行高取最高一行）、衣橱页搭配卡（价格移到 “The Look” 一行，场合与预算单独一行；卡片窄到放不下最长名称时统一预留两行，用容器查询）、对话搭配卡；单品页 “相关搭配” 英文宽屏用两列；徽标与主理人显示名英文下不拆行。这些规则都只在 `html[lang="en"]` 下生效，需要改结构的地方（衣橱卡场合预算的分词 span、单品页主理人名 span）也只在英文下输出，中文 DOM 与渲染不变。
+- **英文排版**：英文页面正文与标题都用 Instrument Sans（D71、D72），为中文设计的宽字距在 `globals.css` 末尾与各组件 module.css 里用 `html[lang="en"]` 收窄（标题字距由令牌统一收紧）。英文名称比中文长，按中文设计的单行省略在英文下改为最多两行，并保持并排卡片等高：首页索引衣橱名（行高取最高一行）、衣橱页搭配卡（价格移到 “The Look” 一行，场合与预算单独一行；卡片窄到放不下最长名称时统一预留两行，用容器查询）、对话搭配卡；单品页 “相关搭配” 英文宽屏用两列；徽标与主理人显示名英文下不拆行。这些规则都只在 `html[lang="en"]` 下生效，需要改结构的地方（衣橱卡场合预算的分词 span、单品页主理人名 span）也只在英文下输出，中文 DOM 与渲染不变。
 - **新增一种语言**：在 `config.ts` 的 `LOCALES` 与 `LOCALE_META` 登记；复制 `messages/en/` 为新语言并翻译；补 `phrases/<语言>.ts`；用脚本生成 `data/catalog.<语言>.json` 并在 `lib/i18n/catalog.ts` 登记。语言按钮的清单自动更新。
 - **测试**：`lib/i18n/i18n.test.ts`（语言协商、消息格式、各语言字典键与占位符一致、英文字典无中文、目录与服务端提示的英文覆盖），以及对话、改编、试穿、体型分析、数字分身各自的英文路径测试。
 - **已知限制**：试衣间里一句话改编写的说明与每件理由（AI 或规则模式）按改编时的语言存库，切换语言后不重写（试衣间卡片目前不显示这两项，只在 `GET /api/looks` 里返回）；改了 `fittingRoom.lookTitle` 的中文模板或目录里的搭配、单品名后，旧记录的自动标题对不上候选，会原样显示存库的文字；数字分身的概括与标签只按生成时的语言写，切换语言后不显示，重新生成才有新语言版本；体型分析换语言会重新分析一次（多一次 Claude 调用）。

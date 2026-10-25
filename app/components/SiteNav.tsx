@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { BAG_EVENT } from "@/lib/bag/client";
+import { CHAT_OPEN_EVENT } from "./chat/ChatDock";
 import { useT } from "@/lib/i18n/client";
 import LinkPending from "./LinkPending";
 import LocaleSwitch from "./LocaleSwitch";
@@ -19,7 +20,10 @@ import nav from "./SiteNav.module.css";
 // 动画全部是 CSS transition（只动 transform / opacity），曲线是预先算好的弹簧 linear()，见 globals.css。
 
 const LINKS = [
-  { href: "/", label: "closets", kicker: "closetsKicker" },
+  // 衣橱 → 全部衣橱目录（D71）；首页由品牌标识进入
+  { href: "/closets", label: "closets", kicker: "closetsKicker" },
+  // 首页「按场合整套穿走」（D71）：锚点链接，不参与“当前栏目”高亮
+  { href: "/#looks", label: "looks", kicker: "looksKicker" },
   { href: "/fitting-room", label: "fittingRoom", kicker: "fittingRoomKicker" },
 ] as const;
 
@@ -29,7 +33,7 @@ const SCROLL_THRESHOLD = 8;
 function currentness(pathname: string, href: string): "page" | "true" | undefined {
   if (pathname === href) return "page";
   // 衣橱页与搭配页都属于“衣橱”这一栏
-  if (href === "/" && (pathname.startsWith("/closet") || pathname.startsWith("/outfit"))) return "true";
+  if (href === "/closets" && (pathname.startsWith("/closet/") || pathname.startsWith("/outfit"))) return "true";
   if (href !== "/" && pathname.startsWith(`${href}/`)) return "true";
   return undefined;
 }
@@ -205,6 +209,20 @@ export default function SiteNav({ initialTheme }: { initialTheme: ThemePref }) {
               </Link>
             )}
           </nav>
+          <span className={nav.rule} aria-hidden="true" />
+          {/* 搜索 / 问造型师（D71）：打开全站悬浮对话；桌面才显示，手机上右下角常驻对话入口 */}
+          <button
+            type="button"
+            className={`sc-nav__icon-btn ${nav.ask}`}
+            aria-label={t("ask")}
+            title={t("ask")}
+            onClick={() => window.dispatchEvent(new CustomEvent(CHAT_OPEN_EVENT))}
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+              <circle cx="7.8" cy="7.8" r="4.9" stroke="currentColor" strokeWidth="1.2" />
+              <path d="m11.4 11.4 3.6 3.6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+            </svg>
+          </button>
           <Link
             href="/bag"
             className={`sc-nav__icon-btn ${nav.bag}`}

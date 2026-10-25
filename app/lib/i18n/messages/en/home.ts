@@ -23,10 +23,31 @@ const home: Shape<typeof zh> = {
     prev: "Previous closet",
     next: "Next closet",
   },
-  index: {
-    aria: "All closets",
+  allClosets: "Browse all {n} closets",
+  directory: {
+    title: "All closets",
+    lead: "Find curators who match your taste by gender, closet type and style, then step inside for complete looks.",
+    byGenderType: "Filter by gender and closet type",
+    byStyle: "Filter by style",
+    style: "Style",
     count: "{n, plural, one {# closet} other {# closets}}",
+    countFiltered: "{shown} of {total} closets",
+    reset: "Clear filters",
     looks: "{n, plural, one {# look} other {# looks}}",
+    enterAria: "Step inside {name}",
+  },
+  edit: {
+    title: "Dressed for the occasion",
+    lead: "Complete looks from our curators. See them on you first, then take home the pieces you love.",
+    ask: "Not sure? Ask our stylist",
+    tabsAria: "Shop complete looks by occasion",
+    viewLookAria: "View the look: {name}",
+    pieces: "{n, plural, one {# piece} other {# pieces}} in this look",
+    piecesAria: "Pieces in {name}",
+    total: "Complete look",
+    viewLook: "View the look",
+    more: "More for {occasion}",
+    cardPieces: "{n, plural, one {# piece} other {# pieces}}",
   },
 };
 

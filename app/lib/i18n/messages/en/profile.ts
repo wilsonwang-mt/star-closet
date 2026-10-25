@@ -3,7 +3,7 @@ import type { Shape } from "../../types";
 import type zh from "../zh/profile";
 
 const profile: Shape<typeof zh> = {
-  kicker: "My Profile",
+  kicker: "The Profile",
   title: "My profile",
   intro: "Keep your style, sizes and budget on file, so every pick feels a little more you.",
   loading: "Opening your profile",

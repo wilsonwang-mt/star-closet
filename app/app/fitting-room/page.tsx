@@ -34,7 +34,7 @@ export default async function FittingRoom() {
         <section className="hero sc-rise" style={{ minHeight: "50dvh" }}>
           <span className="sc-kicker">The Fitting Room</span>
           <h1 className="sc-display" style={{ margin: "6px 0 8px" }}>{t("title")}</h1>
-          <p className="serif-note">{t("signedOut")}</p>
+          <p className="note-text">{t("signedOut")}</p>
         </section>
         <div className="cta-bar">
           <Link href="/login?next=/fitting-room" className="sc-cta">
@@ -61,7 +61,7 @@ export default async function FittingRoom() {
       <section className="hero sc-rise" style={{ minHeight: "36dvh" }}>
         <span className="sc-kicker">The Fitting Room</span>
         <h1 className="sc-display" style={{ margin: "6px 0 8px" }}>{t("title")}</h1>
-        <p className="serif-note">
+        <p className="note-text">
           {looks.length ? t(tryon.enabled ? "summaryTryon" : "summary", { n: looks.length }) : t("empty")}
         </p>
       </section>

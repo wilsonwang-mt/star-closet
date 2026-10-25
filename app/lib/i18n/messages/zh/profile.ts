@@ -1,6 +1,6 @@
 // 中文（源）· 个人档案。键名用英文小驼峰，按界面区域分组；占位符写 {name}，复数写 {n, plural, other {# 件}}。
 const profile = {
-  kicker: "My Profile",
+  kicker: "The Profile",
   title: "我的档案",
   intro: "记下你的风格、尺码与预算，让每一次挑选都更懂你。",
   loading: "正在打开我的档案",

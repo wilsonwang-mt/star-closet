@@ -96,10 +96,15 @@
 }
 
 :root {
-  /* 字体 */
-  --sc-font-didone: "Bodoni Moda", "Didot", serif;   /* 刊头、N° 编号、价格数字、英文斜体引题 */
-  --sc-font-serif: "Noto Serif SC", "Songti SC", serif; /* 中文标题、风格说明 */
-  --sc-font-sans: "SC Sans", "Noto Sans SC", -apple-system, "PingFang SC", sans-serif; /* 界面文字：思源黑体 Light 300 自托管子集（"SC Sans"） */
+  /* 字体（D72 全站无衬线，D73 编辑大字）：西文与数字一律 Instrument Sans，汉字一律思源黑体（"SC Sans"：Light 300、Medium 500）。
+   * 层级只靠字号、字重、字距与大小写，不用衬线、斜体。大标题全大写、用 Instrument Sans 半窄体（中文大标题用思源黑体 Light），
+   * 参考 SSENSE。英文页面的取值见 globals.css 的 html[lang="en"]。 */
+  --sc-font-sans: "SC Sans", "Noto Sans SC", -apple-system, "PingFang SC", sans-serif;          /* 正文与界面：中文页面的西文也用思源黑体 Light，与汉字同一字重 */
+  --sc-font-display: "SC Latin Condensed", "SC Sans", -apple-system, "PingFang SC", sans-serif; /* 大标题与名称（≥17px）：西文半窄体 */
+  --sc-font-title: "SC Latin", "SC Sans", -apple-system, "PingFang SC", sans-serif;             /* 16px 以下的小名称：常规宽度，半窄体在小字号下难读 */
+  --sc-font-label: "SC Latin", "SC Sans", -apple-system, "PingFang SC", sans-serif;            /* 引题、编号、价格、刊头（配等宽数字） */
+  --sc-track-display: .04em; /* 大标题字距 */
+  --sc-track-title: .03em;   /* 卡片名称、区块小标题字距 */
 
   /* 字号（手机基准） */
   --sc-fs-masthead: 15px;   /* 刊头，字距 .42em */
@@ -146,10 +151,13 @@ body { background: var(--sc-bg); color: var(--sc-ink); font-family: var(--sc-fon
   animation: sc-grain 1s steps(6) infinite;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
 
-.sc-masthead { font-family: var(--sc-font-didone); font-size: var(--sc-fs-masthead); letter-spacing: .42em; }
-.sc-kicker { font-family: var(--sc-font-didone); font-style: italic; font-size: var(--sc-fs-caption); letter-spacing: .12em; color: var(--sc-ink-2); }
-.sc-display { font-family: var(--sc-font-serif); font-weight: 400; font-size: var(--sc-fs-display); letter-spacing: .12em; line-height: 1.2; }
-.sc-number { font-family: var(--sc-font-didone); font-style: italic; font-size: var(--sc-fs-number); line-height: .9; }
+.sc-masthead { font-family: var(--sc-font-label); font-weight: 600; font-size: var(--sc-fs-masthead); letter-spacing: .32em; text-transform: uppercase; }
+/* 引题：小号全大写标签，汉字不受大小写影响；case 让标点对齐大写字母 */
+.sc-kicker { font-family: var(--sc-font-label); font-weight: 500; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; font-feature-settings: "case"; color: var(--sc-ink-2); }
+/* 页面大标题（D73）：全大写；中文用思源黑体 Light 放大，英文用半窄体 500（globals.css） */
+.sc-display { font-family: var(--sc-font-display); font-weight: 300; font-size: 34px; letter-spacing: var(--sc-track-display); line-height: 1.15; text-transform: uppercase; }
+@media (min-width: 900px) { .sc-display { font-size: 48px; } }
+.sc-number { font-family: var(--sc-font-label); font-weight: 400; font-size: var(--sc-fs-number); line-height: .9; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .sc-meta { font-size: var(--sc-fs-caption); letter-spacing: .12em; color: var(--sc-ink-2); }
 .sc-foil { background: var(--sc-foil); background-size: 240% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
   animation: sc-shine 9s linear infinite; }
@@ -161,7 +169,7 @@ body { background: var(--sc-bg); color: var(--sc-ink); font-family: var(--sc-fon
 .sc-glass--changed { box-shadow: inset 0 0 0 1px rgba(201, 169, 110, .9), inset 0 1px 0 var(--sc-glass-edge), 0 10px 28px rgba(160, 120, 60, .16); }
 
 .sc-cta { min-height: 54px; border: 0; border-radius: var(--sc-radius-pill); padding: 0 var(--sc-space-6);
-  font: 400 13px/1 var(--sc-font-sans); letter-spacing: .22em; color: var(--sc-cta-fg); background: var(--sc-cta-bg);
+  font: 400 13px/1 var(--sc-font-sans); letter-spacing: .22em; text-transform: uppercase; color: var(--sc-cta-fg); background: var(--sc-cta-bg);
   box-shadow: var(--sc-cta-shadow); cursor: pointer; }
 .sc-cta--ghost { color: var(--sc-ink); background: var(--sc-glass-bg); box-shadow: inset 0 1px 0 var(--sc-glass-edge), var(--sc-glass-shadow);
   -webkit-backdrop-filter: blur(var(--sc-glass-blur)); backdrop-filter: blur(var(--sc-glass-blur)); }
@@ -178,10 +186,10 @@ body { background: var(--sc-bg); color: var(--sc-ink); font-family: var(--sc-fon
 :root[data-theme="light"] .sc-nav { box-shadow: inset 0 1px 0 var(--sc-glass-edge), inset 0 0 0 .5px var(--sc-glass-edge-2),
     0 10px 30px rgba(110, 80, 35, .16), 0 2px 6px rgba(110, 80, 35, .10); }
 .sc-nav--hidden { transform: translate(-50%, calc(-100% - 24px)); opacity: 0; pointer-events: none; }
-.sc-nav__brand { font-family: var(--sc-font-didone); font-size: 13px; letter-spacing: .36em; white-space: nowrap; }
+.sc-nav__brand { font-family: var(--sc-font-label); font-weight: 600; font-size: 13px; letter-spacing: .32em; white-space: nowrap; }
 .sc-nav__links { display: flex; align-items: center; gap: var(--sc-space-1); }
 .sc-nav__link { min-height: 36px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: var(--sc-radius-pill);
-  font-size: 13px; letter-spacing: .08em; color: var(--sc-ink-2); text-decoration: none; transition: background .2s, color .2s; }
+  font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--sc-ink-2); text-decoration: none; transition: background .2s, color .2s; }
 .sc-nav__link:hover, .sc-nav__link[aria-current="page"] { color: var(--sc-ink); background: rgba(255, 255, 255, .10); }
 :root[data-theme="light"] .sc-nav__link:hover, :root[data-theme="light"] .sc-nav__link[aria-current="page"] { background: rgba(31, 28, 24, .06); }
 
