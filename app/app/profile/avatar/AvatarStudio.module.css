@@ -62,7 +62,7 @@
   text-align: center;
 }
 .plus b {
-  font-family: var(--sc-font-didone);
+  font-family: var(--sc-font-label);
   font-weight: 400;
   font-size: 22px;
   line-height: 1;
@@ -313,10 +313,10 @@
 .waitText { display: grid; gap: var(--sc-space-2); justify-items: center; animation: wait-rise 1.1s var(--sc-ease-rise) .15s both; }
 .waitTitle {
   margin: 0;
-  font-family: var(--sc-font-serif);
+  font-family: var(--sc-font-display);
   font-size: 17px;
-  font-weight: 400;
-  letter-spacing: .16em;
+  font-weight: 500;
+  letter-spacing: var(--sc-track-display);
   color: var(--sc-ink);
 }
 

@@ -329,7 +329,7 @@ export default function ProfileForm({
       <section className="sc-glass card stack sc-rise">
         <span className="sc-kicker">{t("avatar.kicker")}</span>
         <h2 className="section-title">{t("avatar.title")}</h2>
-        <p className="serif-note">{t("avatar.intro")}</p>
+        <p className="note-text">{t("avatar.intro")}</p>
         <Link href="/profile/avatar" className="sc-cta sc-cta--ghost">
           {t("avatar.cta")}
         </Link>

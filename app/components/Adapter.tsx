@@ -263,7 +263,7 @@ export default function Adapter({
             <span className="sc-kicker">{result.recognized ? "Nothing to change" : "Try again"}</span>
             <h2 className="section-title">{result.recognized ? t("unchanged.nothing") : t("unchanged.unclear")}</h2>
           </div>
-          <p className="serif-note" style={{ color: "var(--sc-ink)", margin: 0 }}>
+          <p className="note-text" style={{ color: "var(--sc-ink)", margin: 0 }}>
             {result.recognized ? result.summary : t("unchanged.hint")}
           </p>
           {result.recognized && result.notes.length ? (
@@ -310,7 +310,7 @@ export default function Adapter({
               ) : null}
             </div>
           </div>
-          <p className="serif-note" style={{ color: "var(--sc-ink)" }}>{result.summary}</p>
+          <p className="note-text" style={{ color: "var(--sc-ink)" }}>{result.summary}</p>
           {result.notes.length ? (
             <ul className="small muted" style={{ margin: 0, paddingLeft: 18 }}>
               {result.notes.map((n) => (

@@ -97,7 +97,7 @@ export default function MetaPersonStudio({
   return (
     <section className="sc-glass card stack sc-rise">
       <h2 className="section-title">{t("metaperson.title")}</h2>
-      <p className="serif-note">{bodyOn ? t("metaperson.noteBody") : t("metaperson.noteFace")}</p>
+      <p className="note-text">{bodyOn ? t("metaperson.noteBody") : t("metaperson.noteFace")}</p>
 
       <div className={s.grid}>
         {SLOT_META.map((m) => {

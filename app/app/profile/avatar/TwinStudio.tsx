@@ -183,7 +183,7 @@ export default function TwinStudio({
           <span className="sc-meta">{new Date(twin.createdAt).toLocaleDateString(intl)}</span>
         </div>
         <TwinGallery shots={twin.shots} />
-        {twin.summary ? <p className={`serif-note ${css.summary}`}>{twin.summary}</p> : null}
+        {twin.summary ? <p className={`note-text ${css.summary}`}>{twin.summary}</p> : null}
         {twin.tags.length ? (
           <ul className={css.tags} aria-label={t("twin.traitsAria")}>
             {twin.tags.map((tag) => (
@@ -222,7 +222,7 @@ export default function TwinStudio({
   return (
     <section className="sc-glass card stack sc-rise">
       <h2 className="section-title">{t("twin.title")}</h2>
-      <p className="serif-note">{t("twin.note")}</p>
+      <p className="note-text">{t("twin.note")}</p>
 
       <div className={css.grid}>
         {SLOT_META.map((m) => {

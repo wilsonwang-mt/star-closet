@@ -28,7 +28,7 @@
   display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 6px 16px;
   margin-bottom: 14px;
 }
-.title { margin: 2px 0 0; font-family: var(--sc-font-serif); font-weight: 400; font-size: 20px; letter-spacing: .14em; line-height: 1.3; }
+.title { margin: 2px 0 0; font-family: var(--sc-font-display); font-weight: 500; font-size: 19px; letter-spacing: var(--sc-track-display); line-height: 1.3; }
 .filters {
   display: flex; align-items: center; gap: 2px; max-width: 100%;
   overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
@@ -132,14 +132,14 @@
 .avatar {
   width: 48px; height: 48px; border-radius: 50%; overflow: hidden; flex: none; display: grid; place-items: center;
   background: var(--sc-bg-raised); box-shadow: 0 0 0 .5px rgba(201, 169, 110, .9), 0 0 0 3px color-mix(in srgb, var(--sc-bg) 70%, transparent);
-  font-family: var(--sc-font-didone); font-size: 18px; color: var(--sc-champ-text);
+  font-family: var(--sc-font-label); font-weight: 500; font-size: 17px; color: var(--sc-champ-text);
 }
 .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .names { min-width: 0; }
-.kicker { display: block; font-family: var(--sc-font-didone); font-style: italic; font-size: 11px; letter-spacing: .12em; color: var(--sc-ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.closetName { display: -webkit-box; margin: 1px 0 0; font-family: var(--sc-font-serif); font-weight: 400; font-size: 19px; letter-spacing: .1em; line-height: 1.3;
+.kicker { display: block; font-family: var(--sc-font-label); font-weight: 500; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--sc-ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.closetName { display: -webkit-box; margin: 2px 0 0; font-family: var(--sc-font-display); font-weight: 500; font-size: 18px; letter-spacing: var(--sc-track-title); line-height: 1.3;
   -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.tagline { margin: 8px 0 0; font-family: var(--sc-font-serif); font-size: 13px; line-height: 1.7; color: var(--sc-ink-2); }
+.tagline { margin: 8px 0 0; font-size: 13px; line-height: 1.7; color: var(--sc-ink-2); }
 .enter { min-height: 46px; padding: 0 18px 0 20px; gap: 8px; font-size: 13px; letter-spacing: .16em; white-space: nowrap; }
 .enter svg { transition: transform var(--spring-dur) var(--spring); }
 .enter:hover svg { transform: translateX(3px); }
@@ -178,7 +178,7 @@
 .arrow:disabled { opacity: .3; cursor: default; }
 .arrow:focus-visible { outline: 1px solid var(--sc-champ); outline-offset: 2px; }
 .counter { display: grid; justify-items: center; gap: 6px; min-width: 92px; }
-.count { font-family: var(--sc-font-didone); font-size: 15px; letter-spacing: .18em; font-variant-numeric: lining-nums tabular-nums; color: var(--sc-ink-2); }
+.count { font-family: var(--sc-font-label); font-size: 14px; letter-spacing: .12em; font-variant-numeric: tabular-nums; color: var(--sc-ink-2); }
 .count b { font-weight: 400; color: var(--sc-ink); }
 .progress { position: relative; width: 72px; height: 1px; background: var(--sc-rule); overflow: hidden; }
 .progressFill { position: absolute; inset: 0; background: var(--sc-champ); transform-origin: 0 50%; }
@@ -215,12 +215,11 @@
 }
 @keyframes home-fade { from { opacity: 0; } }
 
-/* ---------- 英文（D70、D71）：标题用 Bodoni 放大一档、字距收紧；界面小字用 Instrument Sans 正常字距 ---------- */
-:global(html[lang="en"]) .title { font-size: 24px; line-height: 1.15; letter-spacing: -.005em; }
+/* ---------- 英文（D70–D72）：标题放大一档、字距收紧（令牌）；界面小字正常字距 ---------- */
+:global(html[lang="en"]) .title { font-size: 22px; line-height: 1.15; }
 @media (min-width: 900px) {
-  :global(html[lang="en"]) .title { font-size: 28px; }
+  :global(html[lang="en"]) .title { font-size: 26px; }
 }
-:global(html[lang="en"]) .closetName { letter-spacing: 0; }
-:global(html[lang="en"]) .kicker { letter-spacing: .06em; }
+:global(html[lang="en"]) .closetName { font-size: 19px; line-height: 1.2; }
 :global(html[lang="en"]) .enter { letter-spacing: .02em; }
 :global(html[lang="en"]) .chip { font-size: 13px; letter-spacing: 0; }

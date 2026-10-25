@@ -1,3 +1,6 @@
-/* 英文界面字体（D71）：Instrument Sans（SIL OFL 1.1，许可见 public/fonts/OFL-InstrumentSans.txt），自托管拉丁子集，
- * 宽度固定为常规、字重 400–700 可变。只在英文页面用作正文与界面字（globals.css 的 html[lang="en"]）；中文页面不加载。 */
+/* 西文与数字字体（D71、D72）：Instrument Sans（SIL OFL 1.1，许可见 public/fonts/OFL-InstrumentSans.txt），自托管拉丁子集，
+ * 宽度固定为常规、字重 400–700 可变。英文页面用作正文、界面、标题与标签；中文页面用作标题与标签里的西文、价格和编号。 */
 @font-face { font-family: "Instrument Sans"; font-style: normal; font-weight: 400 700; font-display: swap; src: url(/fonts/instrument-sans-latin.v1.woff2) format("woff2"); unicode-range: U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2010-2027, U+2030, U+2039-203A, U+20AC, U+2122, U+2190-2193, U+2212; }
+/* 中文页面用的同一份文件，只是去掉破折号、省略号与弯引号（U+2014、U+2026、U+2018–2019、U+201C–201D）：
+ * 中文排版里这几个标点要用全角字形，交给后面的思源黑体（tokens.css 的 --sc-font-display / --sc-font-label）。 */
+@font-face { font-family: "SC Latin"; font-style: normal; font-weight: 400 700; font-display: swap; src: url(/fonts/instrument-sans-latin.v1.woff2) format("woff2"); unicode-range: U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2010-2013, U+2015-2017, U+201A-201B, U+201E-2025, U+2027, U+2030, U+2039-203A, U+20AC, U+2122, U+2190-2193, U+2212; }

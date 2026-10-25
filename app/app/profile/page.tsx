@@ -18,7 +18,7 @@ export default async function ProfilePage() {
       <section className="hero sc-rise" style={{ minHeight: "32dvh" }}>
         <span className="sc-kicker">{t("kicker")}</span>
         <h1 className="sc-display" style={{ margin: "6px 0 8px" }}>{t("title")}</h1>
-        <p className="serif-note">{t("intro")}</p>
+        <p className="note-text">{t("intro")}</p>
       </section>
       <ProfileForm initial={profile} fallbackName={user.name} />
       <section className="row" style={{ justifyContent: "space-between", padding: "8px 4px 0" }}>

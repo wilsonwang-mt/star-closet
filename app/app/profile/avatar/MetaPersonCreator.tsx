@@ -340,7 +340,7 @@ export default function MetaPersonCreator({
         </div>
       ) : null}
 
-      {fallback ? <p className="serif-note">{tr("metaperson.pickFace")}</p> : null}
+      {fallback ? <p className="note-text">{tr("metaperson.pickFace")}</p> : null}
 
       <div ref={stageWrap} className="stack" style={{ gap: 12 }}>
       {/* 创建器是跨域 iframe，鼠标停在上面时滚轮被它接走：主按钮放在舞台上方，不需要滚过创建器才能保存。 */}
@@ -366,7 +366,7 @@ export default function MetaPersonCreator({
             </div>
             <div className={s.waitText} role="status" aria-live="polite">
               <p className={s.waitTitle}>{tr("metaperson.shaping")}</p>
-              {summary ? <p className="serif-note">{summary}</p> : null}
+              {summary ? <p className="note-text">{summary}</p> : null}
               <span className="sc-meta">{tr("metaperson.elapsed", { time: clock(now - (requestedAt ?? now)) })}</span>
               {engine === "loading" ? <span className="sc-meta">{tr("metaperson.engineStillLoading")}</span> : null}
             </div>

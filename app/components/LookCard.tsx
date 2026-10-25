@@ -73,7 +73,7 @@ export default function LookCard({ look, tryon, tryons }: { look: Look; tryon?: 
           {tf("card.remove")}
         </button>
       </div>
-      {look.request ? <p className="serif-note">“{look.request}”</p> : null}
+      {look.request ? <p className="note-text">“{look.request}”</p> : null}
       <WearAllButton t={t} items={look.items} />
       <div className="rows">
         {look.items.map((it) => {

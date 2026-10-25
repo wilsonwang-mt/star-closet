@@ -271,7 +271,7 @@ function Panel({
     title = tx("avatar.createFirst");
     body = (
       <>
-        <p className="serif-note" style={{ margin: 0 }}>
+        <p className="note-text" style={{ margin: 0 }}>
           {tx("quick.noAvatarLead")}
         </p>
         <p className="sc-meta" style={{ margin: 0 }}>
@@ -287,7 +287,7 @@ function Panel({
     title = tx("quick.running", { kind });
     body = (
       <>
-        <p className={`serif-note wait-step ${s.step}`} key={stageAt(elapsed, stages)} role="status" aria-live="polite">
+        <p className={`note-text wait-step ${s.step}`} key={stageAt(elapsed, stages)} role="status" aria-live="polite">
           {stageText(stages[stageAt(elapsed, stages)])}…
         </p>
         <p className="sc-meta" style={{ margin: 0 }}>

@@ -18,15 +18,15 @@
 .head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 18px 24px; }
 .headText { display: grid; gap: 8px; max-width: 34em; }
 .title {
-  margin: 0; font-family: var(--sc-font-serif); font-weight: 400; color: var(--sc-ink);
-  font-size: 26px; line-height: 1.2; letter-spacing: .1em; text-wrap: balance;
+  margin: 0; font-family: var(--sc-font-display); font-weight: 500; color: var(--sc-ink);
+  font-size: 24px; line-height: 1.2; letter-spacing: var(--sc-track-display); text-wrap: balance;
 }
 .lead { margin: 0; font-size: 14px; line-height: 1.7; color: var(--sc-ink-2); text-wrap: pretty; }
-:global(html[lang="en"]) .title { font-size: 32px; line-height: 1.08; letter-spacing: -.005em; }
+:global(html[lang="en"]) .title { font-size: 28px; line-height: 1.1; }
 :global(html[lang="en"]) .lead { font-size: 15px; line-height: 1.55; }
 @media (min-width: 900px) {
-  .title { font-size: 30px; }
-  :global(html[lang="en"]) .title { font-size: 42px; }
+  .title { font-size: 28px; }
+  :global(html[lang="en"]) .title { font-size: 36px; }
 }
 
 .ask {
@@ -99,19 +99,19 @@
 .curator:hover .curatorName { text-decoration: underline; text-underline-offset: 3px; }
 .curator:focus-visible { outline: 1px solid var(--sc-champ); outline-offset: 4px; border-radius: 8px; }
 
-.lookName { margin: 0; font-family: var(--sc-font-serif); font-weight: 400; font-size: 24px; line-height: 1.25; letter-spacing: .08em; text-wrap: balance; }
+.lookName { margin: 0; font-family: var(--sc-font-display); font-weight: 500; font-size: 21px; line-height: 1.3; letter-spacing: var(--sc-track-display); text-wrap: balance; }
 .lookName a { color: inherit; text-decoration: none; }
 .lookName a:hover { text-decoration: underline; text-decoration-thickness: .5px; text-underline-offset: 5px; }
-:global(html[lang="en"]) .lookName { font-size: 30px; line-height: 1.1; letter-spacing: -.005em; }
+:global(html[lang="en"]) .lookName { font-size: 24px; line-height: 1.15; }
 @media (min-width: 900px) {
-  .lookName { font-size: 28px; }
-  :global(html[lang="en"]) .lookName { font-size: 34px; }
+  .lookName { font-size: 24px; }
+  :global(html[lang="en"]) .lookName { font-size: 28px; }
 }
 .note {
-  margin: 0; font-family: var(--sc-font-serif); font-size: 15px; line-height: 1.75; color: var(--sc-ink-2);
+  margin: 0; font-size: 14px; line-height: 1.8; color: var(--sc-ink-2);
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
-:global(html[lang="en"]) .note { font-size: 16px; line-height: 1.55; }
+:global(html[lang="en"]) .note { font-size: 15px; line-height: 1.6; }
 
 /* 逐件单品：手机横向滑动；宽屏两列 */
 .piecesHead { display: flex; align-items: baseline; justify-content: space-between; margin-top: 4px; }
@@ -138,14 +138,14 @@
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .pieceName:hover { text-decoration: underline; text-underline-offset: 3px; }
-.piecePrice { font-family: var(--sc-font-didone); font-size: 14px; color: var(--sc-ink-2); font-variant-numeric: lining-nums; }
+.piecePrice { font-family: var(--sc-font-label); font-size: 13px; color: var(--sc-ink-2); font-variant-numeric: tabular-nums; }
 .pieceTry { justify-self: start; margin-top: 4px; }
 :global(html[lang="en"]) .pieceName { font-size: 14px; line-height: 1.35; }
 
 .totalRow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-top: 14px; border-top: .5px solid var(--sc-rule); }
 .totalLabel { font-size: 12px; letter-spacing: .12em; color: var(--sc-ink-3); }
 :global(html[lang="en"]) .totalLabel { letter-spacing: .06em; text-transform: uppercase; }
-.total { font-family: var(--sc-font-didone); font-style: italic; font-size: 30px; line-height: 1; }
+.total { font-family: var(--sc-font-label); font-weight: 500; font-size: 26px; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 
 .view {
   justify-self: start; display: inline-flex; align-items: center; gap: 8px; min-height: 36px;
@@ -157,8 +157,8 @@
 
 /* ---------- 同一场合的其他几套 ---------- */
 .moreHead { margin: 36px 0 14px; display: flex; align-items: baseline; justify-content: space-between; }
-.moreTitle { font-family: var(--sc-font-serif); font-size: 18px; letter-spacing: .08em; color: var(--sc-ink); }
-:global(html[lang="en"]) .moreTitle { font-size: 22px; letter-spacing: 0; }
+.moreTitle { font-family: var(--sc-font-display); font-weight: 500; font-size: 16px; letter-spacing: var(--sc-track-title); color: var(--sc-ink); }
+:global(html[lang="en"]) .moreTitle { font-size: 18px; }
 .more {
   list-style: none; margin: 0 -16px; padding: 0 16px 8px; display: grid; grid-auto-flow: column; grid-auto-columns: min(72vw, 280px); gap: 14px;
   overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
@@ -174,11 +174,11 @@
 .cardImg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s cubic-bezier(.2, .7, .2, 1); }
 .card:hover .cardImg img { transform: scale(1.04); }
 .cardText { display: grid; gap: 3px; padding: 0 2px; }
-.cardCloset { font-family: var(--sc-font-didone); font-style: italic; font-size: 12px; letter-spacing: .06em; color: var(--sc-ink-3); }
-.cardName { font-family: var(--sc-font-serif); font-size: 18px; line-height: 1.3; letter-spacing: .06em; color: var(--sc-ink); }
-:global(html[lang="en"]) .cardName { font-size: 21px; line-height: 1.15; letter-spacing: 0; }
+.cardCloset { font-family: var(--sc-font-label); font-weight: 500; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--sc-ink-3); }
+.cardName { font-family: var(--sc-font-display); font-weight: 500; font-size: 16px; line-height: 1.35; letter-spacing: var(--sc-track-title); color: var(--sc-ink); }
+:global(html[lang="en"]) .cardName { font-size: 17px; line-height: 1.25; }
 .cardMeta { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 12px; letter-spacing: .06em; color: var(--sc-ink-3); }
-.cardMeta b { font-family: var(--sc-font-didone); font-weight: 400; font-size: 15px; letter-spacing: 0; color: var(--sc-ink-2); }
+.cardMeta b { font-family: var(--sc-font-label); font-weight: 400; font-size: 14px; letter-spacing: 0; color: var(--sc-ink-2); font-variant-numeric: tabular-nums; }
 :global(html[lang="en"]) .cardMeta { font-size: 13px; letter-spacing: .01em; }
 
 @media (prefers-reduced-motion: reduce) {

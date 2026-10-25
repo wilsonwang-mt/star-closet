@@ -10,13 +10,13 @@
 .root > * { width: min(100% - 32px, var(--sc-col-wide)); min-width: 0; }
 
 .head { display: grid; gap: 8px; }
-.title { margin: 0; font-family: var(--sc-font-serif); font-weight: 400; font-size: 26px; line-height: 1.2; letter-spacing: .12em; }
+.title { margin: 0; font-family: var(--sc-font-display); font-weight: 500; font-size: 24px; line-height: 1.2; letter-spacing: var(--sc-track-display); }
 .lead { margin: 0; max-width: 36em; font-size: 14px; line-height: 1.7; color: var(--sc-ink-2); }
-:global(html[lang="en"]) .title { font-size: 34px; line-height: 1.08; letter-spacing: -.005em; }
+:global(html[lang="en"]) .title { font-size: 28px; line-height: 1.1; }
 :global(html[lang="en"]) .lead { font-size: 15px; line-height: 1.55; }
 @media (min-width: 900px) {
-  .title { font-size: 30px; }
-  :global(html[lang="en"]) .title { font-size: 42px; }
+  .title { font-size: 28px; }
+  :global(html[lang="en"]) .title { font-size: 36px; }
 }
 
 /* ---------- 筛选 ---------- */
@@ -27,7 +27,7 @@
   mask-image: linear-gradient(90deg, transparent, #000 8px, #000 calc(100% - 14px), transparent);
 }
 .row::-webkit-scrollbar { display: none; }
-.rowLabel { flex: none; padding: 0 10px 0 2px; font-family: var(--sc-font-didone); font-style: italic; font-size: 12px; letter-spacing: .06em; color: var(--sc-ink-3); }
+.rowLabel { flex: none; padding: 0 10px 0 2px; font-family: var(--sc-font-label); font-weight: 500; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--sc-ink-3); }
 .chip {
   position: relative; flex: none; min-height: 36px; padding: 0 11px; border: 0; background: none; cursor: pointer;
   font-size: 13px; letter-spacing: .08em; color: var(--sc-ink-3); white-space: nowrap;
@@ -48,7 +48,7 @@
 :global(html[lang="en"]) .status { font-size: 13px; letter-spacing: .01em; }
 .reset { border: 0; padding: 0; background: none; cursor: pointer; color: var(--sc-ink-2); font-size: inherit; letter-spacing: inherit; text-decoration: underline; text-underline-offset: 3px; }
 .reset:hover { color: var(--sc-ink); }
-.empty { margin: 40px 0; font-family: var(--sc-font-serif); color: var(--sc-ink-2); }
+.empty { margin: 40px 0; color: var(--sc-ink-2); }
 
 /* ---------- 卡片网格：手机两列、宽屏三列 ---------- */
 .grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px 12px; }
@@ -69,17 +69,17 @@
   .avatar { width: 48px; height: 48px; bottom: -18px; left: 16px; }
 }
 .text { display: grid; gap: 4px; padding: 14px 2px 0; min-width: 0; }
-.meta { font-family: var(--sc-font-didone); font-style: italic; font-size: 12px; letter-spacing: .06em; color: var(--sc-ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.name { font-family: var(--sc-font-serif); font-size: 18px; line-height: 1.3; letter-spacing: .08em; color: var(--sc-ink); }
+.meta { font-family: var(--sc-font-label); font-weight: 500; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--sc-ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.name { font-family: var(--sc-font-display); font-weight: 500; font-size: 17px; line-height: 1.3; letter-spacing: var(--sc-track-title); color: var(--sc-ink); }
 .tagline { font-size: 13px; line-height: 1.55; color: var(--sc-ink-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .foot { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-top: 4px; font-size: 12px; letter-spacing: .06em; color: var(--sc-ink-3); }
 .tags { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
 @media (min-width: 900px) {
-  .name { font-size: 22px; }
+  .name { font-size: 20px; }
 }
-:global(html[lang="en"]) .name { font-size: 20px; line-height: 1.15; letter-spacing: 0; }
+:global(html[lang="en"]) .name { font-size: 18px; line-height: 1.2; }
 @media (min-width: 900px) {
-  :global(html[lang="en"]) .name { font-size: 25px; }
+  :global(html[lang="en"]) .name { font-size: 22px; }
 }
 :global(html[lang="en"]) .tagline { font-size: 14px; line-height: 1.45; }
 :global(html[lang="en"]) .foot { font-size: 13px; letter-spacing: .01em; }

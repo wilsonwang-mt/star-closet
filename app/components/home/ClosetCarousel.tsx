@@ -491,7 +491,7 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
 
         {n === 0 ? (
           <div className={styles.empty}>
-            <p className="serif-note">{t("empty.note")}</p>
+            <p className="note-text">{t("empty.note")}</p>
             <button
               type="button"
               className="sc-cta sc-cta--ghost compact"

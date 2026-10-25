@@ -50,7 +50,7 @@ export default function BagList({ initial }: { initial: BagView }) {
     return (
       <>
         <section className="sc-glass card stack sc-rise">
-          <p className="serif-note" style={{ margin: 0 }}>{t("empty")}</p>
+          <p className="note-text" style={{ margin: 0 }}>{t("empty")}</p>
         </section>
         <div className="cta-bar">
           <Link href="/" className="sc-cta">

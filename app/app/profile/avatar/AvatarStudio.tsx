@@ -246,7 +246,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
           <h2 className="section-title">{tr("consent.title")}</h2>
           {consented && !editing ? <span className="sc-badge">{tr("consent.agreed")}</span> : null}
         </div>
-        <p className="serif-note">
+        <p className="note-text">
           {tw ? tr("consent.introTwin", { days: state.retentionDays }) : tr("consent.intro3d")}
         </p>
 
@@ -444,7 +444,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
       {state.mode === "photos" ? (
       <section className="sc-glass card stack sc-rise">
         <h2 className="section-title">{tr("photos.title")}</h2>
-        <p className="serif-note">{sideRequired ? tr("photos.noteSideRequired") : tr("photos.noteEither")}</p>
+        <p className="note-text">{sideRequired ? tr("photos.noteSideRequired") : tr("photos.noteEither")}</p>
         <div className={s.grid}>
           {SLOT_META.map((slot) => {
             const p = photosBySlot(slot)[0];
@@ -512,7 +512,7 @@ export default function AvatarStudio({ initial }: { initial: AvatarState }) {
             <div className="wait-bar" aria-hidden="true">
               <i />
             </div>
-            <p role="status" aria-live="polite" className="serif-note">
+            <p role="status" aria-live="polite" className="note-text">
               {job!.status === "queued" ? tr("generate.queuedNote") : tr("generate.progress", { s: job!.elapsedSeconds })}
             </p>
             <button type="button" className="sc-cta sc-cta--ghost" onClick={cancel} disabled={busy === "cancel"}>

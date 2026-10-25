@@ -91,9 +91,9 @@
   padding: 20px; text-align: center; color: #f4f2ed; text-shadow: 0 1px 14px rgba(0, 0, 0, .55);
 }
 .waitGarment { width: 64px; height: 64px; object-fit: contain; margin-bottom: 6px; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .45)); }
-.waitKicker { margin: 0; font-family: var(--sc-font-serif); font-size: 13px; line-height: 1.7; letter-spacing: .14em; }
+.waitKicker { margin: 0; font-size: 13px; line-height: 1.7; letter-spacing: .1em; }
 .waitName { display: block; font-size: 15px; letter-spacing: .08em; color: #f8ead0; }
-.waitTime { margin: 4px 0 0; font-family: var(--sc-font-didone); font-style: italic; font-size: 14px; letter-spacing: .1em; font-variant-numeric: tabular-nums lining-nums; opacity: .85; }
+.waitTime { margin: 4px 0 0; font-family: var(--sc-font-label); font-size: 13px; letter-spacing: .06em; font-variant-numeric: tabular-nums; opacity: .85; }
 .waitNote { margin: 0; font-size: 11px; letter-spacing: .12em; opacity: .8; }
 
 /* 两段式：先出的一张在细化中（D62） */
