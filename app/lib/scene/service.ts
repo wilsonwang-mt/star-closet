@@ -9,27 +9,22 @@ import { sniffImage } from "@/lib/avatar/image";
 import { baseInfo, identityRefs } from "@/lib/tryon/base";
 import { hasConsent, itemTryonImage, recordConsent } from "@/lib/tryon/service";
 import { compressSceneImage } from "./compress";
+import { SceneError } from "./errors";
+import { falHeaders, fetchBytes, generateSceneImage } from "./image";
 import { isSceneId, pickScenes, SCENES, type SceneId } from "./scenes";
+
+export { SceneError };
 
 // 商品详情页“上身效果”（T3）：本人穿着这件单品出现在 2 个场景里，并在后台生成 Live 视频。
 // - 前提：已登录；有数字分身或本人正面全身照（与 2D 试穿共用）；已勾选试穿同意（tryon_consent，D47）；设置了 FAL_KEY。
-// - 场景图：fal-ai/nano-banana-pro/edit，输入身份参考（D63：数字分身正面 + 正脸 + 侧脸，最多 4 张；没有分身时为正面照一张）
+// - 场景图：lib/scene/image.ts（D75 起默认 Nano Banana 2.1、1K，失败时退 Pro），输入身份参考（D63：数字分身正面 + 正脸 + 侧脸，最多 4 张；没有分身时为正面照一张）
 //   + 已有的一键试穿结果（若有，保证衣服准确）+ 单品图 + 场景描述；要求单品颜色款式材质与商品图一致、人物长相不变。
-// - Live：场景图生成后提交 fal queue（Kling 2.5 Turbo Pro image-to-video，5 秒、细微动作、无声）；GET 时推进一次轮询。
+// - Live：D75 起默认不生成（只做静态图）；设置 SCENE_LIVE=1 时，场景图生成后提交 fal queue
+//   （Kling 2.5 Turbo Pro image-to-video，5 秒、细微动作、无声，约 0.35 美元 / 段），GET 时推进一次轮询。已有的视频照常播放。
 // - 存储：`<userId>/avatars/scene-<id>.jpg|mp4`；场景图入库前用 sharp 压到长边 1600、JPEG q82（compress.ts）（一键删除 3D 形象时随用户前缀清理，见 lib/avatar/service.ts deleteAll）。
 // - 同一用户同一件单品只保留最新一组：重新生成前删除旧记录与文件。
 // - 请求头 X-Fal-Store-IO: 0：请 fal 不保存本次请求的输入输出（与 2D 试穿一致）。
 
-export class SceneError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-  ) {
-    super(message);
-  }
-}
-
-const IMAGE_MODEL = "fal-ai/nano-banana-pro/edit";
 const VIDEO_MODEL = "fal-ai/kling-video/v2.5-turbo/pro/image-to-video";
 const IMAGE_TIMEOUT_MS = 100_000;
 
@@ -39,6 +34,11 @@ const VIDEO_NEGATIVE = "fast motion, walking away, turning around, face distorti
 
 export function sceneEnabled(): boolean {
   return !!process.env.FAL_KEY;
+}
+
+/** Live 视频是否开启（D75：默认只做静态图）。 */
+export function sceneLiveEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env.SCENE_LIVE === "1";
 }
 
 export type SceneRenderView = {
@@ -97,18 +97,6 @@ export async function getSceneState(userId: string | null, itemId: string): Prom
 
 // ---- fal ----
 
-function falHeaders() {
-  const key = process.env.FAL_KEY;
-  if (!key) throw new SceneError(503, "上身效果暂未开放");
-  return { Authorization: `Key ${key}`, "Content-Type": "application/json", "X-Fal-Store-IO": "0" };
-}
-
-function falError(status: number): SceneError {
-  if (status === 422 || status === 400) return new SceneError(422, "这张照片无法生成，请换一张光线充足的正面全身照");
-  if (status === 429) return new SceneError(429, "生成的人有点多，请稍后再试");
-  return new SceneError(502, "生成服务暂时不可用，请稍后再试");
-}
-
 async function garmentImage(image: string | null): Promise<string> {
   if (!image) throw new SceneError(422, "这件单品没有可用的图片");
   if (image.startsWith("https://")) return image;
@@ -136,33 +124,15 @@ export function scenePrompt(item: Pick<Item, "name" | "color" | "material" | "su
   ].join(" ");
 }
 
-async function fetchBytes(url: string, signal?: AbortSignal): Promise<Uint8Array> {
-  if (!url.startsWith("https://")) throw new SceneError(502, "生成结果无法读取");
-  const res = await fetch(url, { signal, cache: "no-store" }).catch(() => null);
-  if (!res || !res.ok) throw new SceneError(502, "生成结果下载失败，请稍后再试");
-  return new Uint8Array(await res.arrayBuffer());
-}
-
 type SceneInputs = { refs: string[]; tryon: string | null; garment: string };
 
 async function generateImage(inputs: SceneInputs, item: Item, sceneId: SceneId, signal: AbortSignal): Promise<Uint8Array> {
   const { refs, tryon, garment } = inputs;
   const image_urls = [...refs, ...(tryon ? [tryon] : []), garment];
-  const res = await fetch(`https://fal.run/${IMAGE_MODEL}`, {
-    method: "POST",
-    headers: falHeaders(),
-    body: JSON.stringify({ prompt: scenePrompt(item, sceneId, refs.length, !!tryon), image_urls, aspect_ratio: "3:4", resolution: "2K", num_images: 1, output_format: "jpeg" }),
+  return generateSceneImage(image_urls, scenePrompt(item, sceneId, refs.length, !!tryon), {
     signal,
-    cache: "no-store",
-  }).catch((e: Error) => {
-    if (signal.aborted || e?.name === "TimeoutError" || e?.name === "AbortError") throw new SceneError(504, "生成超时，请稍后再试");
-    throw new SceneError(502, "生成服务暂时连不上，请稍后再试");
+    rejected: "这张照片无法生成，请换一张光线充足的正面全身照",
   });
-  if (!res.ok) throw falError(res.status);
-  const data = (await res.json().catch(() => null)) as { images?: { url?: unknown }[] } | null;
-  const url = data?.images?.[0]?.url;
-  if (typeof url !== "string") throw new SceneError(502, "生成服务没有返回图片，请稍后再试");
-  return fetchBytes(url, signal);
 }
 
 /** 提交 Live 视频到 fal queue，返回状态查询地址；失败返回 null（不影响场景图）。 */
@@ -221,7 +191,7 @@ async function removeRows(rows: (typeof schema.sceneRender.$inferSelect)[]) {
   for (const r of rows) await db.delete(schema.sceneRender).where(eq(schema.sceneRender.id, r.id));
 }
 
-/** 生成本人的上身效果：2 张场景图（并行，约 30–45 秒），随后在后台提交 Live 视频。 */
+/** 生成本人的上身效果：2 张场景图（并行，约 30–45 秒）；开启 Live 时随后在后台提交视频。 */
 export async function createScenes(userId: string, item: Item, opts: { consent?: boolean } = {}): Promise<SceneState> {
   if (!sceneEnabled()) throw new SceneError(503, "上身效果暂未开放");
   if (opts.consent === true) await recordConsent(userId);
@@ -246,12 +216,12 @@ export async function createScenes(userId: string, item: Item, opts: { consent?:
         const bytes = await generateImage({ refs, tryon, garment }, item, sceneId, signal);
         const info = sniffImage(bytes);
         if (!info) throw new SceneError(502, "生成结果无法读取，请稍后再试");
-        // 入库前压缩到长边 1600、JPEG q82（原图 2K 约 1.5MB/张）；Live 视频仍用原图作输入，画质不受影响。
+        // 入库前压缩到长边 1600、JPEG q82（原图更大时）；Live 视频仍用原图作输入，画质不受影响。
         const small = await compressSceneImage(bytes);
         const stored = small ?? { bytes, mime: info.mime, ext: info.ext };
         const key = avatarKey(userId, `scene-${id}`, stored.ext);
         await getStorage().put(key, stored.bytes, stored.mime);
-        const videoStatusUrl = await submitVideo(`data:${info.mime};base64,${Buffer.from(bytes).toString("base64")}`);
+        const videoStatusUrl = sceneLiveEnabled() ? await submitVideo(`data:${info.mime};base64,${Buffer.from(bytes).toString("base64")}`) : null;
         await db.update(schema.sceneRender).set({ status: "succeeded", imageKey: key, videoStatusUrl }).where(eq(schema.sceneRender.id, id));
         return null;
       } catch (e) {

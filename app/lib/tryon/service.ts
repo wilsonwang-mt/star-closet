@@ -965,6 +965,10 @@ export async function deleteTryon(userId: string, id: string): Promise<boolean> 
   for (const s of [m?.fast, m?.fine]) if (isLive(s)) void cancelFashn(s);
   const keys = keysOf(row);
   if (keys.length) await getStorage().remove(keys).catch(() => {});
+  // 用这张图生成的场景姿势图、封面同款一并删除（D75）。动态引入：shots 依赖本模块。
+  await (await import("@/lib/scene/shots")).deleteShotsForTryon(userId, id).catch((e: unknown) => {
+    console.error("[tryon] 删除场景图失败", e instanceof Error ? e.message : "unknown error");
+  });
   return true;
 }
 

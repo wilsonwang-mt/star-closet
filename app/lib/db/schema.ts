@@ -7,7 +7,9 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 // ---- 账号（Better Auth 核心表）----
 // 只存登录所需字段；个人档案、身体数据与照片放在下方 profile / avatar_* 表。
@@ -324,6 +326,49 @@ export const sceneRender = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("scene_render_user_item_idx").on(t.userId, t.itemId)],
+);
+
+// ---- 场景与姿势试穿（D75）：本人的标准试穿结果换到场景里、换姿势（kind = pose，方案 A），
+// 或把搭配封面里的模特换成本人（kind = cover，方案 B）。都以一张已成功的标准试穿图（tryon.result_key）为衣服与身份参考。
+// 文件存私有存储 `<userId>/avatars/shot-<id>.jpg`（沿用现有 key 规则，一键删除时随用户前缀清理）。
+// 同一用户 × 试穿结果 × 场景 × 姿势只保留最新一张；封面同款同一用户 × 搭配只保留最新一张。只做静态图（D75）。
+// 每人同时只能有一张在生成（status = processing 的部分唯一索引，并发请求由数据库挡住，见 lib/scene/shots.ts）。
+export const sceneShot = pgTable(
+  "scene_shot",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(), // "pose" | "cover"
+    tryonId: text("tryon_id").notNull(), // 作为输入的标准试穿结果（删掉那张试穿时一并删除）
+    outfitId: text("outfit_id"), // cover：哪一套的封面
+    sceneId: text("scene_id"), // pose：场景（lib/scene/scenes.ts）
+    pose: text("pose"), // pose：姿势（lib/scene/poses.ts）
+    status: text("status").notNull().default("processing"), // "processing" | "succeeded" | "failed"
+    imageKey: text("image_key"),
+    error: text("error"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("scene_shot_user_tryon_idx").on(t.userId, t.tryonId),
+    index("scene_shot_user_outfit_idx").on(t.userId, t.outfitId),
+    uniqueIndex("scene_shot_one_processing_idx").on(t.userId).where(sql`${t.status} = 'processing'`),
+  ],
+);
+
+// ---- 全站每日生成花费（D75 防滥用：平台承担费用时的总闸）----
+// 调用付费出图模型前按估价原子地累加，当日合计超过 SPEND_DAILY_USD（默认 30 美元）即拒绝（lib/spend.ts）。
+// day 为北京时间日期；bucket = "all" 为全站合计（总闸只看它），其余为按服务的明细。金额单位：百万分之一美元。
+export const spendDay = pgTable(
+  "spend_day",
+  {
+    day: text("day").notNull(),
+    bucket: text("bucket").notNull(),
+    microUsd: integer("micro_usd").notNull().default(0),
+    calls: integer("calls").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.day, t.bucket] })],
 );
 
 // ---- 每用户每日调用计数（D64 防滥用与花费上限）----
