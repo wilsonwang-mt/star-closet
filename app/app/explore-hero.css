@@ -1,0 +1,20 @@
+/* 首屏方案探索（explore/home-hero 分支，定稿前不合并）。cookie sc-hero 决定 html[data-hero]：
+ *   a 主张压在图上：去掉卡片上方的引题、标题、对话按钮、筛选，轮播紧接导航、卡片放大，品牌主张以大号全大写压在中央卡片左下。
+ *   b 一行小字：卡片上方只留一行小号品牌主张。
+ *   c 只换文案：保留标题区结构，标题换成品牌主张，去掉 N° 引题，对话按钮保留。
+ * 三套都把筛选移到切换按钮下方（桌面与手机一致，首屏之外），并修手机信息行：衣橱名缩小、不被截断。具体覆盖在 ClosetCarousel.module.css 末尾。 */
+.hero-switcher {
+  position: fixed; z-index: 60; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); transform: translateX(-50%);
+  display: flex; gap: 2px; padding: 4px; border-radius: var(--sc-radius-pill);
+  background: var(--sc-glass-bg); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow: inset 0 1px 0 var(--sc-glass-edge), inset 0 0 0 .5px var(--sc-glass-edge-2), 0 10px 30px rgba(0, 0, 0, .3);
+  font: 500 12px/1 "Instrument Sans", "SC Sans", sans-serif; letter-spacing: .02em; text-transform: none;
+}
+.hero-switcher button { min-height: 34px; padding: 0 12px; border: 0; border-radius: var(--sc-radius-pill); background: none; color: var(--sc-ink-2); cursor: pointer; white-space: nowrap; }
+.hero-switcher button[aria-pressed="true"] { background: var(--sc-champ); color: #1a150d; }
+.hero-switcher__short { display: none; }
+@media (max-width: 639px) {
+  .hero-switcher__long { display: none; }
+  .hero-switcher__short { display: inline; }
+  .hero-switcher button { min-width: 44px; }
+}

@@ -5,6 +5,7 @@ import type zh from "../zh/home";
 const home: Shape<typeof zh> = {
   dbEmpty: "The catalog hasn't been loaded into the database yet. Run npm run db:setup in app/ first.",
   title: "Whose closet will you step into?",
+  claim: "Curated closets, worn by you.",
   enter: "Step inside",
   filters: {
     aria: "Filter closets",

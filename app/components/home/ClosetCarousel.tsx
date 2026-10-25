@@ -483,9 +483,13 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
             <h1 id="closets-title" className={styles.title}>
               {t("title")}
             </h1>
+            {/* 首屏探索（explore/home-hero）：品牌主张，方案 B 一行小字、方案 C 取代原标题 */}
+            <p className={styles.claim}>{t("claim")}</p>
           </div>
           {/* 用对话定位衣橱（D51、D66）：手机上取代首屏筛选行，桌面在标题与筛选之间 */}
-          <ChatHint />
+          <div className={styles.headAsk}>
+            <ChatHint />
+          </div>
           {renderFilters("top")}
         </header>
 
@@ -518,6 +522,10 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
             onPointerCancel={onPointerUp}
             onDragStart={(e) => e.preventDefault()}
           >
+            {/* 首屏探索（explore/home-hero）：方案 A 把品牌主张压在中央卡片左下 */}
+            <p className={styles.claimOverlay} aria-hidden="true">
+              {t("claim")}
+            </p>
             <motion.div ref={trackRef} className={styles.track} style={{ opacity: trackOpacity }}>
               {list.map((c, i) => (
                 <Card

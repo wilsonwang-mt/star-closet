@@ -3,6 +3,8 @@ const home = {
   /** 目录还没导入数据库时首页显示的开发提示 */
   dbEmpty: "目录还没有写入数据库。请先在 app/ 下运行 npm run db:setup。",
   title: "想走进谁的衣橱？",
+  /** 首屏品牌主张（首屏探索方案，未定稿） */
+  claim: "主理人的衣橱，穿在你身上",
   enter: "走进衣橱",
   filters: {
     aria: "筛选衣橱",

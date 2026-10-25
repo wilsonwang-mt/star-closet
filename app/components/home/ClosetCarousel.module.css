@@ -228,3 +228,65 @@
 }
 :global(html[lang="en"]) .enter { letter-spacing: .1em; }
 :global(html[lang="en"]) .chip { font-size: 11px; font-weight: 500; letter-spacing: .1em; }
+
+/* ---------- 首屏方案探索（explore/home-hero 分支，定稿前不合并；说明见 app/explore-hero.css）---------- */
+.claim, .claimOverlay { display: none; }
+/* 中文主张只在标点处换行，不把「衣橱」拆成两行 */
+.claim, .claimOverlay { word-break: keep-all; overflow-wrap: anywhere; }
+.headAsk { display: contents; }
+/* 三套共同：去掉 N° 引题（下方已有 01 / 10）；筛选移到切换按钮下方；手机信息行衣橱名缩小 */
+:global(html[data-hero]) .head :global(.sc-kicker) { display: none; }
+:global(html[data-hero]) .filtersTop { display: none; }
+@media (min-width: 900px) {
+  :global(html[data-hero]) .filtersIndex { display: flex; }
+}
+@media (max-width: 639px) {
+  :global(html[data-hero][lang="en"]) .closetName { font-size: 21px; line-height: 1.1; }
+  :global(html[data-hero]:not([lang="en"])) .closetName { font-size: 17px; }
+}
+
+/* A：主张压在图上——标题区整块去掉，轮播紧接导航、卡片放大 */
+:global(html[data-hero="a"]) .head { display: none; }
+:global(html[data-hero="a"]) .root { --card-h: clamp(300px, calc(100svh - 300px), calc(min(78vw, 360px) * 16 / 9)); }
+@media (min-width: 900px) {
+  :global(html[data-hero="a"]) .root { --card-h: clamp(280px, calc(100svh - 272px), calc(min(64vw, 1120px) * 9 / 16)); }
+}
+:global(html[data-hero="a"]) .claimOverlay {
+  display: block; position: absolute; z-index: 300; pointer-events: none;
+  left: calc(50% - var(--card-w) / 2); bottom: 0; width: var(--card-w); margin: 0; padding: 120px 22px 24px;
+  border-radius: 0 0 var(--card-r) var(--card-r);
+  background: linear-gradient(180deg, transparent, rgba(8, 7, 6, .5));
+  font-family: var(--sc-font-display); font-weight: 300; font-size: 30px; line-height: 1.2; letter-spacing: var(--sc-track-display);
+  text-transform: uppercase; text-wrap: balance; color: #f8f4ec; text-shadow: 0 2px 20px rgba(0, 0, 0, .35);
+}
+:global(html[data-hero="a"][lang="en"]) .claimOverlay { font-weight: 500; font-size: 36px; line-height: .94; }
+@media (min-width: 900px) {
+  :global(html[data-hero="a"]) .claimOverlay { padding: 200px 44px 40px; font-size: 46px; }
+  :global(html[data-hero="a"][lang="en"]) .claimOverlay { font-size: 76px; }
+}
+
+/* B：卡片上方只留一行小号品牌主张 */
+:global(html[data-hero="b"]) :is(.title, .headAsk) { display: none; }
+:global(html[data-hero="b"]) .head { margin-bottom: 16px; }
+:global(html[data-hero="b"]) .claim {
+  display: block; margin: 0; font-family: var(--sc-font-label); font-weight: 500; font-size: 12px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--sc-ink);
+}
+:global(html[data-hero="b"]:not([lang="en"])) .claim { font-family: var(--sc-font-sans); font-size: 15px; letter-spacing: .24em; }
+:global(html[data-hero="b"]) .root { --card-h: clamp(300px, calc(100svh - 320px), calc(min(76vw, 350px) * 16 / 9)); }
+@media (min-width: 900px) {
+  :global(html[data-hero="b"]) .root { --card-h: clamp(280px, calc(100svh - 296px), calc(min(64vw, 1120px) * 9 / 16)); }
+  :global(html[data-hero="b"][lang="en"]) .claim { font-size: 13px; }
+}
+
+/* C：只换文案——标题位置换成品牌主张，对话按钮保留 */
+:global(html[data-hero="c"]) .title { display: none; }
+:global(html[data-hero="c"]) .claim {
+  display: block; margin: 2px 0 0; font-family: var(--sc-font-display); font-weight: 300; font-size: 26px; line-height: 1.2;
+  letter-spacing: var(--sc-track-display); text-transform: uppercase;
+}
+:global(html[data-hero="c"][lang="en"]) .claim { font-weight: 500; font-size: 34px; line-height: 1; }
+@media (min-width: 900px) {
+  :global(html[data-hero="c"]) .claim { font-size: 34px; }
+  :global(html[data-hero="c"][lang="en"]) .claim { font-size: 48px; }
+}
