@@ -21,6 +21,8 @@ import {
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ClosetView } from "@/components/closet/data";
 import ChatHint from "@/components/chat/ChatHint";
+import ShopForSwitch from "@/components/ShopForSwitch";
+import type { ShopFor } from "@/lib/shopfor";
 import LinkPending from "@/components/LinkPending";
 import SceneVideo from "@/components/closet/SceneVideo";
 import {
@@ -74,7 +76,7 @@ function rubber(raw: number, max: number) {
 const isTyping = (t: EventTarget | null) =>
   t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
 
-export default function ClosetCarousel({ closets, initialId }: { closets: ClosetView[]; initialId?: string }) {
+export default function ClosetCarousel({ closets, initialId, shopFor = null }: { closets: ClosetView[]; initialId?: string; shopFor?: ShopFor | null }) {
   const router = useRouter();
   const wide = useMedia(WIDE_QUERY);
   const reduced = useMedia(REDUCED_QUERY) === true;
@@ -486,6 +488,11 @@ export default function ClosetCarousel({ closets, initialId }: { closets: Closet
           </div>
           {/* 用对话定位衣橱（D51、D66）：手机上取代首屏筛选行，桌面在标题与筛选之间 */}
           <ChatHint />
+          {/* 「为谁选」探索方案 B 首屏分段、C 首访轻问（按 html[data-sfx] 显示其一） */}
+          <div className={styles.shopFor}>
+            <ShopForSwitch kind="segment" current={shopFor} />
+            <ShopForSwitch kind="prompt" current={shopFor} />
+          </div>
           {renderFilters("top")}
         </header>
 

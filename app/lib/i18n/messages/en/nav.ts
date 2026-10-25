@@ -36,6 +36,16 @@ const nav: Shape<typeof zh> = {
     title: "Language",
     menu: "Choose language",
   },
+  shopFor: {
+    label: "Shopping for",
+    all: "All",
+    women: "Women",
+    men: "Men",
+    ask: "Who are you shopping for?",
+    browse: "Just browsing",
+    current: "Shopping for: {who}",
+    change: "Change",
+  },
   offline: {
     lost: "You're offline. We'll continue once you're back.",
     back: "Back online",

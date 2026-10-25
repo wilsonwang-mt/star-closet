@@ -1,0 +1,32 @@
+/* 「为谁选」放法探索（explore/shop-for 分支，定稿前不合并）。cookie sc-sfx 决定 html[data-sfx]，cookie sc-shopfor 记住女士 / 男士 / 全部：
+ *   a 导航顶层（参考 FARFETCH、SSENSE）：桌面在品牌右侧一排，窄屏挂在导航胶囊下方，每页都在。
+ *   b 首屏分段：首页卡片上方的分段控件，只在首页。
+ *   c 首访轻问：第一次来首页时一行问句「你在为谁挑选？」，选过后收成一行小字，可更换。
+ * 三套都按选择过滤首页轮播与搭配区（中性两边都出现），全部衣橱页没带条件时用它做默认性别；首页原来的筛选行隐藏（性别已由开关负责，类型筛选在全部衣橱页）。 */
+
+.sf-nav, .sf-segment, .sf-prompt { display: none !important; }
+html[data-sfx="a"] .sf-nav { display: flex !important; }
+html[data-sfx="b"] .sf-segment { display: inline-flex !important; }
+html[data-sfx="c"] .sf-prompt { display: flex !important; }
+/* A 在窄屏挂在导航胶囊下方：内容整体下移一行 */
+@media (max-width: 1365px) {
+  html[data-sfx="a"] .container { padding-top: calc(var(--nav-offset) + 46px); }
+}
+
+/* ---------- 方案切换条 ---------- */
+.sfx-switcher {
+  position: fixed; z-index: 60; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); transform: translateX(-50%);
+  display: flex; gap: 2px; padding: 4px; border-radius: var(--sc-radius-pill);
+  background: var(--sc-glass-bg); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow: inset 0 1px 0 var(--sc-glass-edge), inset 0 0 0 .5px var(--sc-glass-edge-2), 0 10px 30px rgba(0, 0, 0, .3);
+  font: 500 12px/1 "Instrument Sans", "SC Sans", sans-serif; letter-spacing: .02em; text-transform: none;
+}
+.sfx-switcher button { min-height: 34px; padding: 0 12px; border: 0; border-radius: var(--sc-radius-pill); background: none; color: var(--sc-ink-2); cursor: pointer; white-space: nowrap; }
+.sfx-switcher button[aria-pressed="true"] { background: var(--sc-champ); color: #1a150d; }
+.sfx-switcher .sfx-switcher__reset { color: var(--sc-ink-3); }
+.sfx-switcher__short { display: none; }
+@media (max-width: 639px) {
+  .sfx-switcher__long { display: none; }
+  .sfx-switcher__short { display: inline; }
+  .sfx-switcher button { min-width: 44px; }
+}

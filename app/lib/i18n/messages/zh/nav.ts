@@ -33,6 +33,17 @@ const nav = {
     title: "语言",
     menu: "选择语言",
   },
+  /** 「为谁选」开关（探索中，未定稿） */
+  shopFor: {
+    label: "为谁挑选",
+    all: "全部",
+    women: "女士",
+    men: "男士",
+    ask: "你在为谁挑选？",
+    browse: "都看看",
+    current: "正在为{who}挑选",
+    change: "更换",
+  },
   offline: {
     lost: "网络已断开，恢复后自动继续",
     back: "已恢复连接",

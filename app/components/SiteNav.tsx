@@ -12,6 +12,8 @@ import LocaleSwitch from "./LocaleSwitch";
 import OfflineNotice from "./OfflineNotice";
 import ThemeToggle, { type ThemePref } from "./ThemeToggle";
 import nav from "./SiteNav.module.css";
+import ShopForSwitch from "./ShopForSwitch";
+import type { ShopFor } from "@/lib/shopfor";
 
 // 顶部悬浮玻璃胶囊导航（视觉规范 6.1）。
 // - 手机（< 640px）：右侧只留主题切换与圆形菜单按钮，链接收进玻璃下拉面板。
@@ -38,7 +40,7 @@ function currentness(pathname: string, href: string): "page" | "true" | undefine
   return undefined;
 }
 
-export default function SiteNav({ initialTheme }: { initialTheme: ThemePref }) {
+export default function SiteNav({ initialTheme, shopFor }: { initialTheme: ThemePref; shopFor: ShopFor | null }) {
   const pathname = usePathname();
   const router = useRouter();
   const t = useT("nav");
@@ -185,6 +187,8 @@ export default function SiteNav({ initialTheme }: { initialTheme: ThemePref }) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="brand-logo brand-logo--light" src="/brand/seen-lockup-horizontal-light.svg" alt="" aria-hidden="true" width={96} height={26} />
         </Link>
+        {/* 「为谁选」探索方案 A：导航顶层（只在 html[data-sfx="a"] 下显示） */}
+        <ShopForSwitch kind="nav" current={shopFor} />
         <div className="site-nav__end">
           <nav aria-label={t("mainNav")} className="sc-nav__links site-nav__inline">
             {LINKS.map((l) => (

@@ -228,3 +228,8 @@
 }
 :global(html[lang="en"]) .enter { letter-spacing: .1em; }
 :global(html[lang="en"]) .chip { font-size: 11px; font-weight: 500; letter-spacing: .1em; }
+
+/* ---------- 「为谁选」探索（explore/shop-for 分支，定稿前不合并；说明见 app/explore-shopfor.css）---------- */
+.shopFor { display: contents; }
+:global(html[data-sfx]) .filtersTop, :global(html[data-sfx]) .filtersIndex { display: none; }
+

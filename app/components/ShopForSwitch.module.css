@@ -1,0 +1,55 @@
+/* 「为谁选」开关（探索中，explore/shop-for）。哪种放法显示由 app/explore-shopfor.css 按 html[data-sfx] 决定。 */
+
+/* A 导航顶层：宽屏在品牌右侧，一排全大写小字，当前项加下划线；窄屏挂在导航胶囊下方一行 */
+.nav { display: flex; align-items: center; gap: 2px; margin: 0 auto 0 18px; }
+.nav button {
+  position: relative; min-height: 36px; padding: 0 10px; border: 0; background: none; cursor: pointer;
+  font: 500 11px/1 var(--sc-font-label); letter-spacing: .12em; text-transform: uppercase; color: var(--sc-ink-3);
+}
+.nav button[aria-pressed="true"] { color: var(--sc-ink); }
+.nav button[aria-pressed="true"]::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: 7px; height: 1px; background: var(--sc-champ); }
+.nav button:hover { color: var(--sc-ink-2); }
+.nav button:focus-visible { outline: 1px solid var(--sc-champ); outline-offset: -2px; border-radius: 8px; }
+:global(html:not([lang="en"])) .nav button { font-size: 13px; letter-spacing: .14em; }
+/* 导航放不下时挂到胶囊下方：英文在 1366px 以下会挤（实测 1100–1280px 溢出），两种语言统一用这个断点 */
+@media (max-width: 1365px) {
+  .nav {
+    position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); margin: 0; padding: 3px;
+    border-radius: var(--sc-radius-pill); background: var(--sc-glass-bg);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+    box-shadow: inset 0 1px 0 var(--sc-glass-edge), inset 0 0 0 .5px var(--sc-glass-edge-2);
+  }
+  .nav button { min-height: 32px; padding: 0 16px; }
+  .nav button[aria-pressed="true"] { border-radius: var(--sc-radius-pill); background: var(--nav-hover); }
+  .nav button[aria-pressed="true"]::after { content: none; }
+}
+
+/* B 首屏分段：卡片正上方的分段控件 */
+.segment {
+  display: inline-flex; padding: 3px; border-radius: var(--sc-radius-pill); background: var(--sc-glass-bg);
+  box-shadow: inset 0 1px 0 var(--sc-glass-edge), inset 0 0 0 .5px var(--sc-glass-edge-2);
+}
+.segment button {
+  min-height: 34px; padding: 0 16px; border: 0; border-radius: var(--sc-radius-pill); background: none; cursor: pointer;
+  font: 500 12px/1 var(--sc-font-label); letter-spacing: .1em; text-transform: uppercase; color: var(--sc-ink-2);
+  transition: background-color .2s ease, color .2s ease;
+}
+.segment button[aria-pressed="true"] { background: var(--sc-ink); color: var(--sc-bg); }
+.segment button:focus-visible { outline: 1px solid var(--sc-champ); outline-offset: 2px; }
+:global(html:not([lang="en"])) .segment button { font-size: 13px; letter-spacing: .12em; }
+
+/* C 首访轻问：没选过时一行问句 + 三个答案；选过后收成一行小字，可更换 */
+.prompt { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.ask { font-size: 14px; color: var(--sc-ink); }
+.answers { display: inline-flex; flex-wrap: wrap; gap: 8px; }
+.answers button {
+  min-height: 36px; padding: 0 16px; border: 0; border-radius: var(--sc-radius-pill); cursor: pointer;
+  font: 500 12px/1 var(--sc-font-label); letter-spacing: .1em; text-transform: uppercase; color: var(--sc-ink);
+  background: var(--sc-glass-bg); box-shadow: inset 0 0 0 .5px rgba(201, 169, 110, .7), inset 0 1px 0 var(--sc-glass-edge);
+}
+.answers button.quiet { box-shadow: inset 0 0 0 .5px var(--sc-rule); color: var(--sc-ink-2); }
+.answers button:focus-visible, .change:focus-visible { outline: 1px solid var(--sc-champ); outline-offset: 2px; }
+:global(html:not([lang="en"])) .answers button { font-size: 13px; letter-spacing: .12em; }
+.chosen { display: flex; align-items: baseline; gap: 10px; margin: 0; font-size: 13px; color: var(--sc-ink-2); }
+.change { border: 0; padding: 0; background: none; cursor: pointer; color: var(--sc-ink-2); font-size: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.change:hover { color: var(--sc-ink); }
