@@ -282,7 +282,7 @@ npm run dev                  # http://localhost:3000
 ### 部署前在 Supabase 上执行（本机，不在 Vercel 构建时跑）
 
 1. 本机 `.env.local` 设置 `DATABASE_URL` 与 `DATABASE_MIGRATE_URL`（5432 会话模式），运行 `npm run db:setup`：执行全部迁移（目前到 0008：`scene_shot`、`spend_day`）并写入目录。
-2. SQL Editor 整份执行 `supabase/rls.sql`（为 `usage_counter` 等新表开启 RLS、收回 anon / authenticated 权限）；未建桶时再执行 `supabase/storage.sql`。
+2. SQL Editor 整份执行 `supabase/rls.sql`（为 `usage_counter`、`scene_shot`、`spend_day` 等新表开启 RLS、收回 anon / authenticated 权限）；未建桶时再执行 `supabase/storage.sql`。
 3. 用 Supabase 安全顾问（Security Advisor）复查：应只剩“已开 RLS 但无策略”的 INFO。
 4. 删除或改密测试账号（见 AGENTS.md D64 节）。
 
