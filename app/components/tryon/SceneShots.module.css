@@ -1,0 +1,60 @@
+/* 场景与姿势（D75 方案 A）：标准图下方的一条胶片 + 场景、姿势两组选项 + 生成按钮。
+   选项按行换行排列（不做横向拖动的筛选条，见待修正 Q3）；胶片沿用试衣间“穿搭进度”的缩略图尺寸与选中样式。 */
+.wrap {
+  display: grid; gap: 12px; padding-top: 14px; margin-top: 2px;
+  border-top: .5px solid var(--sc-rule);
+}
+.head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.title {
+  margin: 0; font-family: var(--sc-font-label); font-weight: 500; font-size: 12px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--sc-ink);
+}
+
+.strip {
+  list-style: none; margin: 0; padding: 4px 2px 6px; display: flex; gap: 10px; overflow-x: auto; overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.strip::-webkit-scrollbar { display: none; }
+.strip > li { flex: none; }
+.tile {
+  display: grid; justify-items: center; gap: 6px; padding: 0; border: 0; background: none; cursor: pointer; color: var(--sc-ink-2);
+  font: inherit; -webkit-tap-highlight-color: transparent;
+  transition: transform var(--spring-dur, .5s) var(--spring, ease);
+}
+.tile:not(span):active { transform: scale(.95); transition-duration: .12s; }
+.tile:focus-visible { outline: none; }
+.tile:focus-visible .tileImg { box-shadow: 0 0 0 2px var(--sc-champ); }
+.tileImg {
+  position: relative; display: block; width: 56px; aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden;
+  background: var(--sc-bg-raised); box-shadow: inset 0 0 0 .5px var(--sc-glass-edge-2);
+  transition: box-shadow .25s ease;
+}
+.tileImg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.tile[aria-pressed="true"] { color: var(--sc-champ-text); }
+.tile[aria-pressed="true"] .tileImg { box-shadow: 0 0 0 1.5px var(--sc-champ), 0 8px 18px rgba(0, 0, 0, .28); }
+.tileCap { font-size: 10px; letter-spacing: .08em; white-space: nowrap; max-width: 76px; overflow: hidden; text-overflow: ellipsis; }
+.tilePending { border-radius: 10px; }
+
+.group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.groupLabel { flex: none; min-width: 2.6em; font-size: 11px; letter-spacing: .12em; color: var(--sc-ink-3); }
+.chip { min-height: 34px; padding: 6px 12px; color: var(--sc-ink-2); transition: background-color .2s ease, color .2s ease, box-shadow .2s ease; }
+.chip[aria-pressed="true"] { background: var(--sc-ink); color: var(--sc-bg); box-shadow: none; }
+.chip:disabled { cursor: default; opacity: .55; }
+.chip[aria-pressed="true"]:disabled { opacity: .8; }
+.chip:focus-visible { outline: 1px solid var(--sc-champ); outline-offset: 2px; }
+
+.foot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.note { flex: 1 1 200px; line-height: 1.5; }
+
+/* 大图上的标注：场景图只是示意，合身以标准图为准（父组件放在图片左下角） */
+.badge {
+  position: absolute; left: 10px; bottom: 10px; z-index: 3; max-width: calc(100% - 20px);
+  font-size: 10px; line-height: 1.3; letter-spacing: .04em; color: #f4f2ed;
+  padding: 5px 9px; border-radius: var(--sc-radius-pill); background: rgba(11, 13, 16, .52);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile, .tileImg, .chip { transition: none; }
+  .tile:not(span):active { transform: none; }
+}

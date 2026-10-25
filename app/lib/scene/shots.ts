@@ -198,14 +198,18 @@ export function posePrompt(refCount: number, sceneId: SceneId, pose: PoseId): st
   ].join(" ");
 }
 
-/** 方案 B：图片顺序为 身份参考 1..refCount → 标准试穿图 → 封面（最后一张，只作场景与姿势参考）。 */
+/**
+ * 方案 B：图片顺序为 身份参考 1..refCount → 标准试穿图 → 封面（最后一张，作场景、姿势与鞋包配饰参考）。
+ * 衣服（上装、下装、外套、连衣裙）以标准图为准；鞋、包、帽子与配饰在标准图里并没有试穿（仍是本人照片里的），
+ * 这里跟随封面——封面同款看的是“主理人搭好的这一整套穿在我身上”。实测（2026-10-26，O08）只给标准图时会穿着本人的白球鞋。
+ */
 export function coverPrompt(refCount: number): string {
   const std = refCount + 1;
   const cover = refCount + 2;
   return [
-    `${PERSON(refCount)} Image ${std} shows this person wearing the complete outfit. This person is the only person to depict.`,
-    `Image ${cover} is a reference ONLY for the setting, light, camera angle, framing and pose — do NOT use the face, hairstyle, body or identity of anyone in image ${cover}.`,
-    `Create a new photo of the person from ${WHO(refCount)} in the same setting, camera angle, framing and pose as image ${cover}, wearing exactly the outfit from image ${std}: every garment, shoe, bag and accessory unchanged in color, cut, pattern and material.`,
+    `${PERSON(refCount)} Image ${std} shows this person wearing the clothing of the outfit. This person is the only person to depict.`,
+    `Image ${cover} is a reference for the setting, light, camera angle, framing, pose, and for the shoes, bag, hat and accessories — do NOT use the face, hairstyle, body or identity of anyone in image ${cover}.`,
+    `Create a new photo of the person from ${WHO(refCount)} in the same setting, camera angle, framing and pose as image ${cover}, wearing exactly the clothing (tops, bottoms, outerwear, dresses) from image ${std}, unchanged in color, cut, pattern and material, with the same shoes, bag, hat and accessories as in image ${cover}.`,
     `Keep their face, hair, skin tone and body exactly as in ${WHO(refCount)}. Photorealistic, vertical 3:4 composition. No text, no logos.`,
   ].join(" ");
 }

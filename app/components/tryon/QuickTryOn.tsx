@@ -8,6 +8,7 @@
 //   沿用两段式：先出图 → 角标“正在细化” → 清晰版原地交叉淡入。面板里可“加入试衣间”“看完整详情”。
 // 整页共用一个面板与一份试穿状态（QuickTryonProvider），请求与轮询逻辑与商品详情页共用 useQuickTryon。
 // 动效只动 transform / opacity；减弱动态时只淡入淡出。
+// 细化完成后，结果下方是「换个场景与姿势」（D75 方案 A，SceneShots）：选中的场景图替换大图并标注“示意”。
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -19,7 +20,9 @@ import { reducedFade, springs } from "@/lib/motion";
 import { isAccessory } from "@/lib/tryon/accessory";
 import { isWearable } from "@/lib/tryon/plan";
 import type { TryonContext } from "@/lib/tryon/service";
+import SceneShots, { type ShotSelection } from "./SceneShots";
 import { cleanName, CloseIcon, useConsentLabel } from "./shared";
+import shotStyles from "./SceneShots.module.css";
 import { NANO_STAGES, QUICK_STAGES, stageAt, useQuickStageText, useQuickTryon, useTicker } from "./useQuickTryon";
 import s from "./QuickTryOn.module.css";
 
@@ -195,7 +198,10 @@ function Panel({
   const name = cleanName(item.name);
   const result = q.view?.wornItemId === item.id ? q.view.resultUrl : null;
   const baseUrl = ctx.frontPhotoUrl;
-  const shown = result ?? (hasBase ? baseUrl : null);
+  const [shot, setShot] = useState<ShotSelection>(null);
+  const viewId = q.view?.id ?? null;
+  useEffect(() => setShot(null), [viewId]);
+  const shown = (result ? shot?.imageUrl : null) ?? result ?? (hasBase ? baseUrl : null);
   const [saved, setSaved] = useState<"idle" | "busy" | "done">("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -315,6 +321,9 @@ function Panel({
             {tx("quick.goToFittingRoom")}
           </Link>
         ) : null}
+        {!q.refining && q.view && viewId ? (
+          <SceneShots tryonId={viewId} standardUrl={result} selectedId={shot?.id ?? null} onSelect={setShot} />
+        ) : null}
       </>
     );
   } else {
@@ -399,7 +408,8 @@ function Panel({
               <img src={item.image} alt="" />
             </span>
           ) : null}
-          {result && !q.running ? <span className={s.label}>{q.refining ? tx("stage.refining") : "On You"}</span> : null}
+          {result && !q.running && !shot ? <span className={s.label}>{q.refining ? tx("stage.refining") : "On You"}</span> : null}
+          {result && !q.running && shot ? <span className={shotStyles.badge}>{tx("shots.badge")}</span> : null}
         </div>
 
         <div className={s.text}>

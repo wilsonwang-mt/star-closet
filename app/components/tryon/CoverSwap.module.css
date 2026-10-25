@@ -1,0 +1,27 @@
+/* 封面「模特 / 我」（D75 方案 B）：搭配页标题下方的分段切换，与返回链接同一款玻璃胶囊。 */
+.wrap { display: grid; gap: 10px; margin-top: 14px; justify-items: start; }
+.row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.seg { display: inline-flex; padding: 3px; border-radius: var(--sc-radius-pill); gap: 2px; }
+.segBtn {
+  position: relative; min-height: 38px; min-width: 64px; padding: 0 16px; border: 0; border-radius: var(--sc-radius-pill);
+  background: none; color: var(--sc-ink-2); font: inherit; font-size: 12px; letter-spacing: .14em; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; transition: background-color .25s ease, color .25s ease;
+}
+.segBtn[aria-pressed="true"] { background: var(--sc-ink); color: var(--sc-bg); }
+.segBtn:focus-visible { outline: 1px solid var(--sc-champ); outline-offset: 2px; }
+
+.badge { display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 11px; letter-spacing: .06em; color: var(--sc-ink-2); }
+
+.panel {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border-radius: 16px;
+  font-size: 13px; line-height: 1.5; color: var(--sc-ink); max-width: 560px;
+}
+
+/* 本人的场景图铺成整页场景：与原封面同一层（z-index -1），渲染在后面所以盖在上面；切换时淡入淡出 */
+.layer { position: fixed; inset: 0; z-index: -1; opacity: 0; pointer-events: none; transition: opacity .7s ease; }
+.layer[data-on="true"] { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .segBtn, .layer { transition: none; }
+}

@@ -262,6 +262,6 @@ test("删除试穿图时一并删除用它生成的场景图与文件", async ()
 
 test("Live 视频默认关闭（只做静态图），SCENE_LIVE=1 才开启", async () => {
   const { sceneLiveEnabled } = await import("./service");
-  assert.equal(sceneLiveEnabled({}), false);
-  assert.equal(sceneLiveEnabled({ SCENE_LIVE: "1" }), true);
+  assert.equal(sceneLiveEnabled({} as NodeJS.ProcessEnv), false);
+  assert.equal(sceneLiveEnabled({ SCENE_LIVE: "1" } as unknown as NodeJS.ProcessEnv), true);
 });
