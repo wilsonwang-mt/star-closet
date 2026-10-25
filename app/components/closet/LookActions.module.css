@@ -20,3 +20,10 @@
 
 /* 英文（D70）：“Add look to Fitting Room”比中文长一倍，主按钮不换行，收窄字距免得在窄卡片里撑出边界 */
 :global(html[lang="en"]) .room { letter-spacing: .02em; }
+
+/* ---------- 探索方案（explore/type-layout 分支，定稿前不合并）：全大写后主按钮更宽，收字距；卡片较窄时两个按钮上下排 ---------- */
+:global(html[data-variant][lang="en"]) button.room { font-size: 12px; letter-spacing: .06em; }
+@container (max-width: 440px) {
+  :global(html[data-variant]) .row { grid-template-columns: minmax(0, 1fr); }
+}
+

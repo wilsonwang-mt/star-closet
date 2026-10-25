@@ -1,0 +1,78 @@
+/* 字体与布局探索（explore/type-layout 分支，定稿前不合并）。cookie sc-variant 决定 html[data-variant]：
+ *   a 克制大写（参考 COS）：西文 Geist；导航、区块标题、按钮、筛选全大写，字号克制、字重分层；名称保持原大小写。布局「留白」。
+ *   b 编辑大字（参考 SSENSE）：大标题用 Instrument Sans 半窄体全大写、字号放大；中文大标题用思源黑体 Light。布局「编辑」：手机一行一张大图。
+ *   c 只加留白：字体保持现状（D72），布局与 a 相同的「留白」，用来分清是大写还是留白在起作用。
+ * 三套的颜色、玻璃、圆角、图片完全一致。组件里的覆盖写在各自 module.css 末尾的「探索方案」一节。 */
+
+@font-face { font-family: "Geist"; font-style: normal; font-weight: 300 700; font-display: swap; src: url(/fonts/geist-latin.v1.woff2) format("woff2"); unicode-range: U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2010-2027, U+2030, U+2039-203A, U+20AC, U+2122, U+2190-2193, U+2212; }
+@font-face { font-family: "Geist SC"; font-style: normal; font-weight: 300 700; font-display: swap; src: url(/fonts/geist-latin.v1.woff2) format("woff2"); unicode-range: U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2010-2013, U+2015-2017, U+201A-201B, U+201E-2025, U+2027, U+2030, U+2039-203A, U+20AC, U+2122, U+2190-2193, U+2212; }
+@font-face { font-family: "Instrument Sans Condensed"; font-style: normal; font-weight: 400 700; font-display: swap; src: url(/fonts/instrument-sans-condensed-latin.v1.woff2) format("woff2"); unicode-range: U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2010-2027, U+2030, U+2039-203A, U+20AC, U+2122, U+2190-2193, U+2212; }
+@font-face { font-family: "Instrument Sans Condensed SC"; font-style: normal; font-weight: 400 700; font-display: swap; src: url(/fonts/instrument-sans-condensed-latin.v1.woff2) format("woff2"); unicode-range: U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2010-2013, U+2015-2017, U+201A-201B, U+201E-2025, U+2027, U+2030, U+2039-203A, U+20AC, U+2122, U+2190-2193, U+2212; }
+
+/* ---------- 切换条 ---------- */
+.variant-switcher {
+  position: fixed; z-index: 60; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); transform: translateX(-50%);
+  display: flex; gap: 2px; padding: 4px; border-radius: var(--sc-radius-pill);
+  background: var(--sc-glass-bg); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow: inset 0 1px 0 var(--sc-glass-edge), inset 0 0 0 .5px var(--sc-glass-edge-2), 0 10px 30px rgba(0, 0, 0, .3);
+  font: 500 12px/1 "Instrument Sans", "SC Sans", sans-serif; letter-spacing: .02em; text-transform: none;
+}
+.variant-switcher button { min-height: 34px; padding: 0 12px; border: 0; border-radius: var(--sc-radius-pill); background: none; color: var(--sc-ink-2); cursor: pointer; white-space: nowrap; }
+.variant-switcher button[aria-pressed="true"] { background: var(--sc-champ); color: #1a150d; }
+.variant-switcher__short { display: none; }
+@media (max-width: 639px) {
+  .variant-switcher__long { display: none; }
+  .variant-switcher__short { display: inline; }
+  .variant-switcher button { min-width: 44px; }
+}
+
+/* ---------- 三套共同：手机左右留白 16 → 22px ---------- */
+@media (max-width: 639px) {
+  html[data-variant] .container { padding-left: 22px; padding-right: 22px; }
+}
+
+/* ---------- A 克制大写：Geist ---------- */
+html[data-variant="a"] {
+  --sc-font-display: "Geist SC", "SC Sans", -apple-system, "PingFang SC", sans-serif;
+  --sc-font-label: "Geist SC", "SC Sans", -apple-system, "PingFang SC", sans-serif;
+  --sc-track-display: .1em;   /* 中文：小号标题放开字距，相当于西文全大写的节奏 */
+  --sc-track-title: .04em;
+}
+html[data-variant="a"][lang="en"] {
+  --sc-font-sans: "Geist", "SC Sans", -apple-system, "Helvetica Neue", sans-serif;
+  --sc-font-display: "Geist", "SC Sans", -apple-system, "Helvetica Neue", sans-serif;
+  --sc-font-label: "Geist", "SC Sans", -apple-system, "Helvetica Neue", sans-serif;
+  --sc-track-display: .04em;
+  --sc-track-title: 0;
+}
+html[data-variant="a"] :is(.sc-nav__link, .sc-cta, .section-title, .site-menu__label, .link-btn, .back-link) { text-transform: uppercase; }
+html[data-variant="a"][lang="en"] .sc-nav__link { font-size: 12px; font-weight: 500; letter-spacing: .08em; }
+html[data-variant="a"]:not([lang="en"]) .sc-nav__link { letter-spacing: .14em; }
+html[data-variant="a"][lang="en"] .sc-cta { font-size: 12px; font-weight: 500; letter-spacing: .1em; }
+html[data-variant="a"][lang="en"] .section-title { font-size: 14px; letter-spacing: .08em; }
+html[data-variant="a"]:not([lang="en"]) .section-title { font-size: 16px; }
+html[data-variant="a"][lang="en"] :is(.link-btn, .back-link) { font-size: 12px; letter-spacing: .08em; }
+html[data-variant="a"][lang="en"] .sc-display { letter-spacing: -.01em; }
+
+/* ---------- B 编辑大字：Instrument Sans 半窄体大写标题 ---------- */
+html[data-variant="b"] {
+  --sc-font-display: "Instrument Sans Condensed SC", "SC Sans", -apple-system, "PingFang SC", sans-serif;
+  --sc-track-display: .04em;
+}
+html[data-variant="b"][lang="en"] {
+  --sc-font-display: "Instrument Sans Condensed", "SC Sans", -apple-system, "Helvetica Neue", sans-serif;
+  --sc-track-display: -.005em;
+  --sc-track-title: 0;
+}
+html[data-variant="b"] :is(.sc-nav__link, .sc-cta, .section-title, .sc-display, .site-menu__label) { text-transform: uppercase; }
+html[data-variant="b"][lang="en"] .sc-nav__link { font-size: 11px; font-weight: 500; letter-spacing: .1em; }
+html[data-variant="b"]:not([lang="en"]) .sc-nav__link { letter-spacing: .14em; }
+html[data-variant="b"][lang="en"] .sc-cta { font-size: 12px; font-weight: 500; letter-spacing: .1em; }
+html[data-variant="b"][lang="en"] .section-title { font-size: 24px; line-height: 1; letter-spacing: 0; }
+html[data-variant="b"][lang="en"] .sc-display { font-size: 40px; line-height: .95; }
+html[data-variant="b"]:not([lang="en"]) .sc-display { font-weight: 300; font-size: 34px; line-height: 1.15; }
+@media (min-width: 900px) {
+  html[data-variant="b"][lang="en"] .sc-display { font-size: 64px; }
+  html[data-variant="b"][lang="en"] .section-title { font-size: 30px; }
+  html[data-variant="b"]:not([lang="en"]) .sc-display { font-size: 48px; }
+}

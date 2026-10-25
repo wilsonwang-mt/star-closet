@@ -204,3 +204,11 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ---------- 探索方案（explore/type-layout 分支，定稿前不合并；说明见 app/explore-variants.css）---------- */
+/* A：小标题全大写；B：单品名半窄体放大（保持原大小写） */
+:global(html[data-variant="a"]) .blockTitle { text-transform: uppercase; }
+:global(html[data-variant="a"][lang="en"]) .blockTitle { font-size: 13px; letter-spacing: .1em; }
+:global(html[data-variant="b"][lang="en"]) .name { font-size: 40px; line-height: 1; }
+:global(html[data-variant="b"]:not([lang="en"])) .name { font-size: 30px; font-weight: 300; }
+:global(html[data-variant="b"]) .blockTitle { text-transform: uppercase; }

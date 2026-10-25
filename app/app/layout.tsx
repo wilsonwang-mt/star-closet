@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { preload } from "react-dom";
 import ChatDock from "@/components/chat/ChatDock";
 import SiteNav from "@/components/SiteNav";
+import VariantSwitcher, { type Variant } from "@/components/VariantSwitcher";
 import type { ThemePref } from "@/components/ThemeToggle";
 import { catalogTerms } from "@/lib/i18n/catalog";
 import { I18nProvider } from "@/lib/i18n/client";
@@ -14,6 +15,7 @@ import "./fonts.css"; // 汉字：思源黑体 Light 300 / Medium 500（D50、D7
 import "./fonts-latin.css"; // 西文与数字：Instrument Sans（D71、D72）
 import "./tokens.css";
 import "./globals.css";
+import "./explore-variants.css"; // 字体与布局探索方案（仅 explore/type-layout 分支，定稿前不合并）
 
 
 // 标题模板与描述按访客语言输出（D70）。
@@ -45,6 +47,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   if (process.env.NEXT_PHASE !== "phase-production-build") void getChatCatalog().catch(() => {});
   const saved = (await cookies()).get("sc-theme")?.value;
   const pref: ThemePref = saved === "light" || saved === "system" ? saved : "dark";
+  // 探索方案：cookie sc-variant = a / b / c，没有时是现状
+  const v = (await cookies()).get("sc-variant")?.value;
+  const variant: Variant | undefined = v === "a" || v === "b" || v === "c" ? v : undefined;
   // 多语言（D70）：cookie sc-locale → 浏览器语言 → 中文。只把当前语言的字典与目录词表交给客户端。
   const locale = await getLocale();
   // 中文标题用思源黑体 Medium（D72）
@@ -53,6 +58,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html
       lang={LOCALE_META[locale].htmlLang}
       data-theme={pref === "system" ? undefined : pref}
+      data-variant={variant}
     >
       <body>
         <I18nProvider locale={locale} messages={MESSAGES[locale]} terms={catalogTerms(locale)}>
@@ -60,6 +66,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <main className="container">{children}</main>
           {/* 全站悬浮对话（D66）：与导航同级，路由切换不卸载 */}
           <ChatDock />
+          <VariantSwitcher current={variant ?? null} />
         </I18nProvider>
       </body>
     </html>

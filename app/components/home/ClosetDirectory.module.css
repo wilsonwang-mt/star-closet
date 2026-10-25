@@ -94,3 +94,37 @@
   .card:hover .media > img { transform: none; }
 }
 .foot > span:first-child { flex: none; white-space: nowrap; }
+
+/* ---------- 探索方案（explore/type-layout 分支，定稿前不合并；说明见 app/explore-variants.css）---------- */
+/* 共同留白 */
+:global(html[data-variant]) .root > * { width: min(100% - 44px, var(--sc-col-wide)); }
+:global(html[data-variant]) .head { gap: 14px; }
+:global(html[data-variant]) .filters { margin-top: 40px; padding: 10px 0; }
+:global(html[data-variant]) .status { margin: 24px 0 32px; }
+:global(html[data-variant]) .grid { gap: 48px 16px; }
+:global(html[data-variant]) .text { padding-top: 20px; gap: 6px; }
+@media (min-width: 900px) {
+  :global(html[data-variant]) .grid { gap: 80px 32px; }
+}
+/* A */
+:global(html[data-variant="a"]) :is(.title, .chip, .reset) { text-transform: uppercase; }
+:global(html[data-variant="a"][lang="en"]) .title { font-size: 22px; letter-spacing: .06em; line-height: 1.2; }
+:global(html[data-variant="a"]:not([lang="en"])) .title { font-size: 22px; }
+:global(html[data-variant="a"][lang="en"]) :is(.chip, .reset) { font-size: 12px; letter-spacing: .08em; font-weight: 500; }
+@media (min-width: 900px) {
+  :global(html[data-variant="a"][lang="en"]) .title { font-size: 28px; }
+  :global(html[data-variant="a"]:not([lang="en"])) .title { font-size: 26px; }
+}
+/* B：手机一列大图，宽屏两列 */
+:global(html[data-variant="b"]) :is(.title, .chip, .reset) { text-transform: uppercase; }
+:global(html[data-variant="b"][lang="en"]) .title { font-size: 46px; line-height: .92; }
+:global(html[data-variant="b"]:not([lang="en"])) .title { font-size: 34px; font-weight: 300; }
+:global(html[data-variant="b"][lang="en"]) :is(.chip, .reset) { font-size: 12px; letter-spacing: .08em; font-weight: 500; }
+:global(html[data-variant="b"][lang="en"]) .name { font-size: 28px; line-height: 1.05; }
+:global(html[data-variant="b"]) .grid { grid-template-columns: minmax(0, 1fr); gap: 64px; }
+@media (min-width: 900px) {
+  :global(html[data-variant="b"][lang="en"]) .title { font-size: 88px; }
+  :global(html[data-variant="b"]:not([lang="en"])) .title { font-size: 52px; }
+  :global(html[data-variant="b"][lang="en"]) .name { font-size: 36px; }
+  :global(html[data-variant="b"]) .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 96px 40px; }
+}

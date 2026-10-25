@@ -223,3 +223,27 @@
 :global(html[lang="en"]) .closetName { font-size: 19px; line-height: 1.2; }
 :global(html[lang="en"]) .enter { letter-spacing: .02em; }
 :global(html[lang="en"]) .chip { font-size: 13px; letter-spacing: 0; }
+
+/* ---------- 探索方案（explore/type-layout 分支，定稿前不合并；说明见 app/explore-variants.css）---------- */
+/* 共同留白 */
+:global(html[data-variant]) .head, :global(html[data-variant]) .info { width: min(100% - 44px, max(var(--card-w), 560px)); }
+:global(html[data-variant]) .head { margin-bottom: 20px; }
+:global(html[data-variant]) .info { margin-top: 22px; }
+/* A：标题与筛选全大写、小字号 */
+:global(html[data-variant="a"]) :is(.title, .chip, .all) { text-transform: uppercase; }
+:global(html[data-variant="a"][lang="en"]) .title { font-size: 14px; letter-spacing: .1em; line-height: 1.4; }
+:global(html[data-variant="a"]:not([lang="en"])) .title { font-size: 17px; }
+:global(html[data-variant="a"][lang="en"]) .chip { font-size: 11px; letter-spacing: .1em; font-weight: 500; }
+:global(html[data-variant="a"][lang="en"]) .all { font-size: 12px; letter-spacing: .1em; }
+/* B：标题半窄体全大写、放大 */
+:global(html[data-variant="b"]) :is(.title, .chip, .all) { text-transform: uppercase; }
+:global(html[data-variant="b"][lang="en"]) .title { font-size: 34px; line-height: 1; }
+:global(html[data-variant="b"]:not([lang="en"])) .title { font-size: 26px; font-weight: 300; }
+:global(html[data-variant="b"][lang="en"]) .chip { font-size: 11px; letter-spacing: .1em; font-weight: 500; }
+:global(html[data-variant="b"][lang="en"]) .all { font-size: 12px; letter-spacing: .1em; }
+:global(html[data-variant="b"][lang="en"]) .closetName { font-size: 26px; line-height: 1.05; }
+@media (min-width: 900px) {
+  :global(html[data-variant="b"][lang="en"]) .title { font-size: 48px; }
+  :global(html[data-variant="b"]:not([lang="en"])) .title { font-size: 34px; }
+  :global(html[data-variant="b"][lang="en"]) .closetName { font-size: 30px; }
+}

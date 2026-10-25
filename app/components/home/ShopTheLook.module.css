@@ -185,3 +185,54 @@
   .cover img, .cardImg img, .tab::after, .ask { transition: none; }
   .cover:hover img, .card:hover .cardImg img { transform: none; }
 }
+
+/* ---------- 探索方案（explore/type-layout 分支，定稿前不合并；说明见 app/explore-variants.css）---------- */
+/* 共同留白（a、c；b 在下面再放大） */
+:global(html[data-variant]) .inner { width: min(100% - 44px, var(--sc-col-wide)); }
+:global(html[data-variant]) .root { margin-top: 128px; }
+:global(html[data-variant]) .headText { gap: 14px; }
+:global(html[data-variant]) .tabs { margin-top: 44px; }
+:global(html[data-variant]) .panel { margin-top: 40px; }
+:global(html[data-variant]) .body { padding: 32px 24px 30px; gap: 20px; }
+:global(html[data-variant]) .pieces { margin: 0 -24px; padding: 2px 24px 6px; }
+:global(html[data-variant]) .moreHead { margin: 80px 0 24px; }
+:global(html[data-variant]) .more { margin: 0 -22px; padding: 0 22px 8px; grid-auto-columns: min(80vw, 320px); gap: 20px; }
+@media (min-width: 900px) {
+  :global(html[data-variant]) .root { margin-top: 184px; }
+  :global(html[data-variant]) .body { padding: 56px 56px 48px; gap: 24px; }
+  :global(html[data-variant]) .pieces { margin: 0; padding: 0; gap: 18px 28px; }
+  :global(html[data-variant]) .moreHead { margin: 112px 0 28px; }
+  :global(html[data-variant]) .more { margin: 0; padding: 0; gap: 36px; }
+}
+/* A：区块标题、标签页、按钮全大写；搭配名保持原大小写 */
+:global(html[data-variant="a"]) :is(.title, .tab, .ask, .view, .moreTitle, .piecesTitle, .totalLabel) { text-transform: uppercase; }
+:global(html[data-variant="a"][lang="en"]) .title { font-size: 22px; line-height: 1.2; letter-spacing: .06em; }
+:global(html[data-variant="a"]:not([lang="en"])) .title { font-size: 22px; }
+:global(html[data-variant="a"][lang="en"]) :is(.tab, .ask, .view) { font-size: 12px; letter-spacing: .1em; font-weight: 500; }
+:global(html[data-variant="a"][lang="en"]) .moreTitle { font-size: 13px; letter-spacing: .1em; }
+:global(html[data-variant="a"][lang="en"]) .lookName { letter-spacing: -.01em; }
+@media (min-width: 900px) {
+  :global(html[data-variant="a"][lang="en"]) .title { font-size: 28px; }
+  :global(html[data-variant="a"]:not([lang="en"])) .title { font-size: 26px; }
+  :global(html[data-variant="a"][lang="en"]) .lookName { font-size: 30px; }
+}
+/* B：大号半窄体大写标题；「同场合的其他几套」手机一行一张大图 */
+:global(html[data-variant="b"]) :is(.title, .tab, .ask, .view, .moreTitle, .piecesTitle, .totalLabel) { text-transform: uppercase; }
+:global(html[data-variant="b"]) .root { margin-top: 136px; }
+:global(html[data-variant="b"][lang="en"]) .title { font-size: 46px; line-height: .92; }
+:global(html[data-variant="b"]:not([lang="en"])) .title { font-size: 34px; font-weight: 300; line-height: 1.15; }
+:global(html[data-variant="b"][lang="en"]) :is(.tab, .ask, .view) { font-size: 12px; letter-spacing: .1em; font-weight: 500; }
+:global(html[data-variant="b"][lang="en"]) .lookName { font-size: 32px; line-height: 1; }
+:global(html[data-variant="b"]) .moreTitle { font-family: var(--sc-font-display); }
+:global(html[data-variant="b"][lang="en"]) .moreTitle { font-size: 30px; line-height: 1; }
+:global(html[data-variant="b"]:not([lang="en"])) .moreTitle { font-size: 22px; font-weight: 300; }
+:global(html[data-variant="b"][lang="en"]) .cardName { font-size: 24px; line-height: 1.05; }
+:global(html[data-variant="b"]) .more { grid-auto-flow: row; grid-template-columns: minmax(0, 1fr); grid-auto-columns: auto; margin: 0; padding: 0; gap: 48px; overflow: visible; }
+@media (min-width: 900px) {
+  :global(html[data-variant="b"]) .root { margin-top: 200px; }
+  :global(html[data-variant="b"][lang="en"]) .title { font-size: 88px; }
+  :global(html[data-variant="b"]:not([lang="en"])) .title { font-size: 52px; }
+  :global(html[data-variant="b"][lang="en"]) .lookName { font-size: 44px; }
+  :global(html[data-variant="b"][lang="en"]) .moreTitle { font-size: 40px; }
+  :global(html[data-variant="b"]) .more { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 48px; }
+}

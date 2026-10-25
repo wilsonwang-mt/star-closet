@@ -247,3 +247,27 @@
 .body { grid-template-columns: minmax(0, 1fr); }
 /* 英文换成 Instrument Sans 后，PR #28 按旧字体算的容器宽度阈值不再触发：名称一律预留两行，同排卡片等高（D71） */
 :global(html[lang="en"]) .lookName { min-height: 2lh; }
+
+/* ---------- 探索方案（explore/type-layout 分支，定稿前不合并；说明见 app/explore-variants.css）---------- */
+/* 共同留白 */
+:global(html[data-variant]) .looks { padding-top: 104px; }
+:global(html[data-variant]) .looksHead { margin-bottom: 32px; }
+:global(html[data-variant]) .grid { gap: 40px; }
+:global(html[data-variant]) .lookHead { padding: 22px 24px 0; }
+:global(html[data-variant]) .body { padding: 20px 24px 24px; gap: 16px; }
+@media (min-width: 640px) { :global(html[data-variant]) .grid { gap: 40px 28px; } }
+@media (min-width: 1100px) { :global(html[data-variant]) .grid { gap: 56px 36px; } }
+/* 搭配名保持原大小写（它同时带全局 .section-title） */
+:global(html[data-variant][lang]) h3.lookName { text-transform: none; }
+:global(html[data-variant="a"][lang="en"]) h3.lookName { font-size: 18px; letter-spacing: -.005em; }
+/* B：衣橱名大号半窄体大写；宽屏两列 */
+:global(html[data-variant="b"][lang="en"]) h1.title { font-size: 52px; line-height: .92; }
+:global(html[data-variant="b"]:not([lang="en"])) h1.title { font-size: 40px; font-weight: 300; }
+:global(html[data-variant="b"][lang="en"]) h3.lookName { font-size: 26px; line-height: 1.05; }
+@media (min-width: 900px) {
+  :global(html[data-variant="b"][lang="en"]) h1.title { font-size: 96px; }
+  :global(html[data-variant="b"]:not([lang="en"])) h1.title { font-size: 64px; }
+}
+@media (min-width: 1100px) {
+  :global(html[data-variant="b"]) .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 72px 40px; }
+}
