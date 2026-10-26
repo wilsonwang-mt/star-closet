@@ -66,8 +66,10 @@ export function guestLimit(kind: GuestKind, env: NodeJS.ProcessEnv = process.env
 
 /** 新账号减半额度持续几天；0 表示关闭。 */
 export function newAccountDays(env: NodeJS.ProcessEnv = process.env): number {
-  const n = Number(env.QUOTA_NEW_ACCOUNT_DAYS);
-  return Number.isInteger(n) && n >= 0 ? n : DEFAULT_NEW_ACCOUNT_DAYS;
+  const v = env.QUOTA_NEW_ACCOUNT_DAYS?.trim();
+  const n = Number(v);
+  // 空字符串也按没填：Number("") 是 0，不能因此悄悄关掉
+  return v && Number.isInteger(n) && n >= 0 ? n : DEFAULT_NEW_ACCOUNT_DAYS;
 }
 
 /** 这个账号今天的上限：注册不满 newAccountDays 天减半（向下取整，至少 1 次）。查不到注册时间按新账号算。 */

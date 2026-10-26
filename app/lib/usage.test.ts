@@ -50,6 +50,7 @@ test("新账号分级：注册 7 天内每项额度减半（向下取整、至�
   assert.equal(effectiveLimit("scene", new Date(NOW.getTime() - 7 * DAY), NOW, env({})), 20, "满 7 天恢复");
   assert.equal(effectiveLimit("scene", null, NOW, env({})), 10, "查不到注册时间按新账号");
   assert.equal(effectiveLimit("scene", fresh, NOW, env({ QUOTA_NEW_ACCOUNT_DAYS: "0" })), 20, "0 关闭");
+  assert.equal(effectiveLimit("scene", fresh, NOW, env({ QUOTA_NEW_ACCOUNT_DAYS: "" })), 10, "空值按默认，不关闭");
   assert.equal(effectiveLimit("scene", new Date(NOW.getTime() - 10 * DAY), NOW, env({ QUOTA_NEW_ACCOUNT_DAYS: "14" })), 10);
 });
 
