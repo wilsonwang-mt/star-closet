@@ -68,9 +68,11 @@ before(async () => {
     tryon: await import("@/lib/tryon/service"),
   };
   const { schema } = db;
+  // 注册满 30 天的老账号：额度不减半（新账号分级见 lib/usage.test.ts）
+  const createdAt = new Date(Date.now() - 30 * 86_400_000);
   await db.db.insert(schema.user).values([
-    { id: "u1", name: "测试一", email: "s1@example.test" },
-    { id: "u2", name: "测试二", email: "s2@example.test" },
+    { id: "u1", name: "测试一", email: "s1@example.test", createdAt },
+    { id: "u2", name: "测试二", email: "s2@example.test", createdAt },
   ]);
   for (const u of ["u1", "u2"]) {
     const key = m.storage.photoKey(u, `front-${u}`, "png");

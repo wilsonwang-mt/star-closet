@@ -5,6 +5,7 @@ import { z } from "zod";
 import { db, schema } from "@/lib/db";
 import { DEFAULT_LOCALE, isLocale, type Locale } from "@/lib/i18n/config";
 import { getProfile } from "@/lib/profile";
+import { BudgetError, reserveSpend } from "@/lib/spend";
 import { avatarKey, getStorage, isValidKey } from "@/lib/storage";
 import { cleanSummary } from "./body";
 import { sniffImage } from "./image";
@@ -55,6 +56,17 @@ const TOTAL_BUDGET_MS = 240_000;
 const ANALYSIS_TIMEOUT_MS = 30_000;
 /** 分析结果最多等这么久再开始生成（赶上了就写进提示词）。 */
 const ANALYSIS_PROMPT_WAIT_MS = 12_000;
+
+/**
+ * 一次数字分身生成的估价（全站每日总闸 lib/spend.ts，D76），开始生成前整次预留，单位百万分之一美元：
+ * - 三张标准形象照 + 一次脸部精修，各 1 次 nano-banana-pro/edit 2K，fal 标价 0.15 美元（app/README.md：建一次分身约 0.6 美元）；
+ *   再留 1 次 0.15 的余量给单张失败重试或精修构图被改动后再试（最多还能多 3 次，少见），共 0.75。
+ * - 同意由 Claude 分析照片时再加 0.07：Opus 5.5 标准速度（输入 4、输出 20 美元 / 百万 token），
+ *   最多 5 张长边 1536 的照片约 1.2 万输入 token ≈ 0.05，加上提示与约 500 token 输出。
+ * 以 fal 与 Anthropic 账单为准再校正。
+ */
+export const TWIN_IMAGES_MICRO_USD = 750_000;
+export const TWIN_ANALYSIS_MICRO_USD = 70_000;
 
 // ---------- 接口契约（试穿任务调用，签名不要改） ----------
 
@@ -367,6 +379,9 @@ export async function generateTwin(
   try {
     const photos = (await livePhotos(userId)).filter((p, i, all) => all.findIndex((x) => x.slot === p.slot) === i);
     if (!hasRequiredSlots("twin", photos)) throw new AvatarError(400, requiredSlotsMessage("twin"));
+    // 全站每日总闸（D76）：整次生成先预留；总额已满时在写入作业之前拒绝（BudgetError 503，接口据此退回用户额度）。
+    const analyze = consent.bodyAnalysis && !!process.env.ANTHROPIC_API_KEY;
+    await reserveSpend("twin:fal-ai/nano-banana-pro/edit", TWIN_IMAGES_MICRO_USD + (analyze ? TWIN_ANALYSIS_MICRO_USD : 0));
     const ordered = REFERENCE_ORDER
       .map((slot) => photos.find((p) => p.slot === slot))
       .filter((p): p is (typeof photos)[number] => !!p);
@@ -388,7 +403,7 @@ export async function generateTwin(
     //    赶上了就把眼镜与外观描述写进提示词；没赶上就先生成（实测提示词不依赖分析也能还原本人），概括与标签等分析结束后再写入。
     type Analysis = { analysis: ReturnType<typeof normalizeTraits> | null; glasses: boolean | null };
     const analysisP: Promise<Analysis> = (async () => {
-      if (!(consent.bodyAnalysis && process.env.ANTHROPIC_API_KEY)) return { analysis: null, glasses: null };
+      if (!analyze) return { analysis: null, glasses: null };
       try {
         const storage = getStorage();
         const images: TwinImage[] = [];
@@ -490,6 +505,7 @@ export async function generateTwin(
     console.info(`[avatar] twin ${jobId} 完成：${3 - failed}/3 张，脸部精修 ${faceDetail}，${Math.round((Date.now() - started) / 1000)} 秒`);
     return { jobId };
   } catch (e) {
+    if (e instanceof BudgetError) throw e; // 还没写入作业、没调用任何服务
     const err = e instanceof AvatarError ? e : new AvatarError(500, "生成失败，请稍后再试");
     if (!(e instanceof AvatarError)) console.error("[avatar] twin", e instanceof Error ? e.message : "unknown error");
     if (writtenKeys.length) await getStorage().remove(writtenKeys).catch(() => {});

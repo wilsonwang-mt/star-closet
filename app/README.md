@@ -270,19 +270,21 @@ npm run dev                  # http://localhost:3000
 
 按需：
 
-- `ANTHROPIC_API_KEY`（改编、体型分析；建议设花费上限的正式 key）
+- `ANTHROPIC_API_KEY`（改编、体型分析、悬浮对话；建议设花费上限的正式 key）
 - `FAL_KEY`、`TRYON_PROVIDER`、`AVATAR3D_PROVIDER`、`AVATAR3D_MAX_POLL_SECONDS`、`TWIN_QUEUE_POLL_MS`、`TWIN_FACE_DETAIL`
 - `AVATARSDK_CLIENT_ID`、`AVATARSDK_CLIENT_SECRET`、`AVATARSDK_EXPORT_HOSTS`（MetaPerson，已停用）
-- 每日上限覆盖（正整数，不填用默认）：`QUOTA_ADAPT`（100）、`QUOTA_TRYON`（60，试衣间与一键试穿共用）、`QUOTA_SCENE`（20，上身效果每次与场景图每张各 1 次）、`QUOTA_TWIN`（10）、`QUOTA_BODY_ANALYSIS`（20）
+- 每日上限覆盖（正整数，不填用默认）：`QUOTA_ADAPT`（100）、`QUOTA_TRYON`（60，试衣间与一键试穿共用）、`QUOTA_SCENE`（20，上身效果每次与场景图每张各 1 次）、`QUOTA_TWIN`（10）、`QUOTA_BODY_ANALYSIS`（20）、`QUOTA_CHAT`（50，悬浮对话，只在调用 Claude 时计）
+- 防滥用第二批（D76，`lib/usage.ts`）：`QUOTA_NEW_ACCOUNT_DAYS`（新账号额度减半的天数，默认 7，0 关闭）；`QUOTA_IP_<用途>`（同一网络下所有账号当天合计，如 `QUOTA_IP_SCENE`，默认个人额度的 3 倍、数字分身 2 倍；办公室等共用出口集中演示时可临时调高）；`QUOTA_CHAT_GUEST`（未登录访客按网络每天的对话次数，默认 20）；`IP_HASH_SECRET`（网络计数的 HMAC 密钥，不设时用 `BETTER_AUTH_SECRET`）
+- Vercel BotID（D76，`lib/botid.ts`）：只在 Vercel 上生效；`BOTID=off` 临时关闭（浏览器端需重新部署才停止加挑战）。检查级别在 Vercel 项目的 Firewall → BotID 设置里切换（默认 Basic 免费；Deep Analysis 每 1000 次 1 美元），需开启项目的 OIDC Federation
 
-- 场景出图（D75、D76）：`SPEND_DAILY_USD`（全站每日估算花费总闸，默认 30）、`SCENE_IMAGE_MODEL`（主模型 fal endpoint，默认 `fal-ai/nano-banana-2.1/edit`）、`SCENE_LIVE=1`（开启上身效果的 Live 视频，默认关闭）
+- 场景出图、试穿、数字分身、悬浮对话（D75、D76）：`SPEND_DAILY_USD`（全站每日估算花费总闸，默认 30）、`SCENE_IMAGE_MODEL`（主模型 fal endpoint，默认 `fal-ai/nano-banana-2.1/edit`）、`SCENE_LIVE=1`（开启上身效果的 Live 视频，默认关闭）
 
 不要在 Vercel 上设置：`PGLITE_DIR`、`UPLOADS_DIR`（本地专用）；`DATABASE_MIGRATE_URL` 只在本机跑迁移时用。
 
 ### 部署前在 Supabase 上执行（本机，不在 Vercel 构建时跑）
 
-1. 本机 `.env.local` 设置 `DATABASE_URL` 与 `DATABASE_MIGRATE_URL`（5432 会话模式），运行 `npm run db:setup`：执行全部迁移（目前到 0008：`scene_shot`、`spend_day`）并写入目录。
-2. SQL Editor 整份执行 `supabase/rls.sql`（为 `usage_counter`、`scene_shot`、`spend_day` 等新表开启 RLS、收回 anon / authenticated 权限）；未建桶时再执行 `supabase/storage.sql`。
+1. 本机 `.env.local` 设置 `DATABASE_URL` 与 `DATABASE_MIGRATE_URL`（5432 会话模式），运行 `npm run db:setup`：执行全部迁移（目前到 0009：`scene_shot`、`spend_day`、`ip_counter`）并写入目录。
+2. SQL Editor 整份执行 `supabase/rls.sql`（为 `usage_counter`、`scene_shot`、`spend_day`、`ip_counter` 等新表开启 RLS、收回 anon / authenticated 权限）；未建桶时再执行 `supabase/storage.sql`。
 3. 用 Supabase 安全顾问（Security Advisor）复查：应只剩“已开 RLS 但无策略”的 INFO。
 4. 删除或改密测试账号（见 AGENTS.md D64 节）。
 
@@ -301,6 +303,7 @@ Vercel 函数响应上限 4.5 MB。`/api/avatar/files/*`（照片、试穿图、
 - [ ] 上身效果：场景图出现，Live 视频能播放（含 iPhone Safari）。
 - [ ] Vercel 运行日志（Runtime Logs）没有“缺少环境变量”、5xx 或函数超时；区域显示 sin1。
 - [ ] 当日超过上限时返回中文提示（可临时把某个 `QUOTA_*` 设为 1 验证后改回）。
+- [ ] BotID：在浏览器里注册、登录、发一句悬浮对话都正常；用 curl 直接 POST `/api/chat` 或 `/api/auth/sign-up/email` 返回 403（受保护接口的冒烟检查只能在浏览器里做）。Firewall 页面的 BotID 过滤能看到检查记录。
 
 照片 30 天删除（`npm run avatar:purge`）目前没有配置 Vercel Cron，演示期间由本机定时执行或手动执行。
 

@@ -81,6 +81,9 @@ revoke all on table public.scene_shot from anon, authenticated;
 -- 全站每日生成花费（spend_day，迁移 0008，D76）：只由服务端读写，不对 Data API 开放。
 alter table public.spend_day enable row level security;
 revoke all on table public.spend_day from anon, authenticated;
+-- 按网络（IP）的每日计数（ip_counter，迁移 0009，D76）：只存带日期的 IP 哈希与次数，只由服务端读写，不对 Data API 开放。
+alter table public.ip_counter enable row level security;
+revoke all on table public.ip_counter from anon, authenticated;
 
 -- 5. 建项目时勾选“Enable automatic RLS”会生成 public.rls_auto_enable()（SECURITY DEFINER 的事件触发器函数）。
 --    它只该由建表事件触发，收回 Data API 角色的调用权限；不影响自动开启 RLS。

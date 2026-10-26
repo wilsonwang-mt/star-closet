@@ -15,6 +15,7 @@ type AuthErrorKey =
   | "passwordTooLong"
   | "emailNotVerified"
   | "tooManyRequests"
+  | "botDetected"
   | "signupFailed"
   | "signinFailed";
 
@@ -31,6 +32,8 @@ const AUTH_ERRORS: Record<string, AuthErrorKey> = {
   PASSWORD_TOO_LONG: "passwordTooLong",
   EMAIL_NOT_VERIFIED: "emailNotVerified",
   TOO_MANY_REQUESTS: "tooManyRequests",
+  // 本站加的：注册 / 登录没过 Vercel BotID（app/api/auth/[...all]/route.ts）
+  BOT_DETECTED: "botDetected",
   FAILED_TO_CREATE_USER: "signupFailed",
   FAILED_TO_CREATE_SESSION: "signinFailed",
 };

@@ -26,6 +26,7 @@ const auth = {
     passwordTooLong: "密码太长了，请换一个短一点的",
     emailNotVerified: "邮箱还没有验证",
     tooManyRequests: "尝试次数太多，请稍后再试",
+    botDetected: "安全校验没有通过，请刷新页面后再试",
     signupFailed: "注册失败，请稍后再试",
     signinFailed: "登录失败，请稍后再试",
   },

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { readBodyLimited } from "@/lib/avatar/http";
+import { rejectBot } from "@/lib/botid";
+import { clientIp } from "@/lib/client-ip";
 import { getOutfit } from "@/lib/catalog";
 import { getLocale, localizeServer } from "@/lib/i18n/server";
 import { SceneError } from "@/lib/scene/errors";
@@ -44,6 +46,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const denied = await rejectBot();
+  if (denied) return denied;
   const user = await getCurrentUser();
   if (!user) return jsonError("请先登录", 401);
   try {
@@ -71,7 +75,7 @@ export async function POST(req: Request) {
       throw new SceneError(400, "请求格式不对");
     }
     // 每用户每日上限（超限 429）；生成前的校验失败（4xx）与全站总额已满会退回这次计数。
-    const shot = await withQuota(user.id, "scene", run);
+    const shot = await withQuota(user.id, "scene", run, { ip: clientIp(req.headers) });
     return json({ shot: localizeShot(shot, await getLocale()) }, 201);
   } catch (e) {
     if (e instanceof SceneError) return jsonError(e.message, e.status);

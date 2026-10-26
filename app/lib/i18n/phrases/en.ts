@@ -186,6 +186,10 @@ export const phrases: Record<string, string> = {
   "先整套试穿一次，就能把模特换成你": "Try on the whole look once, then you can swap yourself in for the model.",
   这套搭配没有可用的封面: "This look doesn't have a cover photo to use.",
   "今天的生成名额已经用完了，明天再来试试": "Today's photo generation is fully booked. Please come back tomorrow.",
+  // 防滥用第二批（D76）：BotID、同一网络合计、访客对话（lib/botid.ts、lib/usage.ts）
+  "安全校验没有通过，请刷新页面后再试": "We couldn't verify this browser. Please refresh the page and try again.",
+  "今天同一网络下的使用次数已达上限，明天再来试试": "Today's limit for your network has been reached. Please try again tomorrow.",
+  "今天的对话次数已用完，登录后可以继续": "You've reached today's chat limit. Sign in to keep chatting.",
 };
 
 /** 带变量的原文：按顺序尝试，$1、$2 引用捕获组。全部以 ^…$ 锚定，先匹配者优先。 */
@@ -196,6 +200,7 @@ export const patterns: ReadonlyArray<readonly [RegExp, string]> = [
   [/^今天的场景图次数已用完（每天 (\d+) 次），明天再来试试$/, "You've reached today's limit of $1 scene photos. Try again tomorrow."],
   [/^今天的数字分身生成次数已用完（每天 (\d+) 次），明天再来试试$/, "You've reached today's limit of $1 twin generations. Try again tomorrow."],
   [/^今天的体型分析次数已用完（每天 (\d+) 次），明天再来试试$/, "You've reached today's limit of $1 body-shape analyses. Try again tomorrow."],
+  [/^今天的对话次数已用完（每天 (\d+) 次），明天再来试试$/, "You've reached today's limit of $1 chat messages. Try again tomorrow."],
   // 第三方服务带状态码的失败（providers.ts、metaperson.ts）
   [/^生成服务暂时不可用（网络错误）$/, "The generation service is temporarily unavailable (network error)."],
   [/^生成服务暂时不可用（(\d+)）$/, "The generation service is temporarily unavailable ($1)."],

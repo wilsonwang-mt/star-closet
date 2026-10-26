@@ -321,6 +321,8 @@ export type AiOutcome = {
   speed: "standard" | "fast" | null;
   /** 有几次工具调用是从正文里的 XML 救回来的（监控用） */
   textToolCalls: number;
+  /** 本次 token 用量：输入（未缓存）/ 读缓存 / 写缓存 / 输出，用来校正总闸估价（lib/chat/quota.ts） */
+  tokens: string;
 };
 
 // 追问 chip 的长度上限（字符）：中文 12 个字左右，英文按词数换算放宽
@@ -457,5 +459,7 @@ export async function streamChatAi(opts: {
   }
   const { final, collect } = result;
   if (final.stop_reason === "refusal") throw new Error("模型拒绝了这次请求");
-  return { wroteText: streamed, cards: collect.cards(), chips: collect.chips(), speed: final.usage.speed ?? null, textToolCalls: rescued };
+  const u = final.usage;
+  const tokens = `${u.input_tokens}/${u.cache_read_input_tokens ?? 0}/${u.cache_creation_input_tokens ?? 0}/${u.output_tokens}`;
+  return { wroteText: streamed, cards: collect.cards(), chips: collect.chips(), speed: u.speed ?? null, textToolCalls: rescued, tokens };
 }
