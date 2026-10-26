@@ -397,3 +397,27 @@ test("generateTwin 英文：分析按英文写，记下语言；接口边界只�
   assert.deepEqual(zh.twin?.tags, []);
   assert.deepEqual(zh.twin?.shots.map((s) => s.label), ["正面", "侧面", "背面"]);
 });
+
+test("全站每日总额（D76）：开始生成前整次预留估价（含照片分析）；总额已满时不写作业、不调用 fal，抛 BudgetError（503）", async () => {
+  const spend = await import("@/lib/spend");
+  const { db, schema } = m.db;
+  await userWithPhotos("u9", ["face", "front"]);
+  const once = m.twin.TWIN_IMAGES_MICRO_USD + m.twin.TWIN_ANALYSIS_MICRO_USD;
+  const before = await spend.spentToday();
+  process.env.SPEND_DAILY_USD = String((before + once) / 1_000_000);
+  try {
+    await m.twin.generateTwin("u9", { gender: "female" }, { analyze });
+    assert.equal(await spend.spentToday(), before + once, "整次预留一次");
+    const jobs = async () => (await db.select().from(schema.avatarJob).where(eq(schema.avatarJob.userId, "u9"))).length;
+    const n = await jobs();
+    calls = [];
+    await assert.rejects(
+      m.twin.generateTwin("u9", { gender: "female" }, { analyze }),
+      (e: Error & { status?: number }) => e instanceof spend.BudgetError && e.status === 503,
+    );
+    assert.equal(calls.length, 0, "没有调用 fal");
+    assert.equal(await jobs(), n, "没有写入作业");
+  } finally {
+    delete process.env.SPEND_DAILY_USD;
+  }
+});

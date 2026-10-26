@@ -64,6 +64,13 @@
       "when": 1792946299560,
       "tag": "0008_scene_shot",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793029088323,
+      "tag": "0009_ip_counter",
+      "breakpoints": true
     }
   ]
 }

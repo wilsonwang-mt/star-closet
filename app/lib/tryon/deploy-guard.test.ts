@@ -23,9 +23,11 @@ before(async () => {
   const { migrate } = await import("drizzle-orm/pglite/migrator");
   await migrate(db.db as never, { migrationsFolder: path.join(process.cwd(), "drizzle") });
   m = { db, usage: await import("@/lib/usage") };
+  // 早就注册的老账号：额度不减半（新账号分级见 lib/usage.test.ts）。下面的测试用固定日期 2026-10-17 计数。
+  const createdAt = new Date("2026-01-01T00:00:00Z");
   await db.db.insert(db.schema.user).values([
-    { id: "q1", name: "限次一", email: "q1@example.test" },
-    { id: "q2", name: "限次二", email: "q2@example.test" },
+    { id: "q1", name: "限次一", email: "q1@example.test", createdAt },
+    { id: "q2", name: "限次二", email: "q2@example.test", createdAt },
   ]);
 });
 

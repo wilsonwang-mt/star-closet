@@ -554,3 +554,39 @@ test("试穿卡上传的正面照写入 30 天 expires_at（D47），替换旧�
   assert.equal(await m.svc.getTryon("u3", warm.id), null, "没用上的预热结果随换照片删除");
   assert.ok(!uploaded(`u3/avatars/tryon-${warm.id}.jpg`));
 });
+
+test("全站每日总额（D76）：每段提交前按模型预留估价；总额已满时不提交——细化被拒保留快出的一张，快出图被拒 503 并退回额度", async () => {
+  process.env.FAL_KEY = "test-key";
+  await clearTryons();
+  const spend = await import("@/lib/spend");
+  const usage = await import("@/lib/usage");
+  const { STAGE_MICRO_USD } = await import("./provider");
+  // 前面的测试做过一键删除：重新放一张正面照（代码生成的纯色 PNG）
+  const key = m.storage.photoKey("u1", "front-spend", "png");
+  await m.storage.getStorage().put(key, pngWithMetadata(64, 96), "image/png");
+  await m.db.db.insert(m.db.schema.avatarPhoto).values({ id: "front-spend", userId: "u1", slot: "front", storageKey: key, mime: "image/png" });
+  // 总额只够再提交一段 FASHN
+  const before = await spend.spentToday();
+  process.env.SPEND_DAILY_USD = String((before + STAGE_MICRO_USD.fashn_performance + 1) / 1_000_000);
+  try {
+    const v = await m.svc.createTryon("u1", { lookId: "L1", itemIds: ["B1"], consent: true });
+    assert.deepEqual(
+      submits().map((b) => b.mode),
+      ["performance"],
+      "细化一段被总闸拒绝，没有提交",
+    );
+    assert.equal(await spend.spentToday(), before + STAGE_MICRO_USD.fashn_performance);
+    const done = await pollUntil("u1", v.id, (x) => x?.status === "succeeded");
+    assert.ok(done?.resultUrl, "保留快出的一张");
+
+    const q0 = await usage.quotaRemaining("u1", "tryon");
+    await assert.rejects(
+      usage.withQuota("u1", "tryon", () => m.svc.createTryon("u1", { lookId: "L1", itemIds: ["O1"] })),
+      (e: Error & { status?: number }) => e instanceof spend.BudgetError && e.status === 503,
+    );
+    assert.deepEqual(await usage.quotaRemaining("u1", "tryon"), q0, "总额已满不扣用户额度");
+    assert.equal(submits().length, 1, "没有再向 fal 提交");
+  } finally {
+    delete process.env.SPEND_DAILY_USD;
+  }
+});

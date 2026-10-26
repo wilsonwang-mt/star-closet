@@ -5,6 +5,8 @@ import { json, readBodyLimited, withUser } from "@/lib/avatar/http";
 import { localizeAvatarState } from "@/lib/avatar/l10n";
 import { AvatarError, getAvatarState } from "@/lib/avatar/service";
 import { generateTwin } from "@/lib/avatar/twin";
+import { rejectBot } from "@/lib/botid";
+import { clientIp } from "@/lib/client-ip";
 import { getLocale } from "@/lib/i18n/server";
 import { withQuota } from "@/lib/usage";
 
@@ -24,6 +26,8 @@ const hasProcessingJob = async (userId: string) =>
   ).length > 0;
 
 export async function POST(req: Request) {
+  const denied = await rejectBot();
+  if (denied) return denied;
   return withUser(async (userId) => {
     const locale = await getLocale();
     const raw = await readBodyLimited(req, 4096, "请求太大");
@@ -35,25 +39,30 @@ export async function POST(req: Request) {
         throw new AvatarError(400, "请求格式不对");
       }
     }
-    // 每用户每日数字分身上限（D64）：校验类错误（4xx，尚未调用 fal）退回这次计数。
-    await withQuota(userId, "twin", async () => {
-      let settled = false;
-      let failure: unknown = null;
-      const run = generateTwin(userId, { gender: body?.gender, locale }).then(
-        () => void (settled = true),
-        (e) => {
-          settled = true;
-          failure = e;
-        },
-      );
-      // 校验类错误（未同意、缺照片、正在生成）在写入作业前抛出：等到作业出现或 promise 结束为止（最多约 10 秒）。
-      for (let i = 0; i < 50 && !settled; i++) {
-        if (await hasProcessingJob(userId)) break;
-        await new Promise((r) => setTimeout(r, 200));
-      }
-      if (settled && failure) throw failure;
-      if (!settled) after(() => run);
-    });
+    // 每用户每日数字分身上限（D64；D76 起同一网络另有合计）：校验类错误（4xx，尚未调用 fal）与全站总额已满退回这次计数。
+    await withQuota(
+      userId,
+      "twin",
+      async () => {
+        let settled = false;
+        let failure: unknown = null;
+        const run = generateTwin(userId, { gender: body?.gender, locale }).then(
+          () => void (settled = true),
+          (e) => {
+            settled = true;
+            failure = e;
+          },
+        );
+        // 校验类错误（未同意、缺照片、正在生成）与全站总额已满在写入作业前抛出：等到作业出现或 promise 结束为止（最多约 10 秒）。
+        for (let i = 0; i < 50 && !settled; i++) {
+          if (await hasProcessingJob(userId)) break;
+          await new Promise((r) => setTimeout(r, 200));
+        }
+        if (settled && failure) throw failure;
+        if (!settled) after(() => run);
+      },
+      { ip: clientIp(req.headers) },
+    );
     return json(localizeAvatarState(await getAvatarState(userId), locale));
   });
 }

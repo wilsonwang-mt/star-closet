@@ -85,7 +85,7 @@ test("随视图返回的固定文案都有英文：处理方说明、质量提�
 
 test("带变量的提示：每日上限（每种用途）、第三方状态码、导出主机；patterns 的英文里没有中文", async () => {
   const { QuotaError } = await import("../usage");
-  for (const kind of ["adapt", "tryon", "scene", "twin", "body_analysis"] as const) {
+  for (const kind of ["adapt", "tryon", "scene", "twin", "body_analysis", "chat"] as const) {
     const msg = new QuotaError(kind, 7).message;
     const out = en(msg);
     assert.ok(!CJK.test(out) && out.includes("7") && /Try again tomorrow\.$/.test(out), `${kind}: ${out}`);

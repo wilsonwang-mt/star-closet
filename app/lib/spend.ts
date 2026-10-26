@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { db, schema } from "./db";
+import { isMissingTable } from "./db/errors";
 import { usageDay } from "./usage";
 
 // 全站每日生成花费总闸（D75 防滥用第一批：平台承担费用，防止批量注册账号刷图把钱烧光）。
@@ -8,7 +9,9 @@ import { usageDay } from "./usage";
 // - 北京时间自然日重置（与每用户额度 lib/usage.ts 同一个“日”）。估价是保守估计，不是账单，实际以服务商后台为准。
 // - 合计越过 50%、80% 时打一条 warn 日志，被总闸拒绝时打 error 日志（Vercel 日志可检索 “[spend]”）。
 // - 表还没迁移（生产库未执行 0008）时放行并打 error 日志：总闸失效但不让已有功能整体报错。
-// 目前只接了出图（场景与姿势、上身效果）；试穿、数字分身、对话等接入放在防滥用第二批。
+// 接入（各自的估价常量写在调用处，并注明依据）：
+//   出图（场景与姿势、上身效果）lib/scene/image.ts；2D 试穿每一段提交 lib/tryon/provider.ts；
+//   数字分身每次生成（预留整次）lib/avatar/twin.ts；悬浮对话每次调用 Claude lib/chat/quota.ts（D76 第二批）。
 
 export const DEFAULT_DAILY_USD = 30;
 
@@ -25,11 +28,6 @@ export class BudgetError extends Error {
     super("今天的生成名额已经用完了，明天再来试试");
   }
 }
-
-const isMissingTable = (e: unknown) => {
-  const code = (e as { code?: unknown; cause?: { code?: unknown } })?.code ?? (e as { cause?: { code?: unknown } })?.cause?.code;
-  return code === "42P01";
-};
 
 /**
  * 预留一次调用的估算花费；超过当日总额时抛 BudgetError。单条 upsert 原子完成，并发请求不会一起越过总额。

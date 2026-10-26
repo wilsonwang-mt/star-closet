@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { and, asc, desc, eq, inArray, isNull, ne, sql, type SQL } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
+import { BudgetError } from "@/lib/spend";
 import { getItemsByIds, type Item } from "@/lib/catalog";
 import { avatarKey, getStorage } from "@/lib/storage";
 import { MAX_PHOTO_BYTES, sniffImage } from "@/lib/avatar/image";
@@ -640,7 +641,7 @@ async function advanceChain(userId: string, row: Row, meta: ChainMeta, defer?: D
     const updated = await patchMeta(row.id, { job: nextJob });
     return toView(updated ?? claimed, { stage: "queued" });
   } catch (e) {
-    return failRow(claimed, e instanceof TryonError ? e.message : "试穿失败，请稍后再试");
+    return failRow(claimed, e instanceof TryonError || e instanceof BudgetError ? e.message : "试穿失败，请稍后再试");
   }
 }
 

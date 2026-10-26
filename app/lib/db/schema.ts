@@ -387,6 +387,21 @@ export const usageCounter = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.day, t.kind] })],
 );
 
+// ---- 按网络（IP）的每日计数（D76 防滥用第二批）----
+// 两种用途共用一张表：kind 为 lib/usage.ts 的用途时，是同一网络下所有账号当天的合计（防批量注册账号刷图）；
+// kind 以 "guest:" 开头时，是没登录的访客按网络计的次数（悬浮对话）。
+// 不存原始 IP：ip_hash 是“北京时间日期 + IP（IPv6 取前 64 位）”的 HMAC（lib/usage.ts ipHash），换一天就对不上。
+export const ipCounter = pgTable(
+  "ip_counter",
+  {
+    ipHash: text("ip_hash").notNull(),
+    day: text("day").notNull(),
+    kind: text("kind").notNull(),
+    count: integer("count").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.ipHash, t.day, t.kind] })],
+);
+
 // ---- 购物袋（D67：站内下单的前一步；结算与付款这次不做）----
 // 每个用户每件单品每个尺码一行；尺码未选时为空字符串（主键列不能为空）。数量 1–9。
 export const bagItem = pgTable(

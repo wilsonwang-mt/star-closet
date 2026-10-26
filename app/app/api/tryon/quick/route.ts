@@ -1,5 +1,7 @@
 import { after } from "next/server";
 import { readBodyLimited } from "@/lib/avatar/http";
+import { rejectBot } from "@/lib/botid";
+import { clientIp } from "@/lib/client-ip";
 import { getLocale } from "@/lib/i18n/server";
 import { json, withTryonUser } from "@/lib/tryon/http";
 import { localizeTryonView } from "@/lib/tryon/l10n";
@@ -15,6 +17,8 @@ export const maxDuration = 60;
 const ITEM_RE = /^[A-Za-z0-9_-]{1,40}$/;
 
 export async function POST(req: Request) {
+  const denied = await rejectBot();
+  if (denied) return denied;
   return withTryonUser(async (userId) => {
     const raw = await readBodyLimited(req, 4 * 1024, "请求太大");
     let body: Record<string, unknown> | null;
@@ -26,8 +30,11 @@ export async function POST(req: Request) {
     const itemId = typeof body?.itemId === "string" ? body.itemId : "";
     if (!ITEM_RE.test(itemId)) throw new TryonError(400, "请求格式不对");
     // 与试衣间共用每日试穿上限（D64）。
-    const view = await withQuota(userId, "tryon", () =>
-      createQuickTryon(userId, itemId, { consent: body?.consent === true }, (task) => after(task)),
+    const view = await withQuota(
+      userId,
+      "tryon",
+      () => createQuickTryon(userId, itemId, { consent: body?.consent === true }, (task) => after(task)),
+      { ip: clientIp(req.headers) },
     );
     return json(localizeTryonView(view, await getLocale()), 201);
   });

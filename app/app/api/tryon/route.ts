@@ -1,5 +1,7 @@
 import { after } from "next/server";
 import { readBodyLimited } from "@/lib/avatar/http";
+import { rejectBot } from "@/lib/botid";
+import { clientIp } from "@/lib/client-ip";
 import { getLocale } from "@/lib/i18n/server";
 import { json, withTryonUser } from "@/lib/tryon/http";
 import { localizeTryonView } from "@/lib/tryon/l10n";
@@ -16,6 +18,8 @@ import { withQuota } from "@/lib/usage";
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
+  const denied = await rejectBot();
+  if (denied) return denied;
   return withTryonUser(async (userId) => {
     const raw = await readBodyLimited(req, 16 * 1024, "请求太大");
     let body: Record<string, unknown>;
@@ -33,8 +37,8 @@ export async function POST(req: Request) {
       prewarm: body.prewarm === true,
       consent: body.consent === true,
     };
-    // 每用户每日试穿上限（D64）：预热、缓存命中也计一次；校验类错误退回。
-    const view = await withQuota(userId, "tryon", () => createTryon(userId, input, (task) => after(task)));
+    // 每用户每日试穿上限（D64；D76 起同一网络另有合计）：预热、缓存命中也计一次；校验类错误与全站总额已满退回。
+    const view = await withQuota(userId, "tryon", () => createTryon(userId, input, (task) => after(task)), { ip: clientIp(req.headers) });
     return json(localizeTryonView(view, await getLocale()), 201);
   });
 }

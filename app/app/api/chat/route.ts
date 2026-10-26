@@ -2,16 +2,20 @@ import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
+import { rejectBot } from "@/lib/botid";
 import { streamChatAi, hasChatAi } from "@/lib/chat/ai";
+import { chargeChat } from "@/lib/chat/quota";
+import { clientIp } from "@/lib/client-ip";
 import { availablePages, closetCard, getChatCatalog, outfitCard, pageCard, type ChatCatalog } from "@/lib/chat/catalog";
 import { describePage, describeUser, hasOwnSignal, resolvePage, rulesHint } from "@/lib/chat/context";
 import { CHAT_MAX_INPUT, type ChatCard, type ChatEvent } from "@/lib/chat/protocol";
 import { normalizeEnglish } from "@/lib/chat/english";
 import { getChatUser } from "@/lib/chat/user";
 import type { Locale } from "@/lib/i18n/config";
-import { getLocale, tFor } from "@/lib/i18n/server";
+import { getLocale, localizeServer, tFor } from "@/lib/i18n/server";
 import type { Translator } from "@/lib/i18n/types";
 import { emptyQuery, locate, localizeLabels, parseQuery, type LocateQuery, type LocateResult } from "@/lib/locate/core";
+import { QuotaError } from "@/lib/usage";
 
 export const dynamic = "force-dynamic";
 // 流式回复可能持续十几秒（审美类问题模型会多想）；不设时用平台默认时限，可能在 AI 回来前被掐断
@@ -27,6 +31,9 @@ export const maxDuration = 60;
 // 用户的话只在内存里用于这次请求：不落库；日志只记耗时、速度、卡片数等，不记正文。身体数据不读、不发（见 lib/chat/user.ts）。
 // 多语言（D70）：按请求语言（cookie → Accept-Language）输出理解行、兜底回复、卡片译名与错误提示，并让 Claude 用该语言回复；
 // 规则层解析与查询里的值始终是中文，英文输入先由 normalizeEnglish 换成规则层认得的词（只用于规则解析，发给 Claude 的仍是原话）。
+// 防滥用（D76）：先过 Vercel BotID（lib/botid.ts）；每次真要调用 Claude 前扣额度并向全站每日总闸预留估价（lib/chat/quota.ts）——
+// 登录用户每天 QUOTA_CHAT 次（新账号前 7 天减半，同一网络另有合计），访客按网络每天 QUOTA_CHAT_GUEST 次；
+// 额度用完返回 429 与提示（对话窗把它显示成这一轮的回复），全站总额已满时改用规则层回复。没有 key 时只走规则层，不计次数。
 
 // 审美类的话（如“暖一点的颜色”）模型会多想一会儿，实测首字约 10 秒
 const FIRST_TOKEN_MS = 15_000;
@@ -88,11 +95,12 @@ function fallbackReply(
 }
 
 export async function POST(req: Request) {
+  const denied = await rejectBot();
+  if (denied) return denied;
   const started = Date.now();
   // 登录用户的档案偏好与状态：与目录读取并行，不挡住第一行
-  const userP = getCurrentUser()
-    .then((u) => getChatUser(u?.id ?? null))
-    .catch(() => null);
+  const accountP = getCurrentUser().catch(() => null);
+  const userP = accountP.then((u) => getChatUser(u?.id ?? null)).catch(() => null);
   const locale = await getLocale();
   const t = tFor(locale, "chat");
   const parsed = Body.safeParse(await req.json().catch(() => null));
@@ -118,6 +126,19 @@ export async function POST(req: Request) {
   const followUp = Boolean(lastAssistant);
   const page = resolvePage(parsed.data.path, catalog);
 
+  let useAi = hasChatAi();
+  if (useAi) {
+    try {
+      useAi = await chargeChat((await accountP)?.id ?? null, clientIp(req.headers));
+      if (!useAi) console.warn("chat budget full, rules only");
+    } catch (e) {
+      if (e instanceof QuotaError) return NextResponse.json({ error: await localizeServer(e.message) }, { status: 429 });
+      // 计数出错时不调用 Claude（宁可这一轮只给规则层结果，也不在没有记账的情况下花钱）
+      console.error("chat quota failed:", (e as Error).message);
+      useAi = false;
+    }
+  }
+
   const encoder = new TextEncoder();
   const ctrl = new AbortController();
   req.signal.addEventListener("abort", () => ctrl.abort());
@@ -134,7 +155,7 @@ export async function POST(req: Request) {
       send({ t: "understood", labels: own ? localizeLabels(query, catalog.closets, locale) : [], query });
 
       const tag = `signal=${own ? 1 : 0} page=${page.kind}`;
-      if (!hasChatAi()) {
+      if (!useAi) {
         const fb = fallbackReply(rules, catalog, own, followUp, false, locale, t);
         send({ t: "fallback", ...fb });
       } else {
@@ -180,7 +201,7 @@ export async function POST(req: Request) {
             send({ t: "fallback", text, cards: out.cards.length ? out.cards : fb.cards, chips: out.chips.length ? out.chips : fb.chips });
           }
           console.info(
-            `chat ok speed=${out.speed ?? "?"} first=${firstMs}ms total=${Date.now() - started}ms cards=${out.cards.length} chips=${out.chips.length} tooltext=${out.textToolCalls} notext=${out.wroteText ? 0 : 1} ${tag}`,
+            `chat ok speed=${out.speed ?? "?"} first=${firstMs}ms total=${Date.now() - started}ms cards=${out.cards.length} chips=${out.chips.length} tooltext=${out.textToolCalls} notext=${out.wroteText ? 0 : 1} tok=${out.tokens} ${tag}`,
           );
         } catch (e) {
           const msg = req.signal.aborted

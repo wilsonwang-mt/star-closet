@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { readBodyLimited } from "@/lib/avatar/http";
+import { rejectBot } from "@/lib/botid";
+import { clientIp } from "@/lib/client-ip";
 import { getItemsByIds } from "@/lib/catalog";
 import { getLocale, localizeServer } from "@/lib/i18n/server";
 import { localizeSceneState } from "@/lib/scene/l10n";
@@ -32,6 +34,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const denied = await rejectBot();
+  if (denied) return denied;
   const user = await getCurrentUser();
   if (!user) return jsonError("请先登录", 401);
   try {
@@ -47,7 +51,9 @@ export async function POST(req: Request) {
     const [item] = await getItemsByIds([itemId]);
     if (!item) throw new SceneError(404, "没有找到这件单品");
     // 每用户每日上身效果上限（D64），超限 429（QuotaError 带 status，由下方 catch 统一返回）。
-    const state = await withQuota(user.id, "scene", () => createScenes(user.id, item, { consent: body?.consent === true }));
+    const state = await withQuota(user.id, "scene", () => createScenes(user.id, item, { consent: body?.consent === true }), {
+      ip: clientIp(req.headers),
+    });
     return json(localizeSceneState(state, await getLocale()), 201);
   } catch (e) {
     if (e instanceof SceneError) return jsonError(e.message, e.status);
